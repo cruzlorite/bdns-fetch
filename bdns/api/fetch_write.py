@@ -25,7 +25,7 @@ import requests
 import aiohttp
 from aiolimiter import AsyncLimiter
 from tqdm.asyncio import tqdm
-from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
+from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_fixed
 
 from bdns.api.utils import smart_open, api_request
 
@@ -37,6 +37,9 @@ logger = logging.getLogger(__name__)
 MAX_RETRIES = 3
 """Maximum number of retries for API requests."""
 
+WAIT_TIME = 2
+"""Time to wait between retries in seconds."""
+
 def log_retry_attempt(retry_state):
     # Exception instance from last attempt
     exc = retry_state.outcome.exception()
@@ -44,7 +47,7 @@ def log_retry_attempt(retry_state):
     exc_msg = str(exc) if exc else "No exception"
 
     logger.warning(
-        f"Retrying due to {exc_type}: \"{exc_msg}\". "
+        f" Retrying due to {exc_type}: \"{exc_msg}\". "
         f"Attempt {retry_state.attempt_number} of {MAX_RETRIES}."
     )
 
@@ -63,7 +66,7 @@ def write_to_file(output_stream, item):
         output_stream.write(json.dumps(item, ensure_ascii=False) + '\n')
 
 @retry(
-    wait=wait_exponential(multiplier=1, min=1, max=10),
+    wait=wait_fixed(WAIT_TIME),
     stop=stop_after_attempt(MAX_RETRIES),
     retry=retry_if_exception_type(Exception),
     before_sleep=log_retry_attempt
@@ -103,7 +106,7 @@ def fetch_and_write_raw(url, output_file):
         logger.warning(f"Failed to fetch document from {url}. No response received.")
 
 @retry(
-    wait=wait_exponential(multiplier=1, min=1, max=10),
+    wait=wait_fixed(WAIT_TIME),
     stop=stop_after_attempt(MAX_RETRIES),
     retry=retry_if_exception_type(Exception),
     before_sleep=log_retry_attempt
@@ -177,7 +180,7 @@ async def fetch_and_write_paginated(url, output_file, from_page=0, num_pages=1, 
         url_with_page = f"{url}&page={page}"
         number, total_pages = await async_fetch_and_enqueue_paginated(limiter, session, url_with_page, queue)
         page += 1
-        to_page = total_pages if not num_pages else from_page + num_pages
+        to_page = total_pages if num_pages == 0 else min(from_page + num_pages, total_pages)
 
         # generate task for subsequent pages if not the last page
         tasks = []

@@ -14,6 +14,7 @@
 import typer
 
 from bdns.api.utils import format_url
+from bdns.api.types import Ambito
 from bdns.api.fetch_write import fetch_and_write
 from bdns.api.commands import options
 from bdns.api.endpoints import BDNS_API_ENDPOINT_REGLAMENTOS
@@ -21,13 +22,15 @@ from bdns.api.endpoints import BDNS_API_ENDPOINT_REGLAMENTOS
 
 def reglamentos(
     ctx: typer.Context,
-    vpd: str = options.vpd
+    vpd: str = options.vpd,
+    ambtio: Ambito = options.ambito
 ) -> None:
     """
     Fetches all regulations (EU) from a portal ordered by the description.
     """
     params = {
-        "vpd": vpd
+        "vpd": vpd,
+        "ambito": ambtio.value,
     }
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_REGLAMENTOS, params),

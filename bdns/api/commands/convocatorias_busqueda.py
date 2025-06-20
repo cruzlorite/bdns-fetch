@@ -76,6 +76,6 @@ def convocatorias_busqueda(
             output_file=ctx.obj["output_file"],
             from_page=from_page,
             num_pages=num_pages,
-            rate_limit=ctx.obj["rate_limit"]
+            max_concurrent_requests=ctx.obj["max_concurrent_requests"]
         )
     )

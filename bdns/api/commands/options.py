@@ -40,10 +40,10 @@ output_file: Optional[Path] = typer.Option(
     help="File to save the output. '-' means standard output.",
     show_default=True,
 )
-rate_limit: float = typer.Option(
-    0.25, "--rate-limit", "-rl",
-    min=0.0,
-    help="Maximum number of requests per second to the API. Default is 0.25. Only applies to paginated endpoints.",
+max_concurrent_requests: Optional[int] = typer.Option(
+    5, "--max-concurrent-requests", "-mcr",
+    min=1,
+    help="Maximum number of concurrent requests to the API. Default is 5.",
     show_default=True,
 )
 num_pages: Optional[int] = typer.Option(

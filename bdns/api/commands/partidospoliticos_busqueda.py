@@ -16,41 +16,47 @@ import asyncio
 
 import typer
 
-from bdns.api.utils import format_url
-from bdns.api.types import Order, Direccion
+from bdns.api.utils import format_date_for_api_request, format_url
+from bdns.api.types import Order, Direccion, DescripcionTipoBusqueda
 from bdns.api.fetch_write import fetch_and_write_paginated
 from bdns.api.commands import options
-from bdns.api.endpoints import BDNS_API_ENDPOINT_GRANDES_BENEFICIARIOS_BUSQUEDA
+from bdns.api.endpoints import BDNS_API_ENDPOINT_PARTIDOSPOLITICOS_BUSQUEDA
 
 
-def grandesbeneficiarios_busqueda(
-   ctx: typer.Context,
-    vpd: str = options.vpd,
+def partidospoliticos_busqueda(
+    ctx: typer.Context,
     num_pages: int = options.num_pages,
     from_page: int = options.from_page,
     pageSize: int = options.pageSize,
     order: Order = options.order,
     direccion: Direccion = options.direccion,
-    anios: str = options.anios,
-    nifCif: str = options.nifCif,
-    beneficiario: int = options.beneficiario
+    vpd: str = options.vpd,
+    descripcion: str = options.descripcion,
+    descripcionTipoBusqueda: DescripcionTipoBusqueda = options.descripcionTipoBusqueda,
+    numeroConvocatoria: str = options.numeroConvocatoria,
+    codConcesion: str = options.codConcesion,
+    fechaDesde: datetime = options.fechaDesde,
+    fechaHasta: datetime = options.fechaHasta
 ) -> None:
     """
-    Fetches grandes beneficiarios data from the BDNS API based on search parameters.
+    Fetches concesiones data from the BDNS API based on search parameters.
     """
     params = {
-        "vpd": vpd,
         "pageSize": pageSize,
         "order": order,
         "direccion": direccion,
-        "anios": anios,
-        "nifCif": nifCif,
-        "beneficiario": beneficiario
+        "vpd": vpd,
+        "descripcion": descripcion,
+        "descripcionTipoBusqueda": descripcionTipoBusqueda,
+        "numeroConvocatoria": numeroConvocatoria,
+        "codConcesion": codConcesion,
+        "fechaDesde": format_date_for_api_request(fechaDesde),
+        "fechaHasta": format_date_for_api_request(fechaHasta)
     }
     asyncio.run(
         fetch_and_write_paginated(
             url=format_url(
-                BDNS_API_ENDPOINT_GRANDES_BENEFICIARIOS_BUSQUEDA,
+                BDNS_API_ENDPOINT_PARTIDOSPOLITICOS_BUSQUEDA,
                 params
             ),
             output_file=ctx.obj["output_file"],

@@ -26,7 +26,7 @@ import typer
 
 from bdns.api.commands import (
     concesiones_busqueda,
-    ayudas_estado_busqueda,
+    ayudasestado_busqueda,
     grandesbeneficiarios_anios,
     grandesbeneficiarios_busqueda,
     beneficiarios,
@@ -40,14 +40,21 @@ from bdns.api.commands import (
     convocatorias_ultimas,
     convocatorias_documentos,
     convocatorias_pdf,
-    partidos_politicos_busqueda
+    partidospoliticos_busqueda,
+    actividades,
+    instrumentos,
+    organos,
+    organos_agrupacion,
+    organos_codigo,
+    organos_codigo_admin,
+    sectores
 )
 from bdns.api.commands import options
 
 
 app = typer.Typer()
 app.command(name="concesiones-busqueda")(concesiones_busqueda)
-app.command(name="ayudas-estado-busqueda")(ayudas_estado_busqueda)
+app.command(name="ayudasestado-busqueda")(ayudasestado_busqueda)
 app.command(name="grandesbeneficiarios-anios")(grandesbeneficiarios_anios)
 app.command(name="grandesbeneficiarios-busqueda")(grandesbeneficiarios_busqueda)
 app.command(name="minimis-busqueda")(minimis_busqueda)
@@ -56,11 +63,18 @@ app.command(name="convocatorias-busqueda")(convocatorias_busqueda)
 app.command(name="convocatorias-ultimas")(convocatorias_ultimas)
 app.command(name="convocatorias-documentos")(convocatorias_documentos)
 app.command(name="convocatorias-pdf")(convocatorias_pdf)
-app.command(name="partidos-politicos-busqueda")(partidos_politicos_busqueda)
+app.command(name="partidospoliticos-busqueda")(partidospoliticos_busqueda)
 app.command(name="beneficiarios")(beneficiarios)
 app.command(name="finalidades")(finalidades)
 app.command(name="regiones")(regiones)
 app.command(name="terceros")(terceros)
+app.command(name="actividades")(actividades)
+app.command(name="instrumentos")(instrumentos)
+app.command(name="organos")(organos)
+app.command(name="organos-agrupacion")(organos_agrupacion)
+app.command(name="organos-codigo")(organos_codigo)
+app.command(name="organos-codigo-admin")(organos_codigo_admin)
+app.command(name="sectores")(sectores)
 
 
 
@@ -68,7 +82,7 @@ app.command(name="terceros")(terceros)
 def common_callback(
     ctx: typer.Context,
     output_file: Path = options.output_file,
-    rate_limit: float = options.rate_limit
+    max_concurrent_requests: int = options.max_concurrent_requests,
 ):
     """
     Common callback for all commands.
@@ -76,7 +90,7 @@ def common_callback(
     """
     ctx.obj = {
         "output_file": output_file,
-        "rate_limit": rate_limit
+        "max_concurrent_requests": max_concurrent_requests
     }
 
 if __name__ == "__main__":

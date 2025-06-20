@@ -17,13 +17,13 @@ import asyncio
 import typer
 
 from bdns.api.utils import format_date_for_api_request, format_url
-from bdns.api.types import Order, Direccion, DescripcionTipoBusqueda
+from bdns.api.types import Order, Direccion, TipoAdministracion, DescripcionTipoBusqueda
 from bdns.api.fetch_write import fetch_and_write_paginated
 from bdns.api.commands import options
-from bdns.api.endpoints import BDNS_API_ENDPOINT_PARTIDOS_POLITICOS_BUSQUEDA
+from bdns.api.endpoints import BDNS_API_ENDPOINT_AYUDASESTADO_BUSQUEDA
 
 
-def partidos_politicos_busqueda(
+def ayudasestado_busqueda(
     ctx: typer.Context,
     num_pages: int = options.num_pages,
     from_page: int = options.from_page,
@@ -34,34 +34,48 @@ def partidos_politicos_busqueda(
     descripcion: str = options.descripcion,
     descripcionTipoBusqueda: DescripcionTipoBusqueda = options.descripcionTipoBusqueda,
     numeroConvocatoria: str = options.numeroConvocatoria,
-    codConcesion: str = options.codConcesion,
     fechaDesde: datetime = options.fechaDesde,
-    fechaHasta: datetime = options.fechaHasta
+    fechaHasta: datetime = options.fechaHasta,
+    tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
+    organos: str = options.organos,
+    regiones: str = options.regiones,
+    nifCif: str = options.nifCif,
+    beneficiario: int = options.beneficiario,
+    instrumentos: str = options.instrumentos,
+    actividad: str = options.actividad,
+    finalidad: int = options.finalidad
 ) -> None:
     """
-    Fetches concesiones data from the BDNS API based on search parameters.
+    Fetches ayudas estado data from the BDNS API based on search parameters.
     """
     params = {
+        "vpd": vpd,
         "pageSize": pageSize,
         "order": order,
         "direccion": direccion,
-        "vpd": vpd,
         "descripcion": descripcion,
+        "tipoAdministracion": tipoAdministracion,
         "descripcionTipoBusqueda": descripcionTipoBusqueda,
-        "numeroConvocatoria": numeroConvocatoria,
-        "codConcesion": codConcesion,
         "fechaDesde": format_date_for_api_request(fechaDesde),
-        "fechaHasta": format_date_for_api_request(fechaHasta)
+        "fechaHasta": format_date_for_api_request(fechaHasta),
+        "numeroConvocatoria": numeroConvocatoria,
+        "organos": organos,
+        "regiones": regiones,
+        "nifCif": nifCif,
+        "beneficiario": beneficiario,
+        "instrumentos": instrumentos,
+        "actividad": actividad,
+        "finalidad": finalidad
     }
     asyncio.run(
         fetch_and_write_paginated(
             url=format_url(
-                BDNS_API_ENDPOINT_PARTIDOS_POLITICOS_BUSQUEDA,
+                BDNS_API_ENDPOINT_AYUDAS_ESTADO_BUSQUEDA,
                 params
             ),
             output_file=ctx.obj["output_file"],
             from_page=from_page,
             num_pages=num_pages,
-            rate_limit=ctx.obj["rate_limit"]
+            max_concurrent_requests=ctx.obj["max_concurrent_requests"],
         )
     )

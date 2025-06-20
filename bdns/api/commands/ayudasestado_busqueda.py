@@ -20,10 +20,10 @@ from bdns.api.utils import format_date_for_api_request, format_url
 from bdns.api.types import Order, Direccion, TipoAdministracion, DescripcionTipoBusqueda
 from bdns.api.fetch_write import fetch_and_write_paginated
 from bdns.api.commands import options
-from bdns.api.endpoints import BDNS_API_ENDPOINT_AYUDAS_ESTADO_BUSQUEDA
+from bdns.api.endpoints import BDNS_API_ENDPOINT_AYUDASESTADO_BUSQUEDA
 
 
-def ayudas_estado_busqueda(
+def ayudasestado_busqueda(
     ctx: typer.Context,
     num_pages: int = options.num_pages,
     from_page: int = options.from_page,
@@ -76,6 +76,6 @@ def ayudas_estado_busqueda(
             output_file=ctx.obj["output_file"],
             from_page=from_page,
             num_pages=num_pages,
-            rate_limit=ctx.obj["rate_limit"]
+            max_concurrent_requests=ctx.obj["max_concurrent_requests"],
         )
     )

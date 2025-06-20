@@ -111,11 +111,11 @@ def fetch_and_write_raw(url, output_file):
     retry=retry_if_exception_type(Exception),
     before_sleep=log_retry_attempt
 )
-async def async_fetch_and_enqueue_paginated(limiter, session, url, queue):
+async def async_fetch_and_enqueue_paginated(semaphore, session, url, queue):
     """
     Fetches data from the API and enqueues results into a queue.
     Args:
-        limiter (AsyncLimiter): The rate limiter to control the number of requests.
+        semaphore (asyncio.Semaphore): The semaphore to control concurrent requests.
         session (aiohttp.ClientSession): The session to use for making requests.
         url (str): The URL to fetch data from.
         queue (asyncio.Queue): The queue to enqueue results into.
@@ -124,7 +124,7 @@ async def async_fetch_and_enqueue_paginated(limiter, session, url, queue):
             - is_last (bool): True if this is the last page, False otherwise.
             - total_pages (int): The total number of pages available.
     """
-    async with limiter:
+    async with semaphore:
         async with session.get(url) as resp:
             resp.raise_for_status()
             data = await resp.json()
@@ -160,7 +160,7 @@ async def async_writer(queue, output_file):
         print(f"Error: An unexpected error occurred while writing to {output_file}: {e}", file=sys.stderr)
 
 
-async def fetch_and_write_paginated(url, output_file, from_page=0, num_pages=1, rate_limit=5):
+async def fetch_and_write_paginated(url, output_file, from_page=0, num_pages=1, max_concurrent_requests=5):
     """
     Fetches data from the API and writes it to a file asynchronously.
     Args:
@@ -168,9 +168,9 @@ async def fetch_and_write_paginated(url, output_file, from_page=0, num_pages=1, 
         output_file (str): The file to write the output to.
         from_page (int): The page number to start fetching from. Default is 0.
         num_pages (int): The number of pages to fetch. If 0 or None, fetches all pages.
-        rate_limit (float): The maximum number of requests per second. Default is 3.0.
+        max_concurrent_requests (int): The maximum number of concurrent requests. Default is 5.
     """
-    limiter = AsyncLimiter(1, time_period=1/rate_limit)
+    semaphore = asyncio.Semaphore(max_concurrent_requests)
     queue = asyncio.Queue()
     async with aiohttp.ClientSession() as session:
         writer_task = asyncio.create_task(async_writer(queue, output_file))
@@ -178,7 +178,7 @@ async def fetch_and_write_paginated(url, output_file, from_page=0, num_pages=1, 
         # fetch the first page to find out if there are more pages
         page = from_page
         url_with_page = f"{url}&page={page}"
-        number, total_pages = await async_fetch_and_enqueue_paginated(limiter, session, url_with_page, queue)
+        number, total_pages = await async_fetch_and_enqueue_paginated(semaphore, session, url_with_page, queue)
         page += 1
         to_page = total_pages if num_pages == 0 else min(from_page + num_pages, total_pages)
 
@@ -186,7 +186,7 @@ async def fetch_and_write_paginated(url, output_file, from_page=0, num_pages=1, 
         tasks = []
         for page in range(page, to_page):
             url_with_page = f"{url}&page={page}"
-            tasks.append(asyncio.create_task(async_fetch_and_enqueue_paginated(limiter, session, url_with_page, queue)))
+            tasks.append(asyncio.create_task(async_fetch_and_enqueue_paginated(semaphore, session, url_with_page, queue)))
 
         for task in tqdm(asyncio.as_completed(tasks), initial=1, total=len(tasks) + 1, desc="Fetching pages"):
             await task

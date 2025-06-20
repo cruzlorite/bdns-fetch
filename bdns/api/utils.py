@@ -81,6 +81,7 @@ def smart_open(file, *args, **kwargs):
     Passes all additional args/kwargs to open().
     """
     if str(file) == '-':
+        sys.stdout.reconfigure(encoding='utf-8')
         yield sys.stdout
     else:
         with open(file, *args, **kwargs) as f:

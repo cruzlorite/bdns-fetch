@@ -19,6 +19,7 @@ import typer
 
 from bdns.api.types import (
     Order,
+    Ambito,
     Direccion,
     TipoAdministracion,
     DescripcionTipoBusqueda
@@ -204,7 +205,7 @@ idAdmon: Optional[TipoAdministracion] = typer.Option(
     help="Identifier of the administrative body.",
     show_default=True,
 )
-ambito: Optional[str] = typer.Option(
+ambito: Optional[Ambito] = typer.Option(
     None, "--ambito", "-a",
     help="Indicator of the area where the search will be conducted (Concessions (C), State Aid (A), de Minimis (M), Sanctions (S), Political Parties (P), Large Beneficiaries (G)).",
     show_default=True,

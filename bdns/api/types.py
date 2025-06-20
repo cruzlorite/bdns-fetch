@@ -35,11 +35,9 @@ class Order(str, Enum):
     ayudaEquivalente = "ayudaEquivalente"
     tieneProyecto = "tieneProyecto"
 
-
 class Direccion(str, Enum):
     asc = "asc"
     desc = "desc"
-
 
 class TipoAdministracion(str, Enum):
     C = "C"  # Administración del Estado
@@ -47,8 +45,15 @@ class TipoAdministracion(str, Enum):
     L = "L"  # Entidad Local
     O = "O"  # Otros Órganos
 
-
 class DescripcionTipoBusqueda(str, Enum):
     exacta = "0" # Frase exacta
     todas  = "1" # Todas las palabras
     alguna = "2" # Alguna palabra
+
+class Ambito(str, Enum):
+    C = "C"  # Concesiones
+    A = "A"  # Ayudas de Estado
+    M = "M"  # de Minimis
+    S = "S"  # Sanciones
+    P = "P"  # Partidos políticos
+    G = "G"  # Grandes Beneficiarios

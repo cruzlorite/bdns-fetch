@@ -18,64 +18,22 @@ import typer
 
 from bdns.api.utils import format_date_for_api_request, format_url
 from bdns.api.types import Order, Direccion, TipoAdministracion, DescripcionTipoBusqueda
-from bdns.api.fetch_write import fetch_and_write_paginated
+from bdns.api.fetch_write import fetch_and_write
 from bdns.api.commands import options
-from bdns.api.endpoints import BDNS_API_ENDPOINT_AYUDASESTADO_BUSQUEDA
+from bdns.api.endpoints import BDNS_API_ENDPOINT_PLANESESTRATEGICOS_VIGENCIA
 
 
-def ayudasestado_busqueda(
+def planesestrategicos_vigencia(
     ctx: typer.Context,
-    num_pages: int = options.num_pages,
-    from_page: int = options.from_page,
-    pageSize: int = options.pageSize,
-    order: Order = options.order,
-    direccion: Direccion = options.direccion,
-    vpd: str = options.vpd,
-    descripcion: str = options.descripcion,
-    descripcionTipoBusqueda: DescripcionTipoBusqueda = options.descripcionTipoBusqueda,
-    numeroConvocatoria: str = options.numeroConvocatoria,
-    fechaDesde: datetime = options.fechaDesde,
-    fechaHasta: datetime = options.fechaHasta,
-    tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
-    organos: str = options.organos,
-    regiones: str = options.regiones,
-    nifCif: str = options.nifCif,
-    beneficiario: int = options.beneficiario,
-    instrumentos: str = options.instrumentos,
-    actividad: str = options.actividad,
-    finalidad: int = options.finalidad
+    vpd: str = options.vpd
 ) -> None:
     """
-    Fetches ayudas estado data from the BDNS API based on search parameters.
+    Fetches all start and end years of validity for strategic plans.
     """
     params = {
-        "vpd": vpd,
-        "pageSize": pageSize,
-        "order": order,
-        "direccion": direccion,
-        "descripcion": descripcion,
-        "tipoAdministracion": tipoAdministracion,
-        "descripcionTipoBusqueda": descripcionTipoBusqueda,
-        "fechaDesde": format_date_for_api_request(fechaDesde),
-        "fechaHasta": format_date_for_api_request(fechaHasta),
-        "numeroConvocatoria": numeroConvocatoria,
-        "organos": organos,
-        "regiones": regiones,
-        "nifCif": nifCif,
-        "beneficiario": beneficiario,
-        "instrumentos": instrumentos,
-        "actividad": actividad,
-        "finalidad": finalidad
+        "vpd": vpd
     }
-    asyncio.run(
-        fetch_and_write_paginated(
-            url=format_url(
-                BDNS_API_ENDPOINT_AYUDAS_ESTADO_BUSQUEDA,
-                params
-            ),
-            output_file=ctx.obj["output_file"],
-            from_page=from_page,
-            num_pages=num_pages,
-            max_concurrent_requests=ctx.obj["max_concurrent_requests"],
-        )
+    fetch_and_write(
+        url=format_url(BDNS_API_ENDPOINT_PLANESESTRATEGICOS_VIGENCIA, params),
+        output_file=ctx.obj["output_file"]
     )

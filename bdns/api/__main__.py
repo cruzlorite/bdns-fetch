@@ -24,58 +24,36 @@ from pathlib import Path
 
 import typer
 
-from bdns.api.commands import (
-    concesiones_busqueda,
-    ayudasestado_busqueda,
-    grandesbeneficiarios_anios,
-    grandesbeneficiarios_busqueda,
-    beneficiarios,
-    finalidades,
-    regiones,
-    terceros,
-    minimis_busqueda,
-    concesiones_busqueda,
-    convocatorias,
-    convocatorias_busqueda,
-    convocatorias_ultimas,
-    convocatorias_documentos,
-    convocatorias_pdf,
-    partidospoliticos_busqueda,
-    actividades,
-    instrumentos,
-    organos,
-    organos_agrupacion,
-    organos_codigo,
-    organos_codigo_admin,
-    sectores
-)
+from bdns.api.commands import *
 from bdns.api.commands import options
 
 
 app = typer.Typer()
-app.command(name="concesiones-busqueda")(concesiones_busqueda)
+app.command(name="actividades")(actividades)
 app.command(name="ayudasestado-busqueda")(ayudasestado_busqueda)
-app.command(name="grandesbeneficiarios-anios")(grandesbeneficiarios_anios)
-app.command(name="grandesbeneficiarios-busqueda")(grandesbeneficiarios_busqueda)
-app.command(name="minimis-busqueda")(minimis_busqueda)
+app.command(name="beneficiarios")(beneficiarios)
+app.command(name="concesiones-busqueda")(concesiones_busqueda)
 app.command(name="convocatorias")(convocatorias)
 app.command(name="convocatorias-busqueda")(convocatorias_busqueda)
-app.command(name="convocatorias-ultimas")(convocatorias_ultimas)
 app.command(name="convocatorias-documentos")(convocatorias_documentos)
 app.command(name="convocatorias-pdf")(convocatorias_pdf)
-app.command(name="partidospoliticos-busqueda")(partidospoliticos_busqueda)
-app.command(name="beneficiarios")(beneficiarios)
+app.command(name="convocatorias-ultimas")(convocatorias_ultimas)
 app.command(name="finalidades")(finalidades)
-app.command(name="regiones")(regiones)
-app.command(name="terceros")(terceros)
-app.command(name="actividades")(actividades)
+app.command(name="grandesbeneficiarios-anios")(grandesbeneficiarios_anios)
+app.command(name="grandesbeneficiarios-busqueda")(grandesbeneficiarios_busqueda)
 app.command(name="instrumentos")(instrumentos)
+app.command(name="minimis-busqueda")(minimis_busqueda)
+app.command(name="objetivos")(objetivos)
 app.command(name="organos")(organos)
 app.command(name="organos-agrupacion")(organos_agrupacion)
 app.command(name="organos-codigo")(organos_codigo)
-app.command(name="organos-codigo-admin")(organos_codigo_admin)
+app.command(name="organos-codigoadmin")(organos_codigoadmin)
+app.command(name="partidospoliticos-busqueda")(partidospoliticos_busqueda)
+app.command(name="reglamentos")(reglamentos)
+app.command(name="regiones")(regiones)
+app.command(name="sanciones-busqueda")(sanciones_busqueda)
 app.command(name="sectores")(sectores)
-
+app.command(name="terceros")(terceros)
 
 
 @app.callback()

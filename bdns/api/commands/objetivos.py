@@ -16,7 +16,7 @@ import typer
 from bdns.api.utils import format_url
 from bdns.api.fetch_write import fetch_and_write
 from bdns.api.commands import options
-from bdns.api.endpoints import BDNS_API_ENDPOINT_OBJECTIVOS
+from bdns.api.endpoints import BDNS_API_ENDPOINT_OBJETIVOS
 
 
 def objetivos(
@@ -30,6 +30,6 @@ def objetivos(
         "vpd": vpd
     }
     fetch_and_write(
-        url=format_url(BDNS_API_ENDPOINT_OBJECTIVOS, params),
+        url=format_url(BDNS_API_ENDPOINT_OBJETIVOS, params),
         output_file=ctx.obj["output_file"]
     )

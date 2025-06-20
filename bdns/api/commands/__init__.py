@@ -3,6 +3,7 @@ from .ayudasestado_busqueda import ayudasestado_busqueda
 from .beneficiarios import beneficiarios
 from .finalidades import finalidades
 from .regiones import regiones
+from .reglamentos import reglamentos
 from .terceros import terceros
 from .grandesbeneficiarios_anios import grandesbeneficiarios_anios
 from .grandesbeneficiarios_busqueda import grandesbeneficiarios_busqueda
@@ -18,6 +19,8 @@ from .actividades import actividades
 from .organos import organos
 from .organos_agrupacion import organos_agrupacion
 from .organos_codigo import organos_codigo
-from .organos_codigo_admin import organos_codigo_admin
+from .organos_codigoadmin import organos_codigoadmin
 from .instrumentos import instrumentos
 from .objetivos import objetivos
+from .sectores import sectores
+from .sanciones_busqueda import sanciones_busqueda

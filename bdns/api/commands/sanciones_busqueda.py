@@ -18,13 +18,13 @@ import typer
 import asyncio
 
 from bdns.api.utils import format_date_for_api_request, format_url
-from bdns.api.types import Order, Direccion, TipoAdministracion, DescripcionTipoBusqueda
 from bdns.api.fetch_write import fetch_and_write_paginated
+from bdns.api.types import Order, Direccion, TipoAdministracion, DescripcionTipoBusqueda
 from bdns.api.commands import options
-from bdns.api.endpoints import BDNS_API_ENDPOINT_CONCESIONES_BUSQUEDA
+from bdns.api.endpoints import BDNS_API_ENDPOINT_SANCIONES_BUSQUEDA
 
 
-def concesiones_busqueda(
+def sanciones_busqueda(
     ctx: typer.Context,
     num_pages: int = options.num_pages,
     from_page: int = options.from_page,
@@ -34,7 +34,6 @@ def concesiones_busqueda(
     vpd: str = options.vpd,
     descripcion: str = options.descripcion,
     descripcionTipoBusqueda: DescripcionTipoBusqueda = options.descripcionTipoBusqueda,
-    numeroConvocatoria: str = options.numeroConvocatoria,
     fechaDesde: datetime = options.fechaDesde,
     fechaHasta: datetime = options.fechaHasta,
     tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
@@ -44,10 +43,9 @@ def concesiones_busqueda(
     beneficiario: int = options.beneficiario,
     instrumentos: List[int] = options.instrumentos,
     actividad: List[int] = options.actividad,
-    finalidad: int = options.finalidad
 ) -> None:
     """
-    Fetches concesiones data from the BDNS API based on search parameters.
+    Fetches the list of registered sanctions.
     """
     params = {
         "pageSize": pageSize,
@@ -55,7 +53,7 @@ def concesiones_busqueda(
         "direccion": direccion,
         "vpd": vpd,
         "descripcion": descripcion,
-        "tipoAdministracion": tipoAdministracion.value,
+        "tipoAdministracion": tipoAdministracion,
         "descripcionTipoBusqueda": descripcionTipoBusqueda,
         "fechaDesde": format_date_for_api_request(fechaDesde),
         "fechaHasta": format_date_for_api_request(fechaHasta),
@@ -64,14 +62,12 @@ def concesiones_busqueda(
         "nifCif": nifCif,
         "beneficiario": beneficiario,
         "instrumentos": instrumentos,
-        "actividad": actividad,
-        "finalidad": finalidad,
-        "numeroConvocatoria": numeroConvocatoria
+        "actividad": actividad
     }
     asyncio.run(
         fetch_and_write_paginated(
             url=format_url(
-                BDNS_API_ENDPOINT_CONCESIONES_BUSQUEDA,
+                BDNS_API_ENDPOINT_SANCIONES_BUSQUEDA,
                 params
             ),
             output_file=ctx.obj["output_file"],
@@ -80,3 +76,4 @@ def concesiones_busqueda(
             max_concurrent_requests=ctx.obj["max_concurrent_requests"]
         )
     )
+

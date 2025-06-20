@@ -43,7 +43,7 @@ output_file: Optional[Path] = typer.Option(
 max_concurrent_requests: Optional[int] = typer.Option(
     5, "--max-concurrent-requests", "-mcr",
     min=1,
-    help="Maximum number of concurrent requests to the API. Default is 5.",
+    help="Maximum number of concurrent requests to the API.",
     show_default=True,
 )
 num_pages: Optional[int] = typer.Option(
@@ -62,7 +62,7 @@ pageSize: Optional[int] = typer.Option(
     10000, "--pageSize", "-ps",
     min=1,
     max=10000,
-    help="Number of results per page. Default is 10000, which is the maximum allowed.",
+    help="Number of results per page. The maximum allowed is 10000.",
     show_default=True,
 )
 order: Optional[Order] = typer.Option(
@@ -199,7 +199,7 @@ codigo: Optional[str] = typer.Option(
     help="Code of the administrative body.",
     show_default=True,
 )
-idAdmon: Optional[str] = typer.Option(
+idAdmon: Optional[TipoAdministracion] = typer.Option(
     None, "--idAdmon", "-ida",
     help="Identifier of the administrative body.",
     show_default=True,

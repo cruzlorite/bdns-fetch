@@ -14,22 +14,23 @@
 import typer
 
 from bdns.api.utils import format_url
+from bdns.api.types import Order, Direccion, TipoAdministracion, DescripcionTipoBusqueda
 from bdns.api.fetch_write import fetch_and_write
 from bdns.api.commands import options
 from bdns.api.endpoints import BDNS_API_ENDPOINT_ORGANOS
 
 
-def organos(
+def organos_codigo(
     ctx: typer.Context,
     vpd: str = options.vpd,
-    idAdmon: str = options.idAdmon
+    idAdmon: TipoAdministracion = options.idAdmon
 ) -> None:
     """
-    Fetches all types of organs from the BDNS API ordered by the 'descripcion' field.
+    Fetches the organs based on the code.
     """
     params = {
         "vpd": vpd,
-        "idAdmon": idAdmon
+        "idAdmon": idAdmon.value,
     }
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_ORGANOS, params),

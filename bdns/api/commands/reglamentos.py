@@ -14,25 +14,22 @@
 import typer
 
 from bdns.api.utils import format_url
-from bdns.api.types import TipoAdministracion
 from bdns.api.fetch_write import fetch_and_write
 from bdns.api.commands import options
-from bdns.api.endpoints import BDNS_API_ENDPOINT_ORGANOS
+from bdns.api.endpoints import BDNS_API_ENDPOINT_REGLAMENTOS
 
 
-def organos_agrupacion(
+def reglamentos(
     ctx: typer.Context,
-    vpd: str = options.vpd,
-    idAdmon: TipoAdministracion = options.idAdmon
+    vpd: str = options.vpd
 ) -> None:
     """
-    Fetches the grouping of the organs of a portal based on the requested type of administration in tree form and ordered by description.
+    Fetches all regulations (EU) from a portal ordered by the description.
     """
     params = {
-        "vpd": vpd,
-        "idAdmon": idAdmon.value,
+        "vpd": vpd
     }
     fetch_and_write(
-        url=format_url(BDNS_API_ENDPOINT_ORGANOS, params),
+        url=format_url(BDNS_API_ENDPOINT_REGLAMENTOS, params),
         output_file=ctx.obj["output_file"]
     )

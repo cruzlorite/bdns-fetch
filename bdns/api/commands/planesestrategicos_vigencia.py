@@ -24,15 +24,12 @@ from bdns.api.endpoints import BDNS_API_ENDPOINT_PLANESESTRATEGICOS_VIGENCIA
 
 
 def planesestrategicos_vigencia(
-    ctx: typer.Context,
-    vpd: str = options.vpd
+    ctx: typer.Context
 ) -> None:
     """
     Fetches all start and end years of validity for strategic plans.
     """
-    params = {
-        "vpd": vpd
-    }
+    params = { }
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_PLANESESTRATEGICOS_VIGENCIA, params),
         output_file=ctx.obj["output_file"]

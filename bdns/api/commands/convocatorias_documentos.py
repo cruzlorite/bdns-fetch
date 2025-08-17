@@ -26,10 +26,8 @@ def convocatorias_documentos(
     """
     Searches one convocatoria by VPD and numConv.
     """
-    params = {
-        "idDocumento": idDocumento
-    }
+    params = {"idDocumento": idDocumento}
     fetch_and_write_raw(
         url=format_url(BDNS_API_ENDPOINT_CONVOCATORIAS_DOCUMENTOS, params),
-        output_file=ctx.obj["output_file"]
+        output_file=ctx.obj["output_file"],
     )

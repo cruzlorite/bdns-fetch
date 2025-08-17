@@ -12,7 +12,7 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 import typer
 import asyncio
@@ -62,18 +62,14 @@ def sanciones_busqueda(
         "nifCif": nifCif,
         "beneficiario": beneficiario,
         "instrumentos": instrumentos,
-        "actividad": actividad
+        "actividad": actividad,
     }
     asyncio.run(
         fetch_and_write_paginated(
-            url=format_url(
-                BDNS_API_ENDPOINT_SANCIONES_BUSQUEDA,
-                params
-            ),
+            url=format_url(BDNS_API_ENDPOINT_SANCIONES_BUSQUEDA, params),
             output_file=ctx.obj["output_file"],
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=ctx.obj["max_concurrent_requests"]
+            max_concurrent_requests=ctx.obj["max_concurrent_requests"],
         )
     )
-

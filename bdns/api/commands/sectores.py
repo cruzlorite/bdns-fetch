@@ -15,18 +15,15 @@ import typer
 
 from bdns.api.utils import format_url
 from bdns.api.fetch_write import fetch_and_write
-from bdns.api.commands import options
 from bdns.api.endpoints import BDNS_API_ENDPOINT_SECTORES
 
 
-def sectores(
-    ctx: typer.Context
-) -> None:
+def sectores(ctx: typer.Context) -> None:
     """
     Fetches all product sectors in order.
     """
     params = {}
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_SECTORES, params),
-        output_file=ctx.obj["output_file"]
+        output_file=ctx.obj["output_file"],
     )

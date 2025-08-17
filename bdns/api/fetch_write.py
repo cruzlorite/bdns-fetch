@@ -23,12 +23,10 @@ import logging
 import requests
 
 import aiohttp
-from aiolimiter import AsyncLimiter
 from tqdm.asyncio import tqdm
 from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_fixed
 
 from bdns.api.utils import smart_open, api_request
-
 
 
 logging.basicConfig(level=logging.WARNING, stream=sys.stderr)
@@ -40,6 +38,7 @@ MAX_RETRIES = 3
 WAIT_TIME = 2
 """Time to wait between retries in seconds."""
 
+
 def log_retry_attempt(retry_state):
     # Exception instance from last attempt
     exc = retry_state.outcome.exception()
@@ -47,9 +46,10 @@ def log_retry_attempt(retry_state):
     exc_msg = str(exc) if exc else "No exception"
 
     logger.warning(
-        f" Retrying due to {exc_type}: \"{exc_msg}\". "
+        f' Retrying due to {exc_type}: "{exc_msg}". '
         f"Attempt {retry_state.attempt_number} of {MAX_RETRIES}."
     )
+
 
 def write_to_file(output_stream, item):
     """
@@ -61,15 +61,16 @@ def write_to_file(output_stream, item):
     """
     if isinstance(item, list):
         for element in item:
-            output_stream.write(json.dumps(element, ensure_ascii=False) + '\n')
+            output_stream.write(json.dumps(element, ensure_ascii=False) + "\n")
     else:
-        output_stream.write(json.dumps(item, ensure_ascii=False) + '\n')
+        output_stream.write(json.dumps(item, ensure_ascii=False) + "\n")
+
 
 @retry(
     wait=wait_fixed(WAIT_TIME),
     stop=stop_after_attempt(MAX_RETRIES),
     retry=retry_if_exception_type(Exception),
-    before_sleep=log_retry_attempt
+    before_sleep=log_retry_attempt,
 )
 def fetch_and_write(url, output_file):
     """
@@ -80,10 +81,11 @@ def fetch_and_write(url, output_file):
     """
     response = api_request(url)
     if response:
-        with smart_open(output_file, 'w', encoding='utf-8', buffering=1) as f:
+        with smart_open(output_file, "w", encoding="utf-8", buffering=1) as f:
             write_to_file(f, response)
     else:
         logger.warning(f"Failed to fetch data from {url}. No response received.")
+
 
 def fetch_and_write_raw(url, output_file):
     """
@@ -98,18 +100,21 @@ def fetch_and_write_raw(url, output_file):
     if response.status_code == 200:
         result = response.content
     else:
-        raise Exception(f"Failed to fetch data from {url}: {response.status_code}: {response.text}")
+        raise Exception(
+            f"Failed to fetch data from {url}: {response.status_code}: {response.text}"
+        )
     if response:
-        with smart_open(output_file, 'wb') as f:
+        with smart_open(output_file, "wb") as f:
             f.buffer.write(result)
     else:
         logger.warning(f"Failed to fetch document from {url}. No response received.")
+
 
 @retry(
     wait=wait_fixed(WAIT_TIME),
     stop=stop_after_attempt(MAX_RETRIES),
     retry=retry_if_exception_type(Exception),
-    before_sleep=log_retry_attempt
+    before_sleep=log_retry_attempt,
 )
 async def async_fetch_and_enqueue_paginated(semaphore, session, url, queue):
     """
@@ -128,16 +133,16 @@ async def async_fetch_and_enqueue_paginated(semaphore, session, url, queue):
         async with session.get(url) as resp:
             resp.raise_for_status()
             data = await resp.json()
-            if 'codigo' in data and 'error' in data:
+            if "codigo" in data and "error" in data:
                 raise aiohttp.ClientResponseError(
                     request_info=resp.request_info,
                     history=resp.history,
                     status=resp.status,
                     message=f"code={data['codigo']}, error={data['error']}",
-                    headers=resp.headers
+                    headers=resp.headers,
                 )
-            await queue.put(data['content'])
-            return data.get('number', None), data.get('totalPages')
+            await queue.put(data["content"])
+            return data.get("number", None), data.get("totalPages")
 
 
 async def async_writer(queue, output_file):
@@ -148,19 +153,27 @@ async def async_writer(queue, output_file):
         output_file (str): The file to write the output to.
     """
     try:
-        with smart_open(output_file, 'w', encoding='utf-8', buffering=1) as f:
+        with smart_open(output_file, "w", encoding="utf-8", buffering=1) as f:
             while True:
                 item = await queue.get()
                 if item is None:
                     break
                 write_to_file(f, item)
     except FileNotFoundError:
-        print(f"Error: The file {output_file} could not be opened for writing.", file=sys.stderr)
+        print(
+            f"Error: The file {output_file} could not be opened for writing.",
+            file=sys.stderr,
+        )
     except Exception as e:
-        print(f"Error: An unexpected error occurred while writing to {output_file}: {e}", file=sys.stderr)
+        print(
+            f"Error: An unexpected error occurred while writing to {output_file}: {e}",
+            file=sys.stderr,
+        )
 
 
-async def fetch_and_write_paginated(url, output_file, from_page=0, num_pages=1, max_concurrent_requests=5):
+async def fetch_and_write_paginated(
+    url, output_file, from_page=0, num_pages=1, max_concurrent_requests=5
+):
     """
     Fetches data from the API and writes it to a file asynchronously.
     Args:
@@ -178,17 +191,32 @@ async def fetch_and_write_paginated(url, output_file, from_page=0, num_pages=1, 
         # fetch the first page to find out if there are more pages
         page = from_page
         url_with_page = f"{url}&page={page}"
-        number, total_pages = await async_fetch_and_enqueue_paginated(semaphore, session, url_with_page, queue)
+        number, total_pages = await async_fetch_and_enqueue_paginated(
+            semaphore, session, url_with_page, queue
+        )
         page += 1
-        to_page = total_pages if num_pages == 0 else min(from_page + num_pages, total_pages)
+        to_page = (
+            total_pages if num_pages == 0 else min(from_page + num_pages, total_pages)
+        )
 
         # generate task for subsequent pages if not the last page
         tasks = []
         for page in range(page, to_page):
             url_with_page = f"{url}&page={page}"
-            tasks.append(asyncio.create_task(async_fetch_and_enqueue_paginated(semaphore, session, url_with_page, queue)))
+            tasks.append(
+                asyncio.create_task(
+                    async_fetch_and_enqueue_paginated(
+                        semaphore, session, url_with_page, queue
+                    )
+                )
+            )
 
-        for task in tqdm(asyncio.as_completed(tasks), initial=1, total=len(tasks) + 1, desc="Fetching pages"):
+        for task in tqdm(
+            asyncio.as_completed(tasks),
+            initial=1,
+            total=len(tasks) + 1,
+            desc="Fetching pages",
+        ):
             await task
 
         await queue.put(None)

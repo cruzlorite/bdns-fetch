@@ -19,17 +19,12 @@ from bdns.api.commands import options
 from bdns.api.endpoints import BDNS_API_ENDPOINT_OBJETIVOS
 
 
-def objetivos(
-    ctx: typer.Context,
-    vpd: str = options.vpd
-) -> None:
+def objetivos(ctx: typer.Context, vpd: str = options.vpd) -> None:
     """
     Fetches all types of objectives from the BDNS API ordered by the 'descripcion' field.
     """
-    params = {
-        "vpd": vpd
-    }
+    params = {"vpd": vpd}
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_OBJETIVOS, params),
-        output_file=ctx.obj["output_file"]
+        output_file=ctx.obj["output_file"],
     )

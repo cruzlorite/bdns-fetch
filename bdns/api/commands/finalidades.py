@@ -19,17 +19,12 @@ from bdns.api.commands import options
 from bdns.api.endpoints import BDNS_API_ENDPOINT_FINALIDADES
 
 
-def finalidades(
-    ctx: typer.Context,
-    vpd: str = options.vpd
-) -> None:
+def finalidades(ctx: typer.Context, vpd: str = options.vpd) -> None:
     """
     Fetches all types of finalidades from the BDNS API ordered by the 'orden' field.
     """
-    params = {
-        "vpd": vpd
-    }
+    params = {"vpd": vpd}
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_FINALIDADES, params),
-        output_file=ctx.obj["output_file"]
+        output_file=ctx.obj["output_file"],
     )

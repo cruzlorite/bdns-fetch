@@ -7,7 +7,6 @@ from .reglamentos import reglamentos
 from .terceros import terceros
 from .grandesbeneficiarios_anios import grandesbeneficiarios_anios
 from .grandesbeneficiarios_busqueda import grandesbeneficiarios_busqueda
-from .concesiones_busqueda import concesiones_busqueda
 from .convocatorias import convocatorias
 from .convocatorias_busqueda import convocatorias_busqueda
 from .convocatorias_ultimas import convocatorias_ultimas

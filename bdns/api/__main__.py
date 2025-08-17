@@ -21,11 +21,17 @@ It allows users to fetch data from the API and save it to a file or print it to 
 """
 
 from pathlib import Path
+import logging
 
 import typer
 
 from bdns.api.commands import *
 from bdns.api.commands import options
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 
 app = typer.Typer()
@@ -70,8 +76,9 @@ def common_callback(
     """
     ctx.obj = {
         "output_file": output_file,
-        "max_concurrent_requests": max_concurrent_requests
+        "max_concurrent_requests": max_concurrent_requests,
     }
+
 
 if __name__ == "__main__":
     app()

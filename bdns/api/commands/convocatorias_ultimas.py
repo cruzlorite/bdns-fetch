@@ -11,7 +11,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 
-from datetime import datetime
 import asyncio
 
 import typer
@@ -30,26 +29,18 @@ def convocatorias_ultimas(
     pageSize: int = options.pageSize,
     order: Order = options.order,
     direccion: Direccion = options.direccion,
-    vpd: str = options.vpd
+    vpd: str = options.vpd,
 ) -> None:
     """
     Fetches convocatorias data from the BDNS API based on search parameters.
     """
-    params = {
-        "pageSize": pageSize,
-        "order": order,
-        "direccion": direccion,
-        "vpd": vpd
-    }
+    params = {"pageSize": pageSize, "order": order, "direccion": direccion, "vpd": vpd}
     asyncio.run(
         fetch_and_write_paginated(
-            url=format_url(
-                BDNS_API_ENDPOINT_CONVOCATORIAS_ULTIMAS,
-                params
-            ),
+            url=format_url(BDNS_API_ENDPOINT_CONVOCATORIAS_ULTIMAS, params),
             output_file=ctx.obj["output_file"],
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=ctx.obj["max_concurrent_requests"]
+            max_concurrent_requests=ctx.obj["max_concurrent_requests"],
         )
     )

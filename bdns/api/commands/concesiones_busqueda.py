@@ -12,7 +12,7 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 import typer
 import asyncio
@@ -44,7 +44,7 @@ def concesiones_busqueda(
     beneficiario: int = options.beneficiario,
     instrumentos: List[int] = options.instrumentos,
     actividad: List[int] = options.actividad,
-    finalidad: int = options.finalidad
+    finalidad: int = options.finalidad,
 ) -> None:
     """
     Fetches concesiones data from the BDNS API based on search parameters.
@@ -55,7 +55,7 @@ def concesiones_busqueda(
         "direccion": direccion,
         "vpd": vpd,
         "descripcion": descripcion,
-        "tipoAdministracion": tipoAdministracion.value,
+        "tipoAdministracion": tipoAdministracion.value if tipoAdministracion else None,
         "descripcionTipoBusqueda": descripcionTipoBusqueda,
         "fechaDesde": format_date_for_api_request(fechaDesde),
         "fechaHasta": format_date_for_api_request(fechaHasta),
@@ -66,17 +66,14 @@ def concesiones_busqueda(
         "instrumentos": instrumentos,
         "actividad": actividad,
         "finalidad": finalidad,
-        "numeroConvocatoria": numeroConvocatoria
+        "numeroConvocatoria": numeroConvocatoria,
     }
     asyncio.run(
         fetch_and_write_paginated(
-            url=format_url(
-                BDNS_API_ENDPOINT_CONCESIONES_BUSQUEDA,
-                params
-            ),
+            url=format_url(BDNS_API_ENDPOINT_CONCESIONES_BUSQUEDA, params),
             output_file=ctx.obj["output_file"],
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=ctx.obj["max_concurrent_requests"]
+            max_concurrent_requests=ctx.obj["max_concurrent_requests"],
         )
     )

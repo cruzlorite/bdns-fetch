@@ -11,7 +11,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 
-from datetime import datetime
 import asyncio
 
 import typer
@@ -24,7 +23,7 @@ from bdns.api.endpoints import BDNS_API_ENDPOINT_GRANDES_BENEFICIARIOS_BUSQUEDA
 
 
 def grandesbeneficiarios_busqueda(
-   ctx: typer.Context,
+    ctx: typer.Context,
     vpd: str = options.vpd,
     num_pages: int = options.num_pages,
     from_page: int = options.from_page,
@@ -33,7 +32,7 @@ def grandesbeneficiarios_busqueda(
     direccion: Direccion = options.direccion,
     anios: str = options.anios,
     nifCif: str = options.nifCif,
-    beneficiario: int = options.beneficiario
+    beneficiario: int = options.beneficiario,
 ) -> None:
     """
     Fetches grandes beneficiarios data from the BDNS API based on search parameters.
@@ -45,17 +44,14 @@ def grandesbeneficiarios_busqueda(
         "direccion": direccion,
         "anios": anios,
         "nifCif": nifCif,
-        "beneficiario": beneficiario
+        "beneficiario": beneficiario,
     }
     asyncio.run(
         fetch_and_write_paginated(
-            url=format_url(
-                BDNS_API_ENDPOINT_GRANDES_BENEFICIARIOS_BUSQUEDA,
-                params
-            ),
+            url=format_url(BDNS_API_ENDPOINT_GRANDES_BENEFICIARIOS_BUSQUEDA, params),
             output_file=ctx.obj["output_file"],
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=ctx.obj["max_concurrent_requests"]
+            max_concurrent_requests=ctx.obj["max_concurrent_requests"],
         )
     )

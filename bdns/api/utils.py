@@ -22,7 +22,6 @@ from datetime import datetime
 import requests
 
 
-
 def format_date_for_api_request(date: datetime, output_format: str = "%d/%m/%Y"):
     """
     Formats a date for API requests.
@@ -39,9 +38,7 @@ def format_date_for_api_request(date: datetime, output_format: str = "%d/%m/%Y")
     return date.strftime(output_format)
 
 
-def format_url(
-        url: str,
-        query_params: dict):
+def format_url(url: str, query_params: dict):
     """
     Formats a URL with query parameters.
     Args:
@@ -52,7 +49,9 @@ def format_url(
     """
     if not url.endswith("?"):
         url += "?"
-    url += "&".join([f"{key}={value}" for key, value in query_params.items() if value is not None])
+    url += "&".join(
+        [f"{key}={value}" for key, value in query_params.items() if value is not None]
+    )
     return url
 
 
@@ -70,7 +69,9 @@ def api_request(url):
     if response.status_code == 200:
         result = response.json()
     else:
-        raise Exception(f"Failed to fetch data from {url}: {response.status_code}: {response.text}")
+        raise Exception(
+            f"Failed to fetch data from {url}: {response.status_code}: {response.text}"
+        )
     return result
 
 
@@ -80,8 +81,8 @@ def smart_open(file, *args, **kwargs):
     Open a file, or use stdin/stdout if file is '-'.
     Passes all additional args/kwargs to open().
     """
-    if str(file) == '-':
-        sys.stdout.reconfigure(encoding='utf-8')
+    if str(file) == "-":
+        sys.stdout.reconfigure(encoding="utf-8")
         yield sys.stdout
     else:
         with open(file, *args, **kwargs) as f:

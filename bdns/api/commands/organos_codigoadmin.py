@@ -14,7 +14,6 @@
 import typer
 
 from bdns.api.utils import format_url
-from bdns.api.types import Order, Direccion, TipoAdministracion, DescripcionTipoBusqueda
 from bdns.api.fetch_write import fetch_and_write
 from bdns.api.commands import options
 from bdns.api.endpoints import BDNS_API_ENDPOINT_ORGANOS_CODIGO_ADMIN
@@ -28,11 +27,8 @@ def organos_codigoadmin(
     """
     Fetches the organs based on the admin code.
     """
-    params = {
-        "vpd": vpd,
-        "codigoAdmin": codigoAdmin
-    }
+    params = {"vpd": vpd, "codigoAdmin": codigoAdmin}
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_ORGANOS_CODIGO_ADMIN, params),
-        output_file=ctx.obj["output_file"]
+        output_file=ctx.obj["output_file"],
     )

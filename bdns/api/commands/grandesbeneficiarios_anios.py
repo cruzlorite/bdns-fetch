@@ -15,18 +15,15 @@ import typer
 
 from bdns.api.utils import format_url
 from bdns.api.fetch_write import fetch_and_write
-from bdns.api.commands import options
 from bdns.api.endpoints import BDNS_API_ENDPOINT_GRANDES_BENEFICIARIOS_ANIOS
 
 
-def grandesbeneficiarios_anios(
-    ctx: typer.Context
-) -> None:
+def grandesbeneficiarios_anios(ctx: typer.Context) -> None:
     """
     Fetches the list of years for grandes beneficiarios from the BDNS API.
     """
-    params = { }
+    params = {}
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_GRANDES_BENEFICIARIOS_ANIOS, params),
-        output_file=ctx.obj["output_file"]
+        output_file=ctx.obj["output_file"],
     )

@@ -19,17 +19,12 @@ from bdns.api.commands import options
 from bdns.api.endpoints import BDNS_API_ENDPOINT_TIPOS_BENEFICIARIOS
 
 
-def beneficiarios(
-    ctx: typer.Context,
-    vpd: str = options.vpd
-) -> None:
+def beneficiarios(ctx: typer.Context, vpd: str = options.vpd) -> None:
     """
     Fetches the list of tipos de beneficiarios from the BDNS API.
     """
-    params = {
-        "vpd": vpd
-    }
+    params = {"vpd": vpd}
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_TIPOS_BENEFICIARIOS, params),
-        output_file=ctx.obj["output_file"]
+        output_file=ctx.obj["output_file"],
     )

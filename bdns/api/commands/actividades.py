@@ -19,17 +19,12 @@ from bdns.api.commands import options
 from bdns.api.endpoints import BDNS_API_ENDPOINT_ACTIVIDADES
 
 
-def actividades(
-    ctx: typer.Context,
-    vpd: str = options.vpd
-) -> None:
+def actividades(ctx: typer.Context, vpd: str = options.vpd) -> None:
     """
     Fetches all NACE activities from a portal in order.
     """
-    params = {
-        "vpd": vpd
-    }
+    params = {"vpd": vpd}
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_ACTIVIDADES, params),
-        output_file=ctx.obj["output_file"]
+        output_file=ctx.obj["output_file"],
     )

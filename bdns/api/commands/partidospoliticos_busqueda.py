@@ -36,7 +36,7 @@ def partidospoliticos_busqueda(
     numeroConvocatoria: str = options.numeroConvocatoria,
     codConcesion: str = options.codConcesion,
     fechaDesde: datetime = options.fechaDesde,
-    fechaHasta: datetime = options.fechaHasta
+    fechaHasta: datetime = options.fechaHasta,
 ) -> None:
     """
     Fetches concesiones data from the BDNS API based on search parameters.
@@ -51,17 +51,14 @@ def partidospoliticos_busqueda(
         "numeroConvocatoria": numeroConvocatoria,
         "codConcesion": codConcesion,
         "fechaDesde": format_date_for_api_request(fechaDesde),
-        "fechaHasta": format_date_for_api_request(fechaHasta)
+        "fechaHasta": format_date_for_api_request(fechaHasta),
     }
     asyncio.run(
         fetch_and_write_paginated(
-            url=format_url(
-                BDNS_API_ENDPOINT_PARTIDOSPOLITICOS_BUSQUEDA,
-                params
-            ),
+            url=format_url(BDNS_API_ENDPOINT_PARTIDOSPOLITICOS_BUSQUEDA, params),
             output_file=ctx.obj["output_file"],
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=ctx.obj["max_concurrent_requests"]
+            max_concurrent_requests=ctx.obj["max_concurrent_requests"],
         )
     )

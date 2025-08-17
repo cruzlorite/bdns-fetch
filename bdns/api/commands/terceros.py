@@ -19,13 +19,12 @@ from bdns.api.commands import options
 from bdns.api.endpoints import BDNS_API_ENDPOINT_TERCEROS
 
 
-
 def terceros(
     ctx: typer.Context,
     vpd: str = options.vpd,
     ambito: str = options.ambito,
     busqueda: str = options.busqueda,
-    idPersona: int = options.idPersona
+    idPersona: int = options.idPersona,
 ) -> None:
     """
     Fetches all types of terceros from the BDNS API ordered by the 'orden' field.
@@ -34,9 +33,9 @@ def terceros(
         "vpd": vpd,
         "ambito": ambito,
         "busqueda": busqueda,
-        "idPersona": idPersona
+        "idPersona": idPersona,
     }
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_TERCEROS, params),
-        output_file=ctx.obj["output_file"]
+        output_file=ctx.obj["output_file"],
     )

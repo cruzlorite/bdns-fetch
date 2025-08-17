@@ -23,7 +23,7 @@ from bdns.api.endpoints import BDNS_API_ENDPOINT_ORGANOS
 def organos_agrupacion(
     ctx: typer.Context,
     vpd: str = options.vpd,
-    idAdmon: TipoAdministracion = options.idAdmon
+    idAdmon: TipoAdministracion = options.idAdmon,
 ) -> None:
     """
     Fetches the grouping of the organs of a portal based on the requested type of administration in tree form and ordered by description.
@@ -34,5 +34,5 @@ def organos_agrupacion(
     }
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_ORGANOS, params),
-        output_file=ctx.obj["output_file"]
+        output_file=ctx.obj["output_file"],
     )

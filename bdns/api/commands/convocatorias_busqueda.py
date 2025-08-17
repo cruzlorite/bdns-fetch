@@ -43,7 +43,7 @@ def convocatorias_busqueda(
     tiposBeneficiario: str = options.tiposBeneficiario,
     instrumentos: str = options.instrumentos,
     finalidad: int = options.finalidad,
-    ayudaEstado: str = options.ayudaEstado
+    ayudaEstado: str = options.ayudaEstado,
 ) -> None:
     """
     Fetches convocatorias data from the BDNS API based on search parameters.
@@ -65,17 +65,14 @@ def convocatorias_busqueda(
         "tiposBeneficiario": tiposBeneficiario,
         "instrumentos": instrumentos,
         "finalidad": finalidad,
-        "ayudaEstado": ayudaEstado
+        "ayudaEstado": ayudaEstado,
     }
     asyncio.run(
         fetch_and_write_paginated(
-            url=format_url(
-                BDNS_API_ENDPOINT_CONVOCATORIAS_BUSQUEDA,
-                params
-            ),
+            url=format_url(BDNS_API_ENDPOINT_CONVOCATORIAS_BUSQUEDA, params),
             output_file=ctx.obj["output_file"],
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=ctx.obj["max_concurrent_requests"]
+            max_concurrent_requests=ctx.obj["max_concurrent_requests"],
         )
     )

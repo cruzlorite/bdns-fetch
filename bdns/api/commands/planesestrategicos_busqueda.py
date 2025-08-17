@@ -35,7 +35,7 @@ def planesestrategicos_busqueda(
     tipoAdministracion: str = options.tipoAdministracion,
     organos: list[int] = options.organos,
     vigenciaDesde: datetime = options.vigenciaDesde,
-    vigenciaHasta: datetime = options.vigenciaHasta
+    vigenciaHasta: datetime = options.vigenciaHasta,
 ) -> None:
     """
     Fetches the list of registered strategic plans.
@@ -53,13 +53,10 @@ def planesestrategicos_busqueda(
     }
     asyncio.run(
         fetch_and_write_paginated(
-            url=format_url(
-                BDNS_API_ENDPOINT_PLANESESTRATEGICOS_BUSQUEDA,
-                params
-            ),
+            url=format_url(BDNS_API_ENDPOINT_PLANESESTRATEGICOS_BUSQUEDA, params),
             output_file=ctx.obj["output_file"],
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=ctx.obj["max_concurrent_requests"]
+            max_concurrent_requests=ctx.obj["max_concurrent_requests"],
         )
     )

@@ -2,7 +2,7 @@
 packages = [{include = "bdns"}]
 name = "bdns-api"
 version = "0.1.0"
-description = "A tool to ingest and process DNS data"
+description = "A tool to ingest and process BDNS subsidies data from Spanish government API"
 readme = "README.md"
 authors = ["José María Cruz Lorite <josemariacruzlorite@gmail.com>"]
 
@@ -18,9 +18,33 @@ aiohttp = ">=3.9.1,<4.0.0"
 aiolimiter = ">=1.0.0,<2.0.0"
 tenacity = ">=8.2.3,<9.0.0"
 
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.0.0,<8.0.0"
+pytest-cov = ">=4.0.0,<5.0.0"
+pytest-asyncio = ">=0.20.0,<1.0.0"
+pytest-mock = ">=3.10.0,<4.0.0"
+pandas = "^2.3.1"
+ruff = ">=0.1.0,<1.0.0"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 bdns-api = "bdns.api.__main__:app"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+# Ignore some rules that would require major refactoring
+ignore = [
+    "F403",  # star imports in __main__.py (would require major refactoring) 
+    "F405",  # star import usage (would require major refactoring)
+    "F401",  # unused imports in __init__.py files (these are re-exports)
+    "E741",  # ambiguous variable name (O is required by API)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"bdns/api/__main__.py" = ["F403", "F405"]  # Allow star imports in main
+"bdns/api/commands/__init__.py" = ["F401"]  # Allow unused imports (re-exports)

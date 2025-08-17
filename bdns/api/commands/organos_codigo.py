@@ -14,7 +14,7 @@
 import typer
 
 from bdns.api.utils import format_url
-from bdns.api.types import Order, Direccion, TipoAdministracion, DescripcionTipoBusqueda
+from bdns.api.types import TipoAdministracion
 from bdns.api.fetch_write import fetch_and_write
 from bdns.api.commands import options
 from bdns.api.endpoints import BDNS_API_ENDPOINT_ORGANOS
@@ -23,7 +23,7 @@ from bdns.api.endpoints import BDNS_API_ENDPOINT_ORGANOS
 def organos_codigo(
     ctx: typer.Context,
     vpd: str = options.vpd,
-    idAdmon: TipoAdministracion = options.idAdmon
+    idAdmon: TipoAdministracion = options.idAdmon,
 ) -> None:
     """
     Fetches the organs based on the code.
@@ -34,5 +34,5 @@ def organos_codigo(
     }
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_ORGANOS, params),
-        output_file=ctx.obj["output_file"]
+        output_file=ctx.obj["output_file"],
     )

@@ -43,7 +43,7 @@ def minimis_busqueda(
     beneficiario: int = options.beneficiario,
     instrumentos: str = options.instrumentos,
     actividad: str = options.actividad,
-    finalidad: int = options.finalidad
+    finalidad: int = options.finalidad,
 ) -> None:
     """
     Fetches concesiones data from the BDNS API based on search parameters.
@@ -65,17 +65,14 @@ def minimis_busqueda(
         "instrumentos": instrumentos,
         "actividad": actividad,
         "finalidad": finalidad,
-        "numeroConvocatoria": numeroConvocatoria
+        "numeroConvocatoria": numeroConvocatoria,
     }
     asyncio.run(
         fetch_and_write_paginated(
-            url=format_url(
-                BDNS_API_ENDPOINT_MINIMIS_BUSQUEDA,
-                params
-            ),
+            url=format_url(BDNS_API_ENDPOINT_MINIMIS_BUSQUEDA, params),
             output_file=ctx.obj["output_file"],
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=ctx.obj["max_concurrent_requests"]
+            max_concurrent_requests=ctx.obj["max_concurrent_requests"],
         )
     )

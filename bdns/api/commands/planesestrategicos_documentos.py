@@ -20,7 +20,7 @@ from bdns.api.utils import format_date_for_api_request, format_url
 from bdns.api.types import Order, Direccion, TipoAdministracion, DescripcionTipoBusqueda
 from bdns.api.fetch_write import fetch_and_write_paginated
 from bdns.api.commands import options
-from bdns.api.endpoints import BDNS_API_ENDPOINT_AYUDASESTADO_BUSQUEDA
+from bdns.api.endpoints import BDNS_API_ENDPOINT_PLANESESTRATEGICOS_DOCUMENTOS
 
 
 def ayudasestado_busqueda(
@@ -43,7 +43,7 @@ def ayudasestado_busqueda(
     beneficiario: int = options.beneficiario,
     instrumentos: str = options.instrumentos,
     actividad: str = options.actividad,
-    finalidad: int = options.finalidad
+    finalidad: int = options.finalidad,
 ) -> None:
     """
     Fetches ayudas estado data from the BDNS API based on search parameters.
@@ -65,14 +65,11 @@ def ayudasestado_busqueda(
         "beneficiario": beneficiario,
         "instrumentos": instrumentos,
         "actividad": actividad,
-        "finalidad": finalidad
+        "finalidad": finalidad,
     }
     asyncio.run(
         fetch_and_write_paginated(
-            url=format_url(
-                BDNS_API_ENDPOINT_AYUDAS_ESTADO_BUSQUEDA,
-                params
-            ),
+            url=format_url(BDNS_API_ENDPOINT_PLANESESTRATEGICOS_DOCUMENTOS, params),
             output_file=ctx.obj["output_file"],
             from_page=from_page,
             num_pages=num_pages,

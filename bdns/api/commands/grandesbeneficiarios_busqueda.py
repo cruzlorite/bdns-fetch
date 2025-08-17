@@ -40,7 +40,7 @@ def grandesbeneficiarios_busqueda(
     """
     # Use anio if provided, otherwise use anios
     years_param = anio if anio is not None else anios
-    
+
     params = {
         "vpd": vpd,
         "pageSize": pageSize,

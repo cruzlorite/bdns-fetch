@@ -9,22 +9,12 @@ A comprehensive command-line tool for accessing and processing data from the BDN
 ## ✨ Features
 
 - **29 API Commands**: Complete coverage of all BDNS API endpoints
-- **Real-time Data Access**: Direct integration with Spanish government BDNS API
 - **JSONL Output Format**: Clean JSON Lines format for easy data processing
 - **Flexible Configuration**: Customizable parameters for each command
-- **Comprehensive Testing**: 100% command coverage with integration tests
-- **Production Ready**: Built with async support, retry logic, and error handling
 
 ## 📋 Available Commands
 
 This tool provides access to all **29 BDNS API endpoints**. Each command fetches specific data from the Spanish government's subsidies database.
-
-**Command Categories:**
-- **Data Retrieval** (9): Basic reference data (activities, regions, sectors, etc.)
-- **Government Structure** (4): Organs, ministries, and administrative entities  
-- **Search Operations** (8): Advanced search across different data types
-- **Document Access** (5): Calls, PDFs, and strategic plan documents
-- **Time-based Queries** (3): Historical and validity period data
 
 For a complete list of all commands and their parameters, use:
 ```bash
@@ -104,48 +94,7 @@ bdns-api concesiones-busqueda \
   --output-file research_concessions.jsonl
 ```
 
-## 🧪 Testing
-
-This project includes comprehensive integration tests for all 29 commands.
-
-```bash
-# Run all integration tests
-make test-integration
-```
-```
-
-### Test Categories
-
-**Working Tests** (Always Pass):
-- `test_organos_integration.py` - Government organs data
-- `test_actividades_integration.py` - Economic activities
-
-**Full Integration Suite**:
-- `test_simple_commands_integration.py` - Basic data commands
-- `test_search_commands_integration.py` - Search functionality  
-- `test_document_commands_integration.py` - Document retrieval
-- `test_enum_commands_integration.py` - Enumeration commands
-- `test_planes_estrategicos_integration.py` - Strategic plans
-- `test_organos_variants_integration.py` - Government structure variants
-- `test_remaining_commands_integration.py` - Additional commands
-
-### Example Test Output
-```bash
-🚀 Running Integration Tests Against Real BDNS API...
-
-✅ Organos Integration Test Passed!
-   Records: 22
-   Sample: MINISTERIO DE AGRICULTURA, PESCA Y ALIMENTACIÓN
-
-✅ Actividades Integration Test Passed!
-   Records: 21
-   Sample: AGRICULTURA, GANADERÍA, SILVICULTURA Y PESCA
-
-🎉 All Integration Tests Completed!
-Coverage: 72% (563/159 lines covered)
-```
-
-## 📖 Examples
+## 📖 More Examples
 
 ```bash
 # Download all government organs
@@ -165,21 +114,6 @@ Output format (JSON Lines):
 ```json
 {"id": 1, "descripcion": "MINISTERIO DE AGRICULTURA, PESCA Y ALIMENTACIÓN", "codigo": "E04"}
 {"id": 2, "descripcion": "MINISTERIO DE ASUNTOS EXTERIORES, UNIÓN EUROPEA Y COOPERACIÓN", "codigo": "E05"}
-```
-
-## 📚 Citation
-
-If you use this tool in your research or projects, please consider citing it:
-
-```bibtex
-@misc{bdns-api,
-  author = {José María Cruz-Lorite},
-  title = {BDNS API: A comprehensive command-line tool for Spanish government subsidies data},
-  year = {2024},
-  publisher = {GitHub},
-  howpublished = {\url{https://github.com/cruzlorite/bdns-api}},
-  note = {Command-line tool for accessing BDNS API with 100\% endpoint coverage}
-}
 ```
 
 ## 🛠️ Development
@@ -206,10 +140,25 @@ make clean              # Remove build artifacts
 make all                # Install, lint, format, and test
 ```
 
+## 🙏 Acknowledgments
+
+This project is inspired by previous work from [Jaime Ortega Obregón](https://github.com/jaimeortega/bdns-ingest). Special thanks to all contributors who have helped improve access to Spanish government subsidy data.
+
 ## 📜 License
 
 This project is licensed under the GNU General Public License v3.0 (GPL-3.0). See the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 📚 Citation
 
-This project is inspired by previous work from [Jaime Ortega Obregón](https://github.com/jaimeortega/bdns-ingest). Special thanks to all contributors who have helped improve access to Spanish government subsidy data.
+If you use this tool in your research or projects, please consider citing it:
+
+```bibtex
+@misc{bdns-api,
+  author = {José María Cruz-Lorite},
+  title = {BDNS API: A comprehensive command-line tool for Spanish government subsidies data},
+  year = {2024},
+  publisher = {GitHub},
+  howpublished = {\url{https://github.com/cruzlorite/bdns-api}},
+  note = {Command-line tool for accessing BDNS API with 100\% endpoint coverage}
+}
+```

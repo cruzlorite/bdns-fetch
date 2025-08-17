@@ -20,14 +20,12 @@ from bdns.api.endpoints import BDNS_API_ENDPOINT_PLANESESTRATEGICOS_DOCUMENTOS
 
 def planesestrategicos_documentos(
     ctx: typer.Context,
-    idDocumento: int = typer.Option(..., help="Identificador del documento")
+    idDocumento: int = typer.Option(..., help="Identificador del documento"),
 ) -> None:
     """
     Obtiene el documento de un plan estratégico específico por su identificador.
     """
-    params = {
-        "idDocumento": idDocumento
-    }
+    params = {"idDocumento": idDocumento}
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_PLANESESTRATEGICOS_DOCUMENTOS, params),
         output_file=ctx.obj["output_file"],

@@ -21,14 +21,12 @@ from bdns.api.endpoints import BDNS_API_ENDPOINT_PLANESESTRATEGICOS
 
 def planesestrategicos(
     ctx: typer.Context,
-    idPES: int = typer.Option(..., help="Identificador del plan estratégico")
+    idPES: int = typer.Option(..., help="Identificador del plan estratégico"),
 ) -> None:
     """
     Obtiene un plan estratégico específico por su identificador.
     """
-    params = {
-        "idPES": idPES
-    }
+    params = {"idPES": idPES}
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_PLANESESTRATEGICOS, params),
         output_file=ctx.obj["output_file"],

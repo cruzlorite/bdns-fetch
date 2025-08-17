@@ -53,7 +53,7 @@ class TestDocumentCommandsIntegration:
 
         try:
             # Act - Test with basic parameters (try common document ID)
-            convocatorias_documentos(ctx, vpd="GE", idDocumento=1)
+            convocatorias_documentos(ctx, idDocumento="1")
 
             # Assert
             assert output_path.exists(), (
@@ -81,7 +81,7 @@ class TestDocumentCommandsIntegration:
 
         try:
             # Act - Test with basic parameters
-            convocatorias_pdf(ctx, vpd="GE", idDocumento=1)
+            convocatorias_pdf(ctx, vpd="GE", id="1")
 
             # Assert
             assert output_path.exists(), (

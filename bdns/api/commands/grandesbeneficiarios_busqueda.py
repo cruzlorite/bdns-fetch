@@ -31,18 +31,22 @@ def grandesbeneficiarios_busqueda(
     order: Order = options.order,
     direccion: Direccion = options.direccion,
     anios: str = options.anios,
+    anio: str = None,  # Alias for backward compatibility
     nifCif: str = options.nifCif,
     beneficiario: int = options.beneficiario,
 ) -> None:
     """
     Fetches grandes beneficiarios data from the BDNS API based on search parameters.
     """
+    # Use anio if provided, otherwise use anios
+    years_param = anio if anio is not None else anios
+    
     params = {
         "vpd": vpd,
         "pageSize": pageSize,
         "order": order,
         "direccion": direccion,
-        "anios": anios,
+        "anios": years_param,
         "nifCif": nifCif,
         "beneficiario": beneficiario,
     }

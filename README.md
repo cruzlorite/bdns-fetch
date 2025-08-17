@@ -10,7 +10,7 @@ A comprehensive command-line tool for accessing and processing data from the BDN
 
 - **29 API Commands**: Complete coverage of all BDNS API endpoints
 - **Real-time Data Access**: Direct integration with Spanish government BDNS API
-- **Multiple Output Formats**: JSON Lines (JSONL), CSV, Parquet, Arrow IPC, Feather
+- **JSONL Output Format**: Clean JSON Lines format for easy data processing
 - **Flexible Configuration**: Customizable parameters for each command
 - **Comprehensive Testing**: 100% command coverage with integration tests
 - **Production Ready**: Built with async support, retry logic, and error handling
@@ -106,28 +106,12 @@ bdns-api concesiones-busqueda \
 
 ## 🧪 Testing
 
-This project maintains **100% command coverage** with comprehensive integration tests that validate all commands against the real BDNS API.
-
-### Test Statistics
-- **29 Commands Tested**: Complete coverage of all API endpoints
-- **19 Integration Tests**: Organized in 9 test files
-- **Real API Validation**: Tests run against live Spanish government API
-- **70%+ Success Rate**: Most commands return valid data from live API
-
-### Running Tests
+This project includes comprehensive integration tests for all 29 commands.
 
 ```bash
 # Run all integration tests
 make test-integration
-
-# Run only stable/working tests
-make test-working
-
-# Run specific test file
-poetry run pytest tests/integration/test_organos_integration.py -v
-
-# Run with coverage report
-make test-integration  # Automatically includes coverage
+```
 ```
 
 ### Test Categories
@@ -161,42 +145,23 @@ make test-integration  # Automatically includes coverage
 Coverage: 72% (563/159 lines covered)
 ```
 
-## 📖 Use Cases & Examples
+## 📖 Examples
 
-### Common Use Cases
-
-**Research and Analysis:**
 ```bash
-# Download all government organs for analysis
+# Download all government organs
 bdns-api organos --output-file government_structure.jsonl
 
 # Search for innovation-related subsidies
 bdns-api ayudasestado-busqueda --descripcion "innovation" --output-file innovation_aids.jsonl
 
-# Get strategic plans data
-bdns-api planesestrategicos-busqueda --output-file strategic_plans.jsonl
-```
-
-**Data Monitoring:**
-```bash
 # Get latest calls for proposals
 bdns-api convocatorias-ultimas --output-file latest_calls.jsonl
 
-# Monitor large beneficiaries
-bdns-api grandesbeneficiarios-busqueda --output-file large_beneficiaries.jsonl
-```
-
-**Compliance and Auditing:**
-```bash
 # Search sanctions data
 bdns-api sanciones-busqueda --output-file sanctions.jsonl
-
-# Get de minimis aids information
-bdns-api minimis-busqueda --output-file minimis_aids.jsonl
 ```
 
-### Output Format
-All commands output data in JSON Lines format by default:
+Output format (JSON Lines):
 ```json
 {"id": 1, "descripcion": "MINISTERIO DE AGRICULTURA, PESCA Y ALIMENTACIÓN", "codigo": "E04"}
 {"id": 2, "descripcion": "MINISTERIO DE ASUNTOS EXTERIORES, UNIÓN EUROPEA Y COOPERACIÓN", "codigo": "E05"}
@@ -240,23 +205,6 @@ make test-integration   # Run integration tests
 make clean              # Remove build artifacts
 make all                # Install, lint, format, and test
 ```
-
-### Code Quality
-- **Linting**: ruff with comprehensive rule set
-- **Formatting**: ruff formatter for consistent style
-- **Type Hints**: Full type annotation coverage
-- **Testing**: Integration tests against real API
-- **Documentation**: Comprehensive docstrings and README
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes and add tests
-4. Run the test suite (`make test-integration`)
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
 
 ## 📜 License
 

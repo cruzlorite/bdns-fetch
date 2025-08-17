@@ -19,7 +19,8 @@ def get_test_context():
         # Mock typer context
         mock_ctx = Mock()
         mock_ctx.obj = {
-            "output_file": str(output_path)
+            "output_file": str(output_path),
+            "max_concurrent_requests": 5,  # Default value for paginated commands
         }
         
         return mock_ctx, output_path

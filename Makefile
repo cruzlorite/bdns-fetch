@@ -1,46 +1,47 @@
 # Makefile for BDNS API project
 
-.PHONY: help install test-integration lint format clean dev-install
+.PHONY: help install dev-install test test-integration test-working lint format clean all
+
+.DEFAULT_GOAL := help
 
 help: ## Show this help message
-	@echo "Available commands:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo "BDNS API - Available Make Targets:"
+	@echo "================================="
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
-install: ## Install dependencies
+install: ## Install project dependencies
+	poetry install --no-dev
+
+dev-install: ## Install project with development dependencies
 	poetry install
 
-dev-install: ## Install dependencies including dev dependencies
-	poetry install --with dev
+test: test-integration ## Run all tests (alias for test-integration)
 
 test-integration: ## Run integration tests against real BDNS API
+	@echo "🚀 Running Integration Tests Against Real BDNS API..."
 	poetry run pytest tests/integration/ -v -s -m integration
+	@echo "🎉 Integration Tests Completed!"
 
-test-working: ## Run only the working integration tests (19 tests)
-	@echo "🚀 Running BDNS API Integration Tests"
-	@echo "======================================"
-	@echo ""
-	@echo "📋 Running Core Tests (17 tests)..."
-	@poetry run pytest tests/integration/test_simple_commands_integration.py \
-	                  tests/integration/test_organos_integration.py \
-	                  tests/integration/test_enum_commands_integration.py \
-	                  tests/integration/test_actividades_integration.py \
-	                  tests/integration/test_organos_variants_integration.py \
-	                  -v --tb=no -q
-	@echo ""
-	@echo "📋 Running Additional Working Tests (2 tests)..."
-	@poetry run pytest tests/integration/test_document_commands_integration.py -k "convocatorias and not documentos and not pdf" -v --tb=no -q
-	@poetry run pytest tests/integration/test_planes_estrategicos_integration.py -k "vigencia" -v --tb=no -q
-	@echo ""
-	@echo "✅ All working integration tests completed!"
-	@echo "📊 Total: 19 working tests for BDNS API commands"
+test-working: ## Run only tests that are known to work (limited API endpoints)
+	@echo "� Running Working Integration Tests..."
+	poetry run pytest tests/integration/test_organos_integration.py tests/integration/test_actividades_integration.py -v -s -m integration
+	@echo "🎉 Working Tests Completed!"
 
-lint: ## Run linting
+lint: ## Run code linting with ruff
 	poetry run ruff check .
 
-format: ## Format code
+format: ## Format code with ruff formatter
 	poetry run ruff format .
 
-clean: ## Clean up cache and temporary files
-	find . -type d -name __pycache__ -delete
-	find . -name "*.pyc" -delete
-	rm -rf .coverage htmlcov/ .pytest_cache/
+clean: ## Remove build artifacts and cache files
+	rm -rf dist/
+	rm -rf build/
+	rm -rf *.egg-info
+	rm -rf .pytest_cache/
+	rm -rf .ruff_cache/
+	rm -rf htmlcov/
+	rm -f .coverage
+	find . -type d -name __pycache__ -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
+
+all: dev-install lint format test ## Install, lint, format, and test everything

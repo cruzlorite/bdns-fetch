@@ -23,5 +23,7 @@ from .instrumentos import instrumentos
 from .objetivos import objetivos
 from .sectores import sectores
 from .sanciones_busqueda import sanciones_busqueda
+from .planesestrategicos import planesestrategicos
 from .planesestrategicos_busqueda import planesestrategicos_busqueda
+from .planesestrategicos_documentos import planesestrategicos_documentos
 from .planesestrategicos_vigencia import planesestrategicos_vigencia

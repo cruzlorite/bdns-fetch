@@ -69,7 +69,7 @@ bdns-api actividades
 bdns-api ayudasestado-busqueda \
   --descripcion "innovation" \
   --num-pages 3 \
-  --pageSize 50 \
+  --pageSize 1000 \
   --output-file innovation_aids.jsonl
 
 # Get specific strategic plan by ID
@@ -80,7 +80,7 @@ bdns-api planesestrategicos --idPES 459 --output-file plan_459.jsonl
 - `--output-file FILE`: Save output to file (defaults to stdout)
 - `--vpd CODE`: Territory code (GE=Spain, specific regions available)
 - `--num-pages N`: Number of pages to fetch (for paginated commands)
-- `--pageSize N`: Records per page (default: 500, max: 500)
+- `--pageSize N`: Records per page (default: 10000, max: 10000)
 
 **Advanced Search Example:**
 ```bash
@@ -147,18 +147,3 @@ This project is inspired by previous work from [Jaime Ortega Obregón](https://g
 ## 📜 License
 
 This project is licensed under the GNU General Public License v3.0 (GPL-3.0). See the [LICENSE](LICENSE) file for details.
-
-## 📚 Citation
-
-If you use this tool in your research or projects, please consider citing it:
-
-```bibtex
-@misc{bdns-api,
-  author = {José María Cruz-Lorite},
-  title = {BDNS API: A comprehensive command-line tool for Spanish government subsidies data},
-  year = {2024},
-  publisher = {GitHub},
-  howpublished = {\url{https://github.com/cruzlorite/bdns-api}},
-  note = {Command-line tool for accessing BDNS API with 100\% endpoint coverage}
-}
-```

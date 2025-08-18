@@ -30,7 +30,7 @@ def organos_agrupacion(
     """
     params = {
         "vpd": vpd,
-        "idAdmon": idAdmon.value,
+        "idAdmon": idAdmon.value if idAdmon else None,
     }
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_ORGANOS, params),

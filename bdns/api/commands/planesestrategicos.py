@@ -21,7 +21,7 @@ from bdns.api.endpoints import BDNS_API_ENDPOINT_PLANESESTRATEGICOS
 
 def planesestrategicos(
     ctx: typer.Context,
-    idPES: int = typer.Option(..., "--idPES", "-idpes", help="Identificador del plan estratégico"),
+    idPES: int = options.idPES_required,
 ) -> None:
     """
     Obtiene un plan estratégico específico por su identificador.

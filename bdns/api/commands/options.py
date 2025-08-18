@@ -206,6 +206,12 @@ idDocumento: Optional[int] = typer.Option(
     help="Identifier of the document to search for.",
     show_default=True,
 )
+idDocumento_required: int = typer.Option(
+    ...,
+    "--idDocumento",
+    "-id",
+    help="Identifier of the document.",
+)
 nifCif: Optional[str] = typer.Option(
     None,
     "--nifCif",
@@ -327,5 +333,18 @@ numConv: Optional[str] = typer.Option(
     "--numConv",
     "-nc",
     help="Number of the call.",
+    show_default=True,
+)
+idPES_required: int = typer.Option(
+    ...,
+    "--idPES",
+    "-idpes",
+    help="Identifier of the strategic plan.",
+)
+idPES: Optional[int] = typer.Option(
+    None,
+    "--idPES",
+    "-idpes",
+    help="Identifier of the strategic plan.",
     show_default=True,
 )

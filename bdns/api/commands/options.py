@@ -322,13 +322,6 @@ vigenciaHasta: Optional[date] = typer.Option(
     help="End date of the validity of the strategic plan.",
     show_default=True,
 )
-idPES: Optional[int] = typer.Option(
-    None,
-    "--idPES",
-    "-idp",
-    help="Identifier of the strategic plan.",
-    show_default=True,
-)
 numConv: Optional[str] = typer.Option(
     None,
     "--numConv",

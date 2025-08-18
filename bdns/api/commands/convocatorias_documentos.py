@@ -21,10 +21,10 @@ from bdns.api.endpoints import BDNS_API_ENDPOINT_CONVOCATORIAS_DOCUMENTOS
 
 def convocatorias_documentos(
     ctx: typer.Context,
-    idDocumento: str = options.idDocumento,
+    idDocumento: int = options.idDocumento_required,
 ) -> None:
     """
-    Searches one convocatoria by VPD and numConv.
+    Obtiene el documento de una convocatoria.
     """
     params = {"idDocumento": idDocumento}
     fetch_and_write_raw(

@@ -21,13 +21,12 @@ from bdns.api.endpoints import BDNS_API_ENDPOINT_ORGANOS_CODIGO_ADMIN
 
 def organos_codigoadmin(
     ctx: typer.Context,
-    vpd: str = options.vpd,
-    codigoAdmin: str = options.codigoAdmin,
+    codigoAdmin: str = options.codigoAdmin_required,
 ) -> None:
     """
-    Fetches the organs based on the admin code.
+    Obtiene los órganos en función del código admin.
     """
-    params = {"vpd": vpd, "codigoAdmin": codigoAdmin}
+    params = {"codigoAdmin": codigoAdmin}
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_ORGANOS_CODIGO_ADMIN, params),
         output_file=ctx.obj["output_file"],

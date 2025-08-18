@@ -97,6 +97,12 @@ vpd: Optional[str] = typer.Option(
     help="VPD portal ID.",
     show_default=True,
 )
+vpd_required: str = typer.Option(
+    ...,
+    "--vpd",
+    "-vpd",
+    help="VPD portal ID.",
+)
 descripcion: Optional[str] = typer.Option(
     None,
     "--descripcion",
@@ -171,6 +177,13 @@ tiposBeneficiario: Optional[List[int]] = typer.Option(
     help="List of identifiers of the selected beneficiary types, separated by commas.",
     show_default=True,
 )
+tiposBeneficiario_str: Optional[List[str]] = typer.Option(
+    None,
+    "--tiposBeneficiario",
+    "-tb",
+    help="List of beneficiary type codes, separated by commas.",
+    show_default=True,
+)
 instrumentos: Optional[List[int]] = typer.Option(
     None,
     "--instrumentos",
@@ -240,6 +253,12 @@ id: Optional[int] = typer.Option(
     help="Identifier of the document to search for.",
     show_default=True,
 )
+id_required: int = typer.Option(
+    ...,
+    "--id",
+    "-i",
+    help="Identifier of the document.",
+)
 objetivos: Optional[List[int]] = typer.Option(
     None,
     "--objetivos",
@@ -260,6 +279,12 @@ codigoAdmin: Optional[str] = typer.Option(
     "-ca",
     help="Admin code of the body.",
     show_default=True,
+)
+codigoAdmin_required: str = typer.Option(
+    ...,
+    "--codigoAdmin",
+    "-ca",
+    help="Admin code of the organ.",
 )
 codigo: Optional[str] = typer.Option(
     None,
@@ -335,6 +360,12 @@ numConv: Optional[str] = typer.Option(
     help="Number of the call.",
     show_default=True,
 )
+numConv_required: str = typer.Option(
+    ...,
+    "--numConv",
+    "-nc",
+    help="Number of the call.",
+)
 idPES_required: int = typer.Option(
     ...,
     "--idPES",
@@ -347,4 +378,10 @@ idPES: Optional[int] = typer.Option(
     "-idpes",
     help="Identifier of the strategic plan.",
     show_default=True,
+)
+codigo: str = typer.Option(
+    ...,
+    "--codigo",
+    "-c",
+    help="Organ code.",
 )

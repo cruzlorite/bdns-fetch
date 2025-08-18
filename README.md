@@ -142,7 +142,7 @@ make all                # Install, lint, format, and test
 
 ## 🙏 Acknowledgments
 
-This project is inspired by previous work from [Jaime Ortega Obregón](https://github.com/jaimeortega/bdns-ingest). Special thanks to all contributors who have helped improve access to Spanish government subsidy data.
+This project is inspired by previous work from [Jaime Ortega Obregón](https://github.com/JaimeObregon/subvenciones/tree/main).
 
 ## 📜 License
 

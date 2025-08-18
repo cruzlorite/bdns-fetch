@@ -12,6 +12,7 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+from typing import List
 
 import typer
 
@@ -30,7 +31,7 @@ def grandesbeneficiarios_busqueda(
     pageSize: int = options.pageSize,
     order: Order = options.order,
     direccion: Direccion = options.direccion,
-    anios: str = options.anios,
+    anios: List[int] = options.anios,
     anio: str = None,  # Alias for backward compatibility
     nifCif: str = options.nifCif,
     beneficiario: int = options.beneficiario,

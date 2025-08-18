@@ -13,6 +13,7 @@
 
 from datetime import datetime
 import asyncio
+from typing import List
 
 import typer
 
@@ -37,12 +38,12 @@ def minimis_busqueda(
     fechaDesde: datetime = options.fechaDesde,
     fechaHasta: datetime = options.fechaHasta,
     tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
-    organos: str = options.organos,
-    regiones: str = options.regiones,
+    organos: List[int] = options.organos,
+    regiones: List[int] = options.regiones,
     nifCif: str = options.nifCif,
     beneficiario: int = options.beneficiario,
-    instrumentos: str = options.instrumentos,
-    actividad: str = options.actividad,
+    instrumentos: List[int] = options.instrumentos,
+    actividad: List[int] = options.actividad,
     finalidad: int = options.finalidad,
 ) -> None:
     """

@@ -13,6 +13,7 @@
 
 from datetime import datetime
 import asyncio
+from typing import List
 
 import typer
 
@@ -33,7 +34,7 @@ def planesestrategicos_busqueda(
     descripcion: str = options.descripcion,
     descripcionTipoBusqueda: DescripcionTipoBusqueda = options.descripcionTipoBusqueda,
     tipoAdministracion: str = options.tipoAdministracion,
-    organos: list[int] = options.organos,
+    organos: List[int] = options.organos,
     vigenciaDesde: datetime = options.vigenciaDesde,
     vigenciaHasta: datetime = options.vigenciaHasta,
 ) -> None:

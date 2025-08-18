@@ -20,7 +20,7 @@ from bdns.api.endpoints import BDNS_API_ENDPOINT_CONVOCATORIAS
 
 
 def convocatorias(
-    ctx: typer.Context, vpd: str = options.vpd, numConv: str = options.numConv
+    ctx: typer.Context, vpd: str = options.vpd, numConv: str = options.numConv_required
 ) -> None:
     """
     Searches one convocatoria by VPD and numConv.

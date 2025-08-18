@@ -21,11 +21,11 @@ from bdns.api.endpoints import BDNS_API_ENDPOINT_CONVOCATORIAS_PDF
 
 def convocatorias_pdf(
     ctx: typer.Context,
-    id: str = options.id,
-    vpd: str = options.vpd,
+    id: int = options.id_required,
+    vpd: str = options.vpd_required,
 ) -> None:
     """
-    Searches one convocatoria by VPD and numConv.
+    Obtiene la convocatoria en formato pdf.
     """
     params = {"id": id, "vpd": vpd}
     fetch_and_write_raw(

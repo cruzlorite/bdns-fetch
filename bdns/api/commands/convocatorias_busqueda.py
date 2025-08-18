@@ -13,6 +13,7 @@
 
 from datetime import datetime
 import asyncio
+from typing import List
 
 import typer
 
@@ -38,10 +39,10 @@ def convocatorias_busqueda(
     fechaDesde: datetime = options.fechaDesde,
     fechaHasta: datetime = options.fechaHasta,
     tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
-    organos: str = options.organos,
-    regiones: str = options.regiones,
-    tiposBeneficiario: str = options.tiposBeneficiario,
-    instrumentos: str = options.instrumentos,
+    organos: List[int] = options.organos,
+    regiones: List[int] = options.regiones,
+    tiposBeneficiario: List[str] = options.tiposBeneficiario_str,
+    instrumentos: List[int] = options.instrumentos,
     finalidad: int = options.finalidad,
     ayudaEstado: str = options.ayudaEstado,
 ) -> None:

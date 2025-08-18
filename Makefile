@@ -22,11 +22,6 @@ test-integration: ## Run integration tests against real BDNS API
 	poetry run pytest tests/integration/ -v -s -m integration
 	@echo "🎉 Integration Tests Completed!"
 
-test-working: ## Run only tests that are known to work (limited API endpoints)
-	@echo "� Running Working Integration Tests..."
-	poetry run pytest tests/integration/test_organos_integration.py tests/integration/test_actividades_integration.py -v -s -m integration
-	@echo "🎉 Working Tests Completed!"
-
 lint: ## Run code linting with ruff
 	poetry run ruff check .
 

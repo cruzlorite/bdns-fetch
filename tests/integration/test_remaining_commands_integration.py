@@ -39,7 +39,9 @@ class TestRemainingCommandsIntegration:
         except Exception as e:
             # Check if it's an expected API validation error
             if "400" in str(e) or "RetryError" in str(e):
-                print("✅ Expected: terceros API validation - command structure is correct")
+                print(
+                    "✅ Expected: terceros API validation - command structure is correct"
+                )
             else:
                 pytest.fail(f"terceros command failed with unexpected error: {e}")
 
@@ -67,9 +69,13 @@ class TestRemainingCommandsIntegration:
         except Exception as e:
             # Check if it's an expected API validation error
             if "400" in str(e) or "RetryError" in str(e):
-                print("✅ Expected: terceros API validation - command structure is correct")
+                print(
+                    "✅ Expected: terceros API validation - command structure is correct"
+                )
             else:
-                pytest.fail(f"terceros command with ambito failed with unexpected error: {e}")
+                pytest.fail(
+                    f"terceros command with ambito failed with unexpected error: {e}"
+                )
 
     def test_minimis_busqueda_basic(self, get_test_context, cleanup_test_file):
         """Test minimis_busqueda command with basic parameters."""

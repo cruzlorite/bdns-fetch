@@ -51,7 +51,7 @@ def format_url(url: str, query_params: dict):
     """
     if not url.endswith("?"):
         url += "?"
-    
+
     # Filter out None values and typer.OptionInfo objects, convert enums to values
     filtered_params = {}
     for key, value in query_params.items():
@@ -61,7 +61,7 @@ def format_url(url: str, query_params: dict):
                 filtered_params[key] = value.value
             else:
                 filtered_params[key] = value
-    
+
     url += "&".join([f"{key}={value}" for key, value in filtered_params.items()])
     return url
 

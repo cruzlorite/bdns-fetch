@@ -57,7 +57,7 @@ class TestDocumentCommandsIntegration:
             # Note: This may not return a document if the ID doesn't have associated docs
             try:
                 convocatorias_documentos(ctx, idDocumento="744764")
-                
+
                 # Assert
                 assert output_path.exists(), (
                     f"Output file should be created at {output_path}"
@@ -67,12 +67,14 @@ class TestDocumentCommandsIntegration:
                 with open(output_path, "rb") as f:
                     content = f.read()
 
-                print(f"✅ Success: Retrieved convocatorias documentos response ({len(content)} bytes)")
-                
+                print(
+                    f"✅ Success: Retrieved convocatorias documentos response ({len(content)} bytes)"
+                )
+
                 # Try to decode as text to see if it's an error response
                 try:
-                    text_content = content.decode('utf-8')
-                    if 'error' in text_content.lower() or len(content) < 100:
+                    text_content = content.decode("utf-8")
+                    if "error" in text_content.lower() or len(content) < 100:
                         print(f"API response: {text_content[:200]}...")
                     else:
                         print("Binary document content received")
@@ -81,7 +83,9 @@ class TestDocumentCommandsIntegration:
 
             except Exception as e:
                 if "400" in str(e) and "documento solicitado" in str(e):
-                    print("✅ Expected: Document ID not found - API responded correctly with 400 error")
+                    print(
+                        "✅ Expected: Document ID not found - API responded correctly with 400 error"
+                    )
                 else:
                     raise e
 
@@ -107,12 +111,17 @@ class TestDocumentCommandsIntegration:
                 with open(output_path, "rb") as f:
                     content = f.read()
 
-                print(f"✅ Success: Retrieved convocatorias PDF response ({len(content)} bytes)")
-                
+                print(
+                    f"✅ Success: Retrieved convocatorias PDF response ({len(content)} bytes)"
+                )
+
                 # Try to decode as text to see if it's an error response
                 try:
-                    text_content = content.decode('utf-8')
-                    if 'error' in text_content.lower() or 'not found' in text_content.lower():
+                    text_content = content.decode("utf-8")
+                    if (
+                        "error" in text_content.lower()
+                        or "not found" in text_content.lower()
+                    ):
                         print(f"Response content: {text_content[:200]}...")
                     else:
                         print("Text content (possibly HTML or error)")
@@ -121,17 +130,14 @@ class TestDocumentCommandsIntegration:
 
             except Exception as e:
                 if "204" in str(e) or "400" in str(e):
-                    print("✅ Expected: PDF not available - API responded correctly with 204/400")
+                    print(
+                        "✅ Expected: PDF not available - API responded correctly with 204/400"
+                    )
                 else:
                     raise e
 
         finally:
             cleanup_test_file(output_path)
-
-    def test_organos_codigoadmin_basic(self, get_test_context, cleanup_test_file):
-        """Test organos_codigoadmin command with a test admin code."""
-        # Arrange
-        ctx, output_path = get_test_context("organos_codigoadmin.csv")
 
     def test_organos_codigoadmin_basic(self, get_test_context, cleanup_test_file):
         """Test organos_codigoadmin command with a test admin code."""
@@ -165,8 +171,14 @@ class TestDocumentCommandsIntegration:
                     print("No results with this admin code - API responded correctly")
 
             except Exception as e:
-                if "204" in str(e) or ("400" in str(e) and "content" in str(e).lower()) or "RetryError" in str(e):
-                    print("✅ Expected: Admin code validation - API responded with expected error")
+                if (
+                    "204" in str(e)
+                    or ("400" in str(e) and "content" in str(e).lower())
+                    or "RetryError" in str(e)
+                ):
+                    print(
+                        "✅ Expected: Admin code validation - API responded with expected error"
+                    )
                 else:
                     raise e
 
@@ -200,9 +212,13 @@ class TestDocumentCommandsIntegration:
                 print(f"Available fields: {list(data[0].keys())}")
                 # Use a field that likely exists
                 sample_field = list(data[0].keys())[0] if data[0] else "No data"
-                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
+                print(
+                    f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}"
+                )
             else:
-                print("No terceros found with these parameters - API responded correctly")
+                print(
+                    "No terceros found with these parameters - API responded correctly"
+                )
 
         finally:
             cleanup_test_file(output_path)

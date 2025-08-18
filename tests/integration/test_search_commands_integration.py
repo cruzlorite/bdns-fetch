@@ -60,7 +60,9 @@ class TestSearchCommandsIntegration:
                 print(f"Available fields: {list(data[0].keys())}")
                 # Use a field that likely exists
                 sample_field = list(data[0].keys())[0] if data[0] else "No data"
-                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
+                print(
+                    f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}"
+                )
 
         finally:
             cleanup_test_file(output_path)
@@ -101,7 +103,9 @@ class TestSearchCommandsIntegration:
                 print(f"Available fields: {list(data[0].keys())}")
                 # Use a field that likely exists
                 sample_field = list(data[0].keys())[0] if data[0] else "No data"
-                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
+                print(
+                    f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}"
+                )
 
         finally:
             cleanup_test_file(output_path)
@@ -142,7 +146,9 @@ class TestSearchCommandsIntegration:
                 print(f"Available fields: {list(data[0].keys())}")
                 # Use a field that likely exists
                 sample_field = list(data[0].keys())[0] if data[0] else "No data"
-                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
+                print(
+                    f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}"
+                )
 
         finally:
             cleanup_test_file(output_path)
@@ -183,7 +189,9 @@ class TestSearchCommandsIntegration:
                 print(f"Available fields: {list(data[0].keys())}")
                 # Use a field that likely exists
                 sample_field = list(data[0].keys())[0] if data[0] else "No data"
-                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
+                print(
+                    f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}"
+                )
 
         finally:
             cleanup_test_file(output_path)
@@ -204,7 +212,7 @@ class TestSearchCommandsIntegration:
                 num_pages=1,
                 from_page=0,
                 fechaDesde=datetime(2022, 1, 1),
-                fechaHasta=datetime(2024, 12, 31)
+                fechaHasta=datetime(2024, 12, 31),
             )
 
             # Assert
@@ -227,7 +235,9 @@ class TestSearchCommandsIntegration:
                 print(f"Available fields: {list(data[0].keys())}")
                 # Use a field that likely exists
                 sample_field = list(data[0].keys())[0] if data[0] else "No data"
-                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
+                print(
+                    f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}"
+                )
 
         finally:
             cleanup_test_file(output_path)
@@ -265,7 +275,9 @@ class TestSearchCommandsIntegration:
                 print(f"Available fields: {list(data[0].keys())}")
                 # Use a field that likely exists
                 sample_field = list(data[0].keys())[0] if data[0] else "No data"
-                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
+                print(
+                    f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}"
+                )
 
         finally:
             cleanup_test_file(output_path)
@@ -306,7 +318,9 @@ class TestSearchCommandsIntegration:
                 print(f"Available fields: {list(data[0].keys())}")
                 # Use a field that likely exists
                 sample_field = list(data[0].keys())[0] if data[0] else "No data"
-                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
+                print(
+                    f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}"
+                )
 
         finally:
             cleanup_test_file(output_path)

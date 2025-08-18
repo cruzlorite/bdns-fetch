@@ -20,6 +20,8 @@ import sys
 from contextlib import contextmanager
 from datetime import datetime
 import requests
+import typer
+from enum import Enum
 
 
 def format_date_for_api_request(date: datetime, output_format: str = "%d/%m/%Y"):
@@ -49,9 +51,18 @@ def format_url(url: str, query_params: dict):
     """
     if not url.endswith("?"):
         url += "?"
-    url += "&".join(
-        [f"{key}={value}" for key, value in query_params.items() if value is not None]
-    )
+    
+    # Filter out None values and typer.OptionInfo objects, convert enums to values
+    filtered_params = {}
+    for key, value in query_params.items():
+        if value is not None and not isinstance(value, typer.models.OptionInfo):
+            # Convert enum values to their actual values
+            if isinstance(value, Enum):
+                filtered_params[key] = value.value
+            else:
+                filtered_params[key] = value
+    
+    url += "&".join([f"{key}={value}" for key, value in filtered_params.items()])
     return url
 
 

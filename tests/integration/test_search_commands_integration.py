@@ -6,6 +6,7 @@ These tests make real API calls to the BDNS API.
 
 import pytest
 import json
+from datetime import datetime
 
 from bdns.api.commands.ayudasestado_busqueda import ayudasestado_busqueda
 from bdns.api.commands.concesiones_busqueda import concesiones_busqueda
@@ -36,6 +37,8 @@ class TestSearchCommandsIntegration:
                 pageSize=5,
                 num_pages=1,
                 from_page=0,
+                fechaDesde=datetime(2020, 1, 1),
+                fechaHasta=datetime(2020, 12, 31),
                 tipoAdministracion=TipoAdministracion.C,
             )
 
@@ -53,7 +56,11 @@ class TestSearchCommandsIntegration:
 
             print(f"✅ Success: Retrieved {len(data)} ayudas estado search results")
             if len(data) > 0:
-                print(f"Sample: {data[0]['descripcion']}")
+                # Print available fields for debugging
+                print(f"Available fields: {list(data[0].keys())}")
+                # Use a field that likely exists
+                sample_field = list(data[0].keys())[0] if data[0] else "No data"
+                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
 
         finally:
             cleanup_test_file(output_path)
@@ -71,6 +78,8 @@ class TestSearchCommandsIntegration:
                 pageSize=5,
                 num_pages=1,
                 from_page=0,
+                fechaDesde=datetime(2020, 1, 1),
+                fechaHasta=datetime(2020, 12, 31),
                 tipoAdministracion=TipoAdministracion.A,
             )
 
@@ -88,7 +97,11 @@ class TestSearchCommandsIntegration:
 
             print(f"✅ Success: Retrieved {len(data)} concesiones search results")
             if len(data) > 0:
-                print(f"Sample: {data[0]['descripcion']}")
+                # Print available fields for debugging
+                print(f"Available fields: {list(data[0].keys())}")
+                # Use a field that likely exists
+                sample_field = list(data[0].keys())[0] if data[0] else "No data"
+                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
 
         finally:
             cleanup_test_file(output_path)
@@ -106,6 +119,8 @@ class TestSearchCommandsIntegration:
                 pageSize=5,
                 num_pages=1,
                 from_page=0,
+                fechaDesde=datetime(2020, 1, 1),
+                fechaHasta=datetime(2020, 12, 31),
                 tipoAdministracion=TipoAdministracion.L,
             )
 
@@ -123,7 +138,11 @@ class TestSearchCommandsIntegration:
 
             print(f"✅ Success: Retrieved {len(data)} convocatorias search results")
             if len(data) > 0:
-                print(f"Sample: {data[0]['descripcion']}")
+                # Print available fields for debugging
+                print(f"Available fields: {list(data[0].keys())}")
+                # Use a field that likely exists
+                sample_field = list(data[0].keys())[0] if data[0] else "No data"
+                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
 
         finally:
             cleanup_test_file(output_path)
@@ -141,6 +160,8 @@ class TestSearchCommandsIntegration:
                 pageSize=5,
                 num_pages=1,
                 from_page=0,
+                fechaDesde=datetime(2020, 1, 1),
+                fechaHasta=datetime(2020, 12, 31),
                 tipoAdministracion=TipoAdministracion.C,
             )
 
@@ -158,7 +179,11 @@ class TestSearchCommandsIntegration:
 
             print(f"✅ Success: Retrieved {len(data)} minimis search results")
             if len(data) > 0:
-                print(f"Sample: {data[0]['descripcion']}")
+                # Print available fields for debugging
+                print(f"Available fields: {list(data[0].keys())}")
+                # Use a field that likely exists
+                sample_field = list(data[0].keys())[0] if data[0] else "No data"
+                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
 
         finally:
             cleanup_test_file(output_path)
@@ -173,7 +198,13 @@ class TestSearchCommandsIntegration:
         try:
             # Act - Test with basic parameters
             partidospoliticos_busqueda(
-                ctx, vpd="GE", pageSize=5, num_pages=1, from_page=0
+                ctx,
+                vpd="GE",
+                pageSize=5,
+                num_pages=1,
+                from_page=0,
+                fechaDesde=datetime(2020, 1, 1),
+                fechaHasta=datetime(2020, 12, 31)
             )
 
             # Assert
@@ -192,7 +223,11 @@ class TestSearchCommandsIntegration:
                 f"✅ Success: Retrieved {len(data)} partidos politicos search results"
             )
             if len(data) > 0:
-                print(f"Sample: {data[0]['descripcion']}")
+                # Print available fields for debugging
+                print(f"Available fields: {list(data[0].keys())}")
+                # Use a field that likely exists
+                sample_field = list(data[0].keys())[0] if data[0] else "No data"
+                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
 
         finally:
             cleanup_test_file(output_path)
@@ -226,7 +261,11 @@ class TestSearchCommandsIntegration:
                 f"✅ Success: Retrieved {len(data)} grandes beneficiarios search results"
             )
             if len(data) > 0:
-                print(f"Sample: {data[0]['descripcion']}")
+                # Print available fields for debugging
+                print(f"Available fields: {list(data[0].keys())}")
+                # Use a field that likely exists
+                sample_field = list(data[0].keys())[0] if data[0] else "No data"
+                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
 
         finally:
             cleanup_test_file(output_path)
@@ -244,6 +283,8 @@ class TestSearchCommandsIntegration:
                 pageSize=5,
                 num_pages=1,
                 from_page=0,
+                fechaDesde=datetime(2020, 1, 1),
+                fechaHasta=datetime(2020, 12, 31),
                 tipoAdministracion=TipoAdministracion.C,
             )
 
@@ -261,7 +302,11 @@ class TestSearchCommandsIntegration:
 
             print(f"✅ Success: Retrieved {len(data)} sanciones search results")
             if len(data) > 0:
-                print(f"Sample: {data[0]['descripcion']}")
+                # Print available fields for debugging
+                print(f"Available fields: {list(data[0].keys())}")
+                # Use a field that likely exists
+                sample_field = list(data[0].keys())[0] if data[0] else "No data"
+                print(f"Sample field '{sample_field}': {data[0].get(sample_field, 'N/A')}")
 
         finally:
             cleanup_test_file(output_path)

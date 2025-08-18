@@ -105,7 +105,7 @@ def fetch_and_write_raw(url, output_file):
         )
     if response:
         with smart_open(output_file, "wb") as f:
-            f.buffer.write(result)
+            f.write(result)
     else:
         logger.warning(f"Failed to fetch document from {url}. No response received.")
 

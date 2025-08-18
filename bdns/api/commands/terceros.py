@@ -32,9 +32,16 @@ def terceros(
     params = {
         "vpd": vpd,
         "ambito": ambito,
-        "busqueda": busqueda,
-        "idPersona": idPersona,
     }
+    
+    # Only add busqueda if it's not None and has at least 3 characters
+    if busqueda and len(busqueda.strip()) >= 3:
+        params["busqueda"] = busqueda
+        
+    # Only add idPersona if it's provided
+    if idPersona is not None:
+        params["idPersona"] = idPersona
+    
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_TERCEROS, params),
         output_file=ctx.obj["output_file"],

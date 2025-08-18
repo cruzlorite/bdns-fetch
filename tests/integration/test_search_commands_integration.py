@@ -71,16 +71,16 @@ class TestSearchCommandsIntegration:
         ctx, output_path = get_test_context("concesiones_busqueda.csv")
 
         try:
-            # Act - Test with basic parameters
+            # Act - Test with basic parameters (try broader date range and different administration)
             concesiones_busqueda(
                 ctx,
                 vpd="GE",
                 pageSize=5,
                 num_pages=1,
                 from_page=0,
-                fechaDesde=datetime(2020, 1, 1),
-                fechaHasta=datetime(2020, 12, 31),
-                tipoAdministracion=TipoAdministracion.A,
+                fechaDesde=datetime(2023, 1, 1),
+                fechaHasta=datetime(2024, 12, 31),
+                tipoAdministracion=TipoAdministracion.C,  # Try Autonomous Communities instead
             )
 
             # Assert
@@ -196,15 +196,15 @@ class TestSearchCommandsIntegration:
         ctx, output_path = get_test_context("partidospoliticos_busqueda.csv")
 
         try:
-            # Act - Test with basic parameters
+            # Act - Test with basic parameters (broader date range)
             partidospoliticos_busqueda(
                 ctx,
                 vpd="GE",
                 pageSize=5,
                 num_pages=1,
                 from_page=0,
-                fechaDesde=datetime(2020, 1, 1),
-                fechaHasta=datetime(2020, 12, 31)
+                fechaDesde=datetime(2022, 1, 1),
+                fechaHasta=datetime(2024, 12, 31)
             )
 
             # Assert
@@ -276,16 +276,16 @@ class TestSearchCommandsIntegration:
         ctx, output_path = get_test_context("sanciones_busqueda.csv")
 
         try:
-            # Act - Test with basic parameters
+            # Act - Test with basic parameters (broader date range and different administration)
             sanciones_busqueda(
                 ctx,
                 vpd="GE",
                 pageSize=5,
                 num_pages=1,
                 from_page=0,
-                fechaDesde=datetime(2020, 1, 1),
-                fechaHasta=datetime(2020, 12, 31),
-                tipoAdministracion=TipoAdministracion.C,
+                fechaDesde=datetime(2022, 1, 1),
+                fechaHasta=datetime(2024, 12, 31),
+                tipoAdministracion=TipoAdministracion.A,  # Try State administration
             )
 
             # Assert

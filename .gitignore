@@ -131,6 +131,9 @@ celerybeat.pid
 .env
 .venv
 .venv-*
+venv-*
+venv[0-9]*
+.venv[0-9]*
 env/
 venv/
 ENV/

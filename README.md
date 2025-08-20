@@ -156,10 +156,6 @@ These endpoints generate PDF, CSV, or Excel files instead of JSON data:
 
 **Why excluded**: The subscription system requires user authentication, password management, and email verification - functionality better suited for the official web portal rather than a CLI data extraction tool.
 
-### Documentation Gaps
-- **No Public API Documentation**: The official API documentation is not publicly accessible, making it difficult to verify current endpoint specifications
-- **Response Format Changes**: The API response format may have changed, potentially affecting data processing
-
 ### Recommended Usage
 - **Test First**: Always test commands with small datasets before large-scale usage
 - **Check API Status**: Verify that specific endpoints are working before relying on them for production use

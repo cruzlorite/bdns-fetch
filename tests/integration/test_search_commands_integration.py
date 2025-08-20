@@ -8,16 +8,16 @@ import pytest
 import json
 from datetime import datetime
 
-from bdns.api.commands.ayudasestado_busqueda import ayudasestado_busqueda
-from bdns.api.commands.concesiones_busqueda import concesiones_busqueda
-from bdns.api.commands.convocatorias_busqueda import convocatorias_busqueda
-from bdns.api.commands.minimis_busqueda import minimis_busqueda
-from bdns.api.commands.partidospoliticos_busqueda import partidospoliticos_busqueda
-from bdns.api.commands.grandesbeneficiarios_busqueda import (
+from bdns.fetch.commands.ayudasestado_busqueda import ayudasestado_busqueda
+from bdns.fetch.commands.concesiones_busqueda import concesiones_busqueda
+from bdns.fetch.commands.convocatorias_busqueda import convocatorias_busqueda
+from bdns.fetch.commands.minimis_busqueda import minimis_busqueda
+from bdns.fetch.commands.partidospoliticos_busqueda import partidospoliticos_busqueda
+from bdns.fetch.commands.grandesbeneficiarios_busqueda import (
     grandesbeneficiarios_busqueda,
 )
-from bdns.api.commands.sanciones_busqueda import sanciones_busqueda
-from bdns.api.types import TipoAdministracion
+from bdns.fetch.commands.sanciones_busqueda import sanciones_busqueda
+from bdns.fetch.types import TipoAdministracion
 
 
 @pytest.mark.integration

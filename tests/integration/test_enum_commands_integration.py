@@ -7,10 +7,10 @@ These tests make real API calls to the BDNS API.
 import pytest
 import json
 
-from bdns.api.commands.reglamentos import reglamentos
-from bdns.api.commands.grandesbeneficiarios_anios import grandesbeneficiarios_anios
-from bdns.api.commands.convocatorias_ultimas import convocatorias_ultimas
-from bdns.api.types import Ambito
+from bdns.fetch.commands.reglamentos import reglamentos
+from bdns.fetch.commands.grandesbeneficiarios_anios import grandesbeneficiarios_anios
+from bdns.fetch.commands.convocatorias_ultimas import convocatorias_ultimas
+from bdns.fetch.types import Ambito
 
 
 @pytest.mark.integration

@@ -7,7 +7,7 @@ These tests make real API calls to the BDNS API.
 import pytest
 import json
 
-from bdns.api.commands.actividades import actividades
+from bdns.fetch.commands.actividades import actividades
 
 
 @pytest.mark.integration

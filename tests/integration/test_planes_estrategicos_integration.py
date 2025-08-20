@@ -8,12 +8,12 @@ import pytest
 import json
 from datetime import datetime
 
-from bdns.api.commands.planesestrategicos import planesestrategicos
-from bdns.api.commands.planesestrategicos_busqueda import planesestrategicos_busqueda
-from bdns.api.commands.planesestrategicos_documentos import (
+from bdns.fetch.commands.planesestrategicos import planesestrategicos
+from bdns.fetch.commands.planesestrategicos_busqueda import planesestrategicos_busqueda
+from bdns.fetch.commands.planesestrategicos_documentos import (
     planesestrategicos_documentos,
 )
-from bdns.api.commands.planesestrategicos_vigencia import planesestrategicos_vigencia
+from bdns.fetch.commands.planesestrategicos_vigencia import planesestrategicos_vigencia
 
 
 @pytest.mark.integration

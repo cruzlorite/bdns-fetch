@@ -7,9 +7,9 @@ These tests make real API calls to the BDNS API.
 import pytest
 import json
 
-from bdns.api.commands.organos_agrupacion import organos_agrupacion
-from bdns.api.commands.organos_codigo import organos_codigo
-from bdns.api.types import TipoAdministracion
+from bdns.fetch.commands.organos_agrupacion import organos_agrupacion
+from bdns.fetch.commands.organos_codigo import organos_codigo
+from bdns.fetch.types import TipoAdministracion
 
 
 @pytest.mark.integration

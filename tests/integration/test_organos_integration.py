@@ -7,8 +7,8 @@ These tests make real API calls to the BDNS API.
 import pytest
 import json
 
-from bdns.api.commands.organos import organos
-from bdns.api.types import TipoAdministracion
+from bdns.fetch.commands.organos import organos
+from bdns.fetch.types import TipoAdministracion
 
 
 @pytest.mark.integration

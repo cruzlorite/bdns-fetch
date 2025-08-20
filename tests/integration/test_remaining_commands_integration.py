@@ -5,10 +5,10 @@ import pytest
 import os
 from pathlib import Path
 
-from bdns.api.commands.terceros import terceros
-from bdns.api.commands.minimis_busqueda import minimis_busqueda
-from bdns.api.commands.partidospoliticos_busqueda import partidospoliticos_busqueda
-from bdns.api.types import Ambito, TipoAdministracion
+from bdns.fetch.commands.terceros import terceros
+from bdns.fetch.commands.minimis_busqueda import minimis_busqueda
+from bdns.fetch.commands.partidospoliticos_busqueda import partidospoliticos_busqueda
+from bdns.fetch.types import Ambito, TipoAdministracion
 from datetime import datetime
 
 

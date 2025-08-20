@@ -7,12 +7,12 @@ These tests make real API calls to the BDNS API.
 import pytest
 import json
 
-from bdns.api.commands.regiones import regiones
-from bdns.api.commands.instrumentos import instrumentos
-from bdns.api.commands.sectores import sectores
-from bdns.api.commands.finalidades import finalidades
-from bdns.api.commands.beneficiarios import beneficiarios
-from bdns.api.commands.objetivos import objetivos
+from bdns.fetch.commands.regiones import regiones
+from bdns.fetch.commands.instrumentos import instrumentos
+from bdns.fetch.commands.sectores import sectores
+from bdns.fetch.commands.finalidades import finalidades
+from bdns.fetch.commands.beneficiarios import beneficiarios
+from bdns.fetch.commands.objetivos import objetivos
 
 
 @pytest.mark.integration

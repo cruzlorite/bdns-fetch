@@ -1,12 +1,12 @@
-# Makefile for BDNS API project
+# Makefile for BDNS Fetch project
 
 .PHONY: help install dev-install test test-integration test-working lint format clean all
 
 .DEFAULT_GOAL := help
 
 help: ## Show this help message
-	@echo "BDNS API - Available Make Targets:"
-	@echo "================================="
+	@echo "BDNS Fetch - Available Make Targets:"
+	@echo "===================================="
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
 install: ## Install project dependencies

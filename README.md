@@ -1,6 +1,6 @@
-BDNS API
-========
-[![PyPI version](https://badge.fury.io/py/bdns-api.svg)](https://badge.fury.io/py/bdns-api)
+BDNS Fetch
+===========
+[![PyPI version](https://badge.fury.io/py/bdns-fetch.svg)](https://badge.fury.io/py/bdns-fetch)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
@@ -18,13 +18,13 @@ This tool provides access to all **29 BDNS API endpoints**. Each command fetches
 
 For a complete list of all commands and their parameters, use:
 ```bash
-bdns-api --help
+bdns-fetch --help
 ```
 
 For help on a specific command:
 ```bash
-bdns-api [command-name] --help
-# Example: bdns-api organos --help
+bdns-fetch [command-name] --help
+# Example: bdns-fetch organos --help
 ```
 
 **📖 API Documentation**: Complete endpoint documentation is available at [BDNS API Swagger](https://www.infosubvenciones.es/bdnstrans/doc/swagger)
@@ -35,13 +35,13 @@ bdns-api [command-name] --help
 
 **From PyPI (recommended):**
 ```bash
-pip install bdns-api
+pip install bdns-fetch
 ```
 
 **From source:**
 ```bash
-git clone https://github.com/cruzlorite/bdns-api.git
-cd bdns-api
+git clone https://github.com/cruzlorite/bdns-fetch.git
+cd bdns-fetch
 poetry install
 ```
 
@@ -50,30 +50,30 @@ poetry install
 **Getting Help:**
 ```bash
 # List all available commands
-bdns-api --help
+bdns-fetch --help
 
 # Get help for a specific command  
-bdns-api organos --help
-bdns-api ayudasestado-busqueda --help
+bdns-fetch organos --help
+bdns-fetch ayudasestado-busqueda --help
 ```
 
 **Basic Examples:**
 ```bash
 # Fetch government organs data to file
-bdns-api organos --output-file government_organs.jsonl
+bdns-fetch organos --output-file government_organs.jsonl
 
 # Get economic activities (to stdout by default)
-bdns-api actividades
+bdns-fetch actividades
 
 # Search state aids with filters
-bdns-api ayudasestado-busqueda \
+bdns-fetch ayudasestado-busqueda \
   --descripcion "innovation" \
   --num-pages 3 \
   --pageSize 1000 \
   --output-file innovation_aids.jsonl
 
 # Get specific strategic plan by ID
-bdns-api planesestrategicos --idPES 459 --output-file plan_459.jsonl
+bdns-fetch planesestrategicos --idPES 459 --output-file plan_459.jsonl
 ```
 
 **Common Parameters:**
@@ -85,7 +85,7 @@ bdns-api planesestrategicos --idPES 459 --output-file plan_459.jsonl
 **Advanced Search Example:**
 ```bash
 # Search concessions with multiple filters
-bdns-api concesiones-busqueda \
+bdns-fetch concesiones-busqueda \
   --descripcion "research" \
   --fechaDesde "2023-01-01" \
   --fechaHasta "2024-12-31" \
@@ -98,16 +98,16 @@ bdns-api concesiones-busqueda \
 
 ```bash
 # Download all government organs
-bdns-api organos --output-file government_structure.jsonl
+bdns-fetch organos --output-file government_structure.jsonl
 
 # Search for innovation-related subsidies
-bdns-api ayudasestado-busqueda --descripcion "innovation" --output-file innovation_aids.jsonl
+bdns-fetch ayudasestado-busqueda --descripcion "innovation" --output-file innovation_aids.jsonl
 
 # Get latest calls for proposals
-bdns-api convocatorias-ultimas --output-file latest_calls.jsonl
+bdns-fetch convocatorias-ultimas --output-file latest_calls.jsonl
 
 # Search sanctions data
-bdns-api sanciones-busqueda --output-file sanctions.jsonl
+bdns-fetch sanciones-busqueda --output-file sanctions.jsonl
 ```
 
 Output format (JSON Lines):
@@ -125,8 +125,8 @@ Output format (JSON Lines):
 ### Development Setup
 ```bash
 # Clone and setup
-git clone https://github.com/cruzlorite/bdns-api.git
-cd bdns-api
+git clone https://github.com/cruzlorite/bdns-fetch.git
+cd bdns-fetch
 poetry install --with dev
 
 # Available Make targets

@@ -21,7 +21,7 @@ from bdns.fetch.endpoints import BDNS_API_ENDPOINT_PLANESESTRATEGICOS_VIGENCIA
 
 def planesestrategicos_vigencia(ctx: typer.Context) -> None:
     """
-    Fetches all start and end years of validity for strategic plans.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/planesestrategicos/vigencia
     """
     params = {}
     fetch_and_write(

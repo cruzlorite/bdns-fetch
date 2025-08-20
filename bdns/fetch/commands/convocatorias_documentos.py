@@ -24,7 +24,7 @@ def convocatorias_documentos(
     idDocumento: int = options.idDocumento_required,
 ) -> None:
     """
-    Obtiene el documento de una convocatoria.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/convocatorias/documentos
     """
     params = {"idDocumento": idDocumento}
     fetch_and_write_raw(

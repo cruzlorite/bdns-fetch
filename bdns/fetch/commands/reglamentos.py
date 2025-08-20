@@ -24,7 +24,7 @@ def reglamentos(
     ctx: typer.Context, vpd: str = options.vpd, ambito: Ambito = options.ambito
 ) -> None:
     """
-    Fetches all regulations (EU) from a portal ordered by the description.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/reglamentos
     """
     params = {
         "vpd": vpd,

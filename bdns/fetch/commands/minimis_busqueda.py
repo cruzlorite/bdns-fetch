@@ -47,7 +47,7 @@ def minimis_busqueda(
     finalidad: int = options.finalidad,
 ) -> None:
     """
-    Fetches concesiones data from the BDNS API based on search parameters.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/minimis/busqueda
     """
     params = {
         "pageSize": pageSize,

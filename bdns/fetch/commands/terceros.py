@@ -27,7 +27,7 @@ def terceros(
     idPersona: int = options.idPersona,
 ) -> None:
     """
-    Fetches all types of terceros from the BDNS API ordered by the 'orden' field.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/terceros
     """
     params = {
         "vpd": vpd,

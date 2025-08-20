@@ -21,7 +21,7 @@ from bdns.fetch.endpoints import BDNS_API_ENDPOINT_TIPOS_BENEFICIARIOS
 
 def beneficiarios(ctx: typer.Context, vpd: str = options.vpd) -> None:
     """
-    Fetches the list of tipos de beneficiarios from the BDNS API.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/beneficiarios
     """
     params = {"vpd": vpd}
     fetch_and_write(

@@ -39,7 +39,7 @@ def planesestrategicos_busqueda(
     vigenciaHasta: datetime = options.vigenciaHasta,
 ) -> None:
     """
-    Fetches the list of registered strategic plans.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/planesestrategicos/busqueda
     """
     params = {
         "pageSize": pageSize,

@@ -47,7 +47,7 @@ def convocatorias_busqueda(
     ayudaEstado: str = options.ayudaEstado,
 ) -> None:
     """
-    Fetches convocatorias data from the BDNS API based on search parameters.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/convocatorias/busqueda
     """
     params = {
         "pageSize": pageSize,

@@ -24,7 +24,7 @@ def organos_codigoadmin(
     codigoAdmin: str = options.codigoAdmin_required,
 ) -> None:
     """
-    Obtiene los órganos en función del código admin.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/organos/codigoAdmin
     """
     params = {"codigoAdmin": codigoAdmin}
     fetch_and_write(

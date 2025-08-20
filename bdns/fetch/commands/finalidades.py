@@ -21,7 +21,7 @@ from bdns.fetch.endpoints import BDNS_API_ENDPOINT_FINALIDADES
 
 def finalidades(ctx: typer.Context, vpd: str = options.vpd) -> None:
     """
-    Fetches all types of finalidades from the BDNS API ordered by the 'orden' field.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/finalidades
     """
     params = {"vpd": vpd}
     fetch_and_write(

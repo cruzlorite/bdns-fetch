@@ -17,22 +17,22 @@ from bdns.fetch.utils import format_url
 from bdns.fetch.types import TipoAdministracion
 from bdns.fetch.fetch_write import fetch_and_write
 from bdns.fetch.commands import options
-from bdns.fetch.endpoints import BDNS_API_ENDPOINT_ORGANOS
+from bdns.fetch.endpoints import BDNS_API_ENDPOINT_ORGANOS_AGRUPACION
 
 
 def organos_agrupacion(
     ctx: typer.Context,
     vpd: str = options.vpd,
-    idAdmon: TipoAdministracion = options.idAdmon,
+    idAdmon: TipoAdministracion = options.idAdmon_required,
 ) -> None:
     """
-    Fetches the grouping of the organs of a portal based on the requested type of administration in tree form and ordered by description.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/organos/agrupacion
     """
     params = {
         "vpd": vpd,
-        "idAdmon": idAdmon.value if idAdmon else None,
+        "idAdmon": idAdmon.value,
     }
     fetch_and_write(
-        url=format_url(BDNS_API_ENDPOINT_ORGANOS, params),
+        url=format_url(BDNS_API_ENDPOINT_ORGANOS_AGRUPACION, params),
         output_file=ctx.obj["output_file"],
     )

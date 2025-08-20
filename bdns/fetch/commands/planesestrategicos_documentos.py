@@ -24,7 +24,7 @@ def planesestrategicos_documentos(
     idDocumento: int = options.idDocumento_required,
 ) -> None:
     """
-    Obtiene el documento de un plan estratégico específico por su identificador.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/planesestrategicos/documentos
     """
     params = {"idDocumento": idDocumento}
     fetch_and_write_raw(

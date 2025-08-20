@@ -20,7 +20,7 @@ from bdns.fetch.endpoints import BDNS_API_ENDPOINT_SECTORES
 
 def sectores(ctx: typer.Context) -> None:
     """
-    Fetches all product sectors in order.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/sectores
     """
     params = {}
     fetch_and_write(

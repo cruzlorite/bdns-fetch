@@ -73,8 +73,25 @@ def common_callback(
     max_concurrent_requests: int = options.max_concurrent_requests,
 ):
     """
-    Common callback for all commands.
-    This function sets up the context for all commands and handles the output file option.
+    BDNS Fetch - Base de Datos Nacional de Subvenciones (BDNS) CLI
+
+    Fetch data from the Base de Datos Nacional de Subvenciones (BDNS).
+
+    \b
+    Features:
+      • 29+ commands for all BDNS API endpoints
+      • Search grants, subsidies, beneficiaries, and administrative data
+      • Export data in JSON Lines format for analysis
+      • Built-in pagination and concurrent request handling
+
+    \b
+    Examples:
+      bdns-fetch organos --output-file organs.jsonl
+      bdns-fetch convocatorias-busqueda --fechaDesde "2024-01-01"
+      bdns-fetch ayudasestado-busqueda --descripcion "innovation"
+
+    \b
+    Official API: https://www.infosubvenciones.es/bdnstrans/api
     """
     ctx.obj = {
         "output_file": output_file,

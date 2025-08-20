@@ -39,7 +39,7 @@ def partidospoliticos_busqueda(
     fechaHasta: datetime = options.fechaHasta,
 ) -> None:
     """
-    Fetches concesiones data from the BDNS API based on search parameters.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/partidospoliticos/busqueda
     """
     params = {
         "pageSize": pageSize,

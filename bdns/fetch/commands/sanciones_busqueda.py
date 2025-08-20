@@ -45,7 +45,7 @@ def sanciones_busqueda(
     actividad: List[int] = options.actividad,
 ) -> None:
     """
-    Fetches the list of registered sanctions.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/sanciones/busqueda
     """
     params = {
         "pageSize": pageSize,

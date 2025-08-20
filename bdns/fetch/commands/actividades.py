@@ -19,9 +19,12 @@ from bdns.fetch.commands import options
 from bdns.fetch.endpoints import BDNS_API_ENDPOINT_ACTIVIDADES
 
 
-def actividades(ctx: typer.Context, vpd: str = options.vpd) -> None:
+def actividades(
+    ctx: typer.Context,
+    vpd: str = options.vpd,
+) -> None:
     """
-    Fetches all NACE activities from a portal in order.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/actividades
     """
     params = {"vpd": vpd}
     fetch_and_write(

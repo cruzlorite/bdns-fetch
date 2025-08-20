@@ -24,7 +24,7 @@ def planesestrategicos(
     idPES: int = options.idPES_required,
 ) -> None:
     """
-    Obtiene un plan estratégico específico por su identificador.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/planesestrategicos
     """
     params = {"idPES": idPES}
     fetch_and_write(

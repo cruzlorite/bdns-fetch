@@ -24,7 +24,7 @@ def organos_codigo(
     codigo: str = options.codigo,
 ) -> None:
     """
-    Obtiene los órganos en función del código.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/organos/codigo
     """
     params = {
         "codigo": codigo,

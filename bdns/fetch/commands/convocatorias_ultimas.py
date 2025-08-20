@@ -32,7 +32,7 @@ def convocatorias_ultimas(
     vpd: str = options.vpd,
 ) -> None:
     """
-    Fetches convocatorias data from the BDNS API based on search parameters.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/convocatorias/ultimas
     """
     params = {"pageSize": pageSize, "order": order, "direccion": direccion, "vpd": vpd}
     asyncio.run(

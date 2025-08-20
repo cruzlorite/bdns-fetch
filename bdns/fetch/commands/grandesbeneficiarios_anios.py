@@ -20,7 +20,7 @@ from bdns.fetch.endpoints import BDNS_API_ENDPOINT_GRANDES_BENEFICIARIOS_ANIOS
 
 def grandesbeneficiarios_anios(ctx: typer.Context) -> None:
     """
-    Fetches the list of years for grandes beneficiarios from the BDNS API.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/grandesbeneficiarios/anios
     """
     params = {}
     fetch_and_write(

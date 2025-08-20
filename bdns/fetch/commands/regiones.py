@@ -21,7 +21,7 @@ from bdns.fetch.endpoints import BDNS_API_ENDPOINT_REGIONES
 
 def regiones(ctx: typer.Context, vpd: str = options.vpd) -> None:
     """
-    Fetches all types of regiones from the BDNS API ordered by the 'orden' field.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/regiones
     """
     params = {"vpd": vpd}
     fetch_and_write(

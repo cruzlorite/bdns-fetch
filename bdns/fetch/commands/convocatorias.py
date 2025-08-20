@@ -23,7 +23,7 @@ def convocatorias(
     ctx: typer.Context, vpd: str = options.vpd, numConv: str = options.numConv_required
 ) -> None:
     """
-    Searches one convocatoria by VPD and numConv.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/convocatorias
     """
     params = {"vpd": vpd, "numConv": numConv}
     fetch_and_write(

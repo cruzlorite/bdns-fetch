@@ -37,7 +37,7 @@ def grandesbeneficiarios_busqueda(
     beneficiario: int = options.beneficiario,
 ) -> None:
     """
-    Fetches grandes beneficiarios data from the BDNS API based on search parameters.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/grandesbeneficiarios/busqueda
     """
     # Use anio if provided, otherwise use anios
     years_param = anio if anio is not None else anios

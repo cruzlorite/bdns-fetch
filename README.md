@@ -4,17 +4,17 @@ BDNS Fetch
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-A comprehensive command-line tool for accessing and processing data from the BDNS (Base de Datos Nacional de Subvenciones) API - the Spanish government's national subsidies database.
+A comprehensive command-line tool for accessing and processing data from the Base de Datos Nacional de Subvenciones (BDNS) API.
 
 ## ✨ Features
 
-- **29 API Commands**: Complete coverage of all BDNS API endpoints
+- **30 Data Extraction Commands**: Covers all data extraction endpoints from the BDNS API (30 out of 46 total endpoints)
 - **JSONL Output Format**: Clean JSON Lines format for easy data processing
 - **Flexible Configuration**: Customizable parameters for each command
 
 ## 📋 Available Commands
 
-This tool provides access to all **29 BDNS API endpoints**. Each command fetches specific data from the Spanish government's subsidies database.
+This tool provides access to **30 BDNS API data extraction endpoints**. Each command fetches specific data from the Base de Datos Nacional de Subvenciones (BDNS).
 
 For a complete list of all commands and their parameters, use:
 ```bash
@@ -27,7 +27,7 @@ bdns-fetch [command-name] --help
 # Example: bdns-fetch organos --help
 ```
 
-**📖 API Documentation**: Complete endpoint documentation is available at [BDNS API Swagger](https://www.infosubvenciones.es/bdnstrans/doc/swagger)
+**📖 API Documentation**: Complete endpoint documentation is available at [BDNS API Swagger](https://www.infosubvenciones.es/bdnstrans/estaticos/doc/snpsap-api.json)
 
 ## 🚀 Quick Start
 
@@ -115,6 +115,63 @@ Output format (JSON Lines):
 {"id": 1, "descripcion": "MINISTERIO DE AGRICULTURA, PESCA Y ALIMENTACIÓN", "codigo": "E04"}
 {"id": 2, "descripcion": "MINISTERIO DE ASUNTOS EXTERIORES, UNIÓN EUROPEA Y COOPERACIÓN", "codigo": "E05"}
 ```
+
+## ⚠️ Current Limitations
+
+### Missing Commands
+**This tool implements 30 out of 46 total API endpoints**. The following 16 commands are **intentionally not included**:
+
+#### Export/Download Endpoints (9 missing)
+These endpoints generate PDF, CSV, or Excel files instead of JSON data:
+- `convocatorias/exportar` - Export search results to files
+- `convocatorias/ultimas/exportar` - Export latest calls to files
+- `concesiones/exportar` - Export concessions search to files
+- `ayudasestado/exportar` - Export state aids search to files
+- `minimis/exportar` - Export minimis search to files
+- `grandesbeneficiarios/exportar` - Export large beneficiaries to files
+- `partidospoliticos/exportar` - Export political parties search to files
+- `planesestrategicos/exportar` - Export strategic plans to files
+- `sanciones/exportar` - Export sanctions search to files
+
+**Why excluded**: These endpoints return binary file data (PDF/Excel/CSV) instead of structured JSON data, making them unsuitable for a CLI tool focused on data extraction and processing.
+
+#### Portal Configuration Endpoints (2 missing)
+- `vpd/{vpd}/configuracion` - Get portal navigation configuration
+- `enlaces` - Get portal links and micro-windows
+
+**Why excluded**: These endpoints return web portal configuration data (navigation menus, links) that are not relevant for data extraction purposes.
+
+#### Subscription/Alert System (5 missing)
+- `suscripciones/alta` - Create new alert subscription
+- `suscripciones/altaidentificado` - Create subscription with token
+- `suscripciones/activar` - Activate subscription
+- `suscripciones/login` - Login to subscription service
+- `suscripciones/cerrar` - Close session
+- `suscripciones/detalle` - Get subscription details
+- `suscripciones/modificar` - Modify subscription
+- `suscripciones/anular` - Cancel subscription
+- `suscripciones/reactivar` - Reactivate subscription
+- `suscripciones/recuperarcontrasena` - Recover password
+- `suscripciones/restablecercontrasena` - Reset password
+
+**Why excluded**: The subscription system requires user authentication, password management, and email verification - functionality better suited for the official web portal rather than a CLI data extraction tool.
+
+### Documentation Gaps
+- **No Public API Documentation**: The official API documentation is not publicly accessible, making it difficult to verify current endpoint specifications
+- **Response Format Changes**: The API response format may have changed, potentially affecting data processing
+
+### Recommended Usage
+- **Test First**: Always test commands with small datasets before large-scale usage
+- **Check API Status**: Verify that specific endpoints are working before relying on them for production use
+- **Monitor for Updates**: The Spanish government may update the API without notice
+
+### Alternative Data Sources
+If you encounter issues with the API, consider:
+- **Manual Portal**: Use the [BDNS web portal](https://www.infosubvenciones.es/bdnstrans/GE/es/home) for manual data access
+- **Contact Support**: Reach out to the Spanish government's technical support for API access issues
+- **Community Support**: Check the project's [GitHub Issues](https://github.com/cruzlorite/bdns-fetch/issues) for community-reported solutions
+
+This tool remains valuable for when the API is accessible and serves as a comprehensive interface for all **data extraction endpoints** in the BDNS API.
 
 ## 🛠️ Development
 

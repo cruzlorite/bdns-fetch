@@ -25,7 +25,7 @@ def convocatorias_pdf(
     vpd: str = options.vpd_required,
 ) -> None:
     """
-    Obtiene la convocatoria en formato pdf.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/convocatorias/pdf
     """
     params = {"id": id, "vpd": vpd}
     fetch_and_write_raw(

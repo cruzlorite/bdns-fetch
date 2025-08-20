@@ -48,8 +48,6 @@ def ayudasestado_busqueda(
 ) -> None:
     """
     Fetches data from https://www.infosubvenciones.es/bdnstrans/api/ayudasestado/busqueda
-    
-    Searches state aids data from the BDNS API based on search parameters.
     """
     params = {
         "vpd": vpd,

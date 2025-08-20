@@ -23,16 +23,14 @@ from bdns.fetch.endpoints import BDNS_API_ENDPOINT_ORGANOS
 def organos(
     ctx: typer.Context,
     vpd: str = options.vpd,
-    idAdmon: TipoAdministracion = options.idAdmon,
+    idAdmon: TipoAdministracion = options.idAdmon_required,
 ) -> None:
     """
     Fetches data from https://www.infosubvenciones.es/bdnstrans/api/organos
-    
-    Retrieves all types of organs from the BDNS API ordered by the 'descripcion' field.
     """
     params = {
         "vpd": vpd,
-        "idAdmon": idAdmon.value if idAdmon else None,
+        "idAdmon": idAdmon.value,
     }
     fetch_and_write(
         url=format_url(BDNS_API_ENDPOINT_ORGANOS, params),

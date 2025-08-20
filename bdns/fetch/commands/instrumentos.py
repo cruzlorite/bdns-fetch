@@ -21,7 +21,7 @@ from bdns.fetch.endpoints import BDNS_API_ENDPOINT_INSTRUMENTOS
 
 def instrumentos(ctx: typer.Context, vpd: str = options.vpd) -> None:
     """
-    Fetches all aid instruments from a portal ordered by the 'orden' field.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/instrumentos
     """
     params = {"vpd": vpd}
     fetch_and_write(

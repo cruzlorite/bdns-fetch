@@ -21,7 +21,7 @@ from bdns.fetch.endpoints import BDNS_API_ENDPOINT_OBJETIVOS
 
 def objetivos(ctx: typer.Context, vpd: str = options.vpd) -> None:
     """
-    Fetches all types of objectives from the BDNS API ordered by the 'descripcion' field.
+    Fetches data from https://www.infosubvenciones.es/bdnstrans/api/objetivos
     """
     params = {"vpd": vpd}
     fetch_and_write(

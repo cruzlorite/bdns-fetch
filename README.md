@@ -128,7 +128,6 @@ Output format (JSON Lines):
 
 ## 🔧 Error Handling & Debugging
 
-### Clean Error Messages
 The tool provides user-friendly error messages for common API issues:
 
 ```bash
@@ -137,36 +136,7 @@ $ bdns-fetch ayudasestado-busqueda --vpd INVALID_PORTAL
 Error (ERR_VALIDACION): El parámetro 'vpd' indica un portal no válido.
 ```
 
-### Verbose Logging
-Use the `--verbose` flag to see detailed HTTP request and response information:
-
-```bash
-# Enable verbose logging for debugging
-$ bdns-fetch --verbose ayudasestado-busqueda --pageSize 1
-
-DEBUG:bdns.fetch.fetch_write:HTTP REQUEST: GET https://www.infosubvenciones.es/bdnstrans/api/ayudasestado/busqueda?vpd=GE&pageSize=1&page=0
-DEBUG:bdns.fetch.fetch_write:HTTP RESPONSE: 200  - 163.6ms
-DEBUG:bdns.fetch.fetch_write:Response Headers: {'Date': 'Wed, 20 Aug 2025 21:27:27 GMT', 'Content-Type': 'application/json', ...}
-DEBUG:bdns.fetch.fetch_write:Response Content-Length: 1814 bytes
-DEBUG:bdns.fetch.fetch_write:Response contains 1 items
-DEBUG:bdns.fetch.fetch_write:Total pages available: 5783747
-DEBUG:bdns.fetch.fetch_write:Current page: 0
-```
-
-**Verbose logging includes:**
-- Timestamps for all operations
-- Complete HTTP request URLs
-- Response status codes and timing (in milliseconds)  
-- Full HTTP response headers
-- Response content size and structure analysis
-- Error details for troubleshooting
-
-**When to use verbose mode:**
-- Debugging API connectivity issues
-- Analyzing response times and performance
-- Understanding API rate limiting behavior
-- Troubleshooting parameter validation errors
-- Monitoring large data extraction jobs
+Use --verbose for detailed logging.
 
 ## ⚠️ Current Limitations
 

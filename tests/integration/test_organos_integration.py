@@ -39,13 +39,12 @@ class TestOrganosIntegration:
                         data.append(json.loads(line.strip()))
 
             assert isinstance(data, list), "Should return a list of records"
-            assert len(data) >= 0, "Should return data (could be empty for this filter)"
+            assert len(data) > 0, "Should return data with actual records"
 
             print(
                 f"✅ Success: Retrieved {len(data)} organos records for Administración del Estado"
             )
-            if len(data) > 0:
-                print(f"Sample: {data[0]['descripcion']}")
+            print(f"Sample: {data[0]['descripcion']}")
 
         finally:
             cleanup_test_file(output_path)

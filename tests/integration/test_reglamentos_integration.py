@@ -1,29 +1,30 @@
 # -*- coding: utf-8 -*-
 """
-Integration tests for organos-related commands.
+Integration tests for the reglamentos command.
 These tests make real API calls to the BDNS API.
 """
 
 import pytest
 import json
 
-from bdns.fetch.commands.organos_agrupacion import organos_agrupacion
-from bdns.fetch.commands.organos_codigo import organos_codigo
-from bdns.fetch.types import TipoAdministracion
+from bdns.fetch.commands.reglamentos import reglamentos
+from bdns.fetch.types import Ambito
 
 
 @pytest.mark.integration
-class TestOrganosVariantsIntegration:
-    """Integration tests for organos variant commands."""
+class TestReglamentosIntegration:
+    """Integration tests for the reglamentos command."""
 
-    def test_organos_agrupacion_real_api(self, get_test_context, cleanup_test_file):
-        """Test organos_agrupacion command with real API."""
+    def test_reglamentos_real_api_concesiones(
+        self, get_test_context, cleanup_test_file
+    ):
+        """Test reglamentos command with real API - Concesiones scope."""
         # Arrange
-        ctx, output_path = get_test_context("organos_agrupacion.csv")
+        ctx, output_path = get_test_context("reglamentos_concesiones.csv")
 
         try:
-            # Act - Test with TipoAdministracion.C
-            organos_agrupacion(ctx, vpd="GE", idAdmon=TipoAdministracion.C)
+            # Act - Test with Ambito.C (Concesiones)
+            reglamentos(ctx, vpd="GE", ambito=Ambito.C)
 
             # Assert
             assert output_path.exists(), (
@@ -37,23 +38,25 @@ class TestOrganosVariantsIntegration:
                     if line.strip():
                         data.append(json.loads(line.strip()))
 
-            assert len(data) >= 0, "Should return organos agrupacion data"
-
-            print(f"✅ Success: Retrieved {len(data)} organos agrupacion records")
+            print(
+                f"✅ Success: Retrieved {len(data)} reglamentos records for Concesiones"
+            )
             if len(data) > 0:
                 print(f"Sample: {data[0]['descripcion']}")
 
         finally:
             cleanup_test_file(output_path)
 
-    def test_organos_codigo_real_api(self, get_test_context, cleanup_test_file):
-        """Test organos_codigo command with real API."""
+    def test_reglamentos_real_api_ayudas_estado(
+        self, get_test_context, cleanup_test_file
+    ):
+        """Test reglamentos command with real API - Ayudas de Estado scope."""
         # Arrange
-        ctx, output_path = get_test_context("organos_codigo.csv")
+        ctx, output_path = get_test_context("reglamentos_ayudas.csv")
 
         try:
-            # Act - Test with TipoAdministracion.A
-            organos_codigo(ctx, vpd="GE", idAdmon=TipoAdministracion.A)
+            # Act - Test with Ambito.A (Ayudas de Estado)
+            reglamentos(ctx, vpd="GE", ambito=Ambito.A)
 
             # Assert
             assert output_path.exists(), (
@@ -67,9 +70,9 @@ class TestOrganosVariantsIntegration:
                     if line.strip():
                         data.append(json.loads(line.strip()))
 
-            assert len(data) >= 0, "Should return organos codigo data"
-
-            print(f"✅ Success: Retrieved {len(data)} organos codigo records")
+            print(
+                f"✅ Success: Retrieved {len(data)} reglamentos records for Ayudas de Estado"
+            )
             if len(data) > 0:
                 print(f"Sample: {data[0]['descripcion']}")
 

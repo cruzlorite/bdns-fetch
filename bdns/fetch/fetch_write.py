@@ -69,7 +69,7 @@ def write_to_file(output_stream, item):
 @retry(
     wait=wait_fixed(WAIT_TIME),
     stop=stop_after_attempt(MAX_RETRIES),
-    retry=retry_if_exception_type(Exception),
+    retry=retry_if_exception_type((ConnectionError, requests.RequestException)),
     before_sleep=log_retry_attempt,
 )
 def fetch_and_write(url, output_file):
@@ -96,12 +96,14 @@ def fetch_and_write_raw(url, output_file):
         url (str): The URL to fetch the document from.
         output_file (str): The file to write the document to.
     """
+    from bdns.fetch.exceptions import handle_api_response
+
     response = requests.get(url)
     if response.status_code == 200:
         result = response.content
     else:
-        raise Exception(
-            f"Failed to fetch data from {url}: {response.status_code}: {response.text}"
+        raise handle_api_response(
+            response.status_code, url, response.text, dict(response.headers)
         )
     if response:
         with smart_open(output_file, "wb") as f:
@@ -113,7 +115,7 @@ def fetch_and_write_raw(url, output_file):
 @retry(
     wait=wait_fixed(WAIT_TIME),
     stop=stop_after_attempt(MAX_RETRIES),
-    retry=retry_if_exception_type(Exception),
+    retry=retry_if_exception_type((ConnectionError, aiohttp.ClientConnectionError)),
     before_sleep=log_retry_attempt,
 )
 async def async_fetch_and_enqueue_paginated(semaphore, session, url, queue):
@@ -129,18 +131,68 @@ async def async_fetch_and_enqueue_paginated(semaphore, session, url, queue):
             - is_last (bool): True if this is the last page, False otherwise.
             - total_pages (int): The total number of pages available.
     """
+    logger = logging.getLogger(__name__)
+
     async with semaphore:
+        # Log the outgoing request
+        logger.debug(f"HTTP REQUEST: GET {url}")
+
+        start_time = asyncio.get_event_loop().time()
         async with session.get(url) as resp:
-            resp.raise_for_status()
+            end_time = asyncio.get_event_loop().time()
+            response_time = (end_time - start_time) * 1000  # Convert to milliseconds
+
+            # Log response details
+            logger.debug(
+                f"HTTP RESPONSE: {resp.status} {resp.reason} - {response_time:.1f}ms"
+            )
+            logger.debug(f"Response Headers: {dict(resp.headers)}")
+
             data = await resp.json()
+
+            # Log response content size and basic info
+            content_size = len(await resp.text()) if hasattr(resp, "text") else 0
+            logger.debug(f"Response Content-Length: {content_size} bytes")
+
+            if isinstance(data, dict):
+                if "content" in data and isinstance(data["content"], list):
+                    logger.debug(f"Response contains {len(data['content'])} items")
+                if "totalPages" in data:
+                    logger.debug(f"Total pages available: {data['totalPages']}")
+                if "number" in data:
+                    logger.debug(f"Current page: {data['number']}")
+
+            # Handle API errors
             if "codigo" in data and "error" in data:
-                raise aiohttp.ClientResponseError(
-                    request_info=resp.request_info,
-                    history=resp.history,
-                    status=resp.status,
-                    message=f"code={data['codigo']}, error={data['error']}",
-                    headers=resp.headers,
+                logger.error(f"API Error Response: {data}")
+                from bdns.fetch.exceptions import BDNSAPIError
+
+                tech_details = (
+                    f"API error code {data['codigo']}: {data['error']} from {url}"
                 )
+                tech_details += f"\nResponse status: {resp.status}"
+                tech_details += f"\nResponse headers: {dict(resp.headers)}"
+                tech_details += f"\nFull response data: {data}"
+
+                raise BDNSAPIError(
+                    message=f"API returned error: {data['error']}",
+                    suggestion="Check your parameters and try again. Use --help for valid options.",
+                    technical_details=tech_details,
+                )
+
+            if resp.status != 200:
+                logger.error(f"HTTP Error {resp.status}: {resp.reason}")
+                logger.error(f"Response body: {data}")
+                import json
+                from bdns.fetch.exceptions import handle_api_error
+
+                response_text = (
+                    json.dumps(data) if isinstance(data, dict) else str(data)
+                )
+                raise handle_api_error(
+                    resp.status, url, response_text, dict(resp.headers)
+                )
+
             await queue.put(data["content"])
             return data.get("number", None), data.get("totalPages")
 

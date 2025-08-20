@@ -74,14 +74,26 @@ def api_request(url):
     Returns:
         dict: A dictionary containing concessions data.
     Raises:
-        Exception: If the API request fails.
+        BDNSAPIError: If the API request fails.
     """
+    from bdns.fetch.exceptions import handle_api_error
+
     response = requests.get(url)
+
     if response.status_code == 200:
         result = response.json()
+        # Check if the API returned empty data
+        if not result or (isinstance(result, list) and len(result) == 0):
+            from bdns.fetch.exceptions import handle_api_response
+
+            raise handle_api_response(200, url, response.text, dict(response.headers))
+        return result
     else:
-        raise Exception(
-            f"Failed to fetch data from {url}: {response.status_code}: {response.text}"
+        # Server returned an error - show the actual server response
+        from bdns.fetch.exceptions import handle_api_response
+
+        raise handle_api_response(
+            response.status_code, url, response.text, dict(response.headers)
         )
     return result
 

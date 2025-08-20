@@ -22,11 +22,13 @@ It allows users to fetch data from the API and save it to a file or print it to 
 
 from pathlib import Path
 import logging
+import sys
 
 import typer
 
 from bdns.fetch.commands import *
 from bdns.fetch.commands import options
+from bdns.fetch.exceptions import BDNSError, BDNSWarning
 
 # Configure logging
 logging.basicConfig(
@@ -71,6 +73,13 @@ def common_callback(
     ctx: typer.Context,
     output_file: Path = options.output_file,
     max_concurrent_requests: int = options.max_concurrent_requests,
+    verbose_flag: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Enable verbose logging to show detailed HTTP requests and responses.",
+        show_default=True,
+    ),
 ):
     """
     BDNS Fetch - Base de Datos Nacional de Subvenciones (BDNS) CLI
@@ -96,8 +105,27 @@ def common_callback(
     ctx.obj = {
         "output_file": output_file,
         "max_concurrent_requests": max_concurrent_requests,
+        "verbose": verbose_flag,
     }
+
+    # Configure logging based on verbose flag
+    if verbose_flag:
+        # Set detailed logging for HTTP requests/responses
+        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger("bdns.fetch").setLevel(logging.DEBUG)
+        logging.getLogger("aiohttp.client").setLevel(logging.DEBUG)
+        # Enable urllib3 logging for even more HTTP details
+        logging.getLogger("urllib3.connectionpool").setLevel(logging.DEBUG)
+    else:
+        # Keep default INFO level for normal operation
+        logging.getLogger().setLevel(logging.INFO)
 
 
 if __name__ == "__main__":
-    app()
+    try:
+        app()
+    except (BDNSError, BDNSWarning) as e:
+        # Clean error handling for BDNS-specific errors only
+        typer.secho(f"{e}", fg=typer.colors.RED, err=True)
+        sys.exit(1)
+    # All other exceptions will be handled by Typer/Rich with full tracebacks

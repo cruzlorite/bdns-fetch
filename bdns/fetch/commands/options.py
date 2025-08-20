@@ -304,7 +304,7 @@ idAdmon_required: TipoAdministracion = typer.Option(
     ...,
     "--idAdmon",
     "-ida",
-    help="Type of administrative body: C (State), A (Autonomous Community), L (Local Entity), O (Other)"
+    help="Type of administrative body: C (State), A (Autonomous Community), L (Local Entity), O (Other)",
 )
 ambito: Optional[Ambito] = typer.Option(
     None,

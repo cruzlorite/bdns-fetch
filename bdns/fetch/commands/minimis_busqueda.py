@@ -18,7 +18,12 @@ from typing import List
 import typer
 
 from bdns.fetch.utils import format_date_for_api_request, format_url
-from bdns.fetch.types import Order, Direccion, TipoAdministracion, DescripcionTipoBusqueda
+from bdns.fetch.types import (
+    Order,
+    Direccion,
+    TipoAdministracion,
+    DescripcionTipoBusqueda,
+)
 from bdns.fetch.fetch_write import fetch_and_write_paginated
 from bdns.fetch.commands import options
 from bdns.fetch.endpoints import BDNS_API_ENDPOINT_MINIMIS_BUSQUEDA

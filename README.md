@@ -165,14 +165,6 @@ These endpoints generate PDF, CSV, or Excel files instead of JSON data:
 - **Check API Status**: Verify that specific endpoints are working before relying on them for production use
 - **Monitor for Updates**: The Spanish government may update the API without notice
 
-### Alternative Data Sources
-If you encounter issues with the API, consider:
-- **Manual Portal**: Use the [BDNS web portal](https://www.infosubvenciones.es/bdnstrans/GE/es/home) for manual data access
-- **Contact Support**: Reach out to the Spanish government's technical support for API access issues
-- **Community Support**: Check the project's [GitHub Issues](https://github.com/cruzlorite/bdns-fetch/issues) for community-reported solutions
-
-This tool remains valuable for when the API is accessible and serves as a comprehensive interface for all **data extraction endpoints** in the BDNS API.
-
 ## 🛠️ Development
 
 ### Prerequisites

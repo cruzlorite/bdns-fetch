@@ -82,12 +82,11 @@ bdns-fetch --verbose --output-file plan_459.jsonl planesestrategicos \
 **Common Parameters:**
 - `--output-file FILE`: Save output to file (defaults to stdout)  
 - `--verbose, -v`: Enable detailed HTTP request/response logging
-- `--vpd CODE`: Territory code (GE=Spain, specific regions available)
 - `--num-pages N`: Number of pages to fetch (for paginated commands)
 - `--pageSize N`: Records per page (default: 10000, max: 10000)
 - `--max-concurrent-requests N`: Maximum concurrent API requests (default: 5)
 
-**Advanced Search Example:**
+**Paginated Search Example:**
 ```bash
 # Search concessions with multiple filters and verbose logging
 bdns-fetch --verbose --output-file research_concessions.jsonl \

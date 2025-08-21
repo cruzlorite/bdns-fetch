@@ -63,22 +63,20 @@ bdns-fetch ayudasestado-busqueda --help
 **Basic Examples:**
 ```bash
 # Fetch government organs data to file
-bdns-fetch organos --output-file government_organs.jsonl
+bdns-fetch --output-file government_organs.jsonl organos
 
 # Get economic activities (to stdout by default)
 bdns-fetch actividades
 
 # Search state aids with filters and verbose logging
-bdns-fetch --verbose ayudasestado-busqueda \
+bdns-fetch --verbose --output-file innovation_aids.jsonl ayudasestado-busqueda \
   --descripcion "innovation" \
   --num-pages 3 \
-  --pageSize 1000 \
-  --output-file innovation_aids.jsonl
+  --pageSize 1000
 
 # Get specific strategic plan by ID with debugging
-bdns-fetch --verbose planesestrategicos \
-  --idPES 459 \
-  --output-file plan_459.jsonl
+bdns-fetch --verbose --output-file plan_459.jsonl planesestrategicos \
+  --idPES 459
 ```
 
 **Common Parameters:**
@@ -92,32 +90,30 @@ bdns-fetch --verbose planesestrategicos \
 **Advanced Search Example:**
 ```bash
 # Search concessions with multiple filters and verbose logging
-bdns-fetch --verbose concesiones-busqueda \
+bdns-fetch --verbose --output-file research_concessions.jsonl \
+  --max-concurrent-requests 8 concesiones-busqueda \
   --descripcion "research" \
   --fechaDesde "2023-01-01" \
   --fechaHasta "2024-12-31" \
   --tipoAdministracion "C" \
-  --num-pages 10 \
-  --max-concurrent-requests 8 \
-  --output-file research_concessions.jsonl
+  --num-pages 10
 ```
 
 ## 📖 More Examples
 
 ```bash
 # Download all government organs
-bdns-fetch organos --output-file government_structure.jsonl
+bdns-fetch --output-file government_structure.jsonl organos
 
 # Search for innovation-related subsidies with verbose logging
-bdns-fetch --verbose ayudasestado-busqueda \
-  --descripcion "innovation" \
-  --output-file innovation_aids.jsonl
+bdns-fetch --verbose --output-file innovation_aids.jsonl ayudasestado-busqueda \
+  --descripcion "innovation"
 
 # Get latest calls for proposals
-bdns-fetch convocatorias-ultimas --output-file latest_calls.jsonl
+bdns-fetch --output-file latest_calls.jsonl convocatorias-ultimas
 
 # Search sanctions data with detailed HTTP logging
-bdns-fetch --verbose sanciones-busqueda --output-file sanctions.jsonl
+bdns-fetch --verbose --output-file sanctions.jsonl sanciones-busqueda
 ```
 
 Output format (JSON Lines):
@@ -141,7 +137,7 @@ Use --verbose for detailed logging.
 ## ⚠️ Current Limitations
 
 ### Missing Commands
-**This tool implements 30 out of 46 total API endpoints**. The following 16 commands are **intentionally not included**:
+The following commands are **intentionally not included**:
 
 #### Export/Download Endpoints (9 missing)
 These endpoints generate PDF, CSV, or Excel files instead of JSON data:
@@ -155,7 +151,7 @@ These endpoints generate PDF, CSV, or Excel files instead of JSON data:
 - `planesestrategicos/exportar` - Export strategic plans to files
 - `sanciones/exportar` - Export sanctions search to files
 
-**Why excluded**: These endpoints return binary file data (PDF/Excel/CSV) instead of structured JSON data, making them unsuitable for a CLI tool focused on data extraction and processing.
+**Why excluded**: These endpoints are thought to be better suited for the official web portal rather than a CLI data extraction tool.
 
 #### Portal Configuration Endpoints (2 missing)
 - `vpd/{vpd}/configuracion` - Get portal navigation configuration
@@ -163,7 +159,7 @@ These endpoints generate PDF, CSV, or Excel files instead of JSON data:
 
 **Why excluded**: These endpoints return web portal configuration data (navigation menus, links) that are not relevant for data extraction purposes.
 
-#### Subscription/Alert System (5 missing)
+#### Subscription/Alert System (11 missing)
 - `suscripciones/alta` - Create new alert subscription
 - `suscripciones/altaidentificado` - Create subscription with token
 - `suscripciones/activar` - Activate subscription
@@ -176,7 +172,7 @@ These endpoints generate PDF, CSV, or Excel files instead of JSON data:
 - `suscripciones/recuperarcontrasena` - Recover password
 - `suscripciones/restablecercontrasena` - Reset password
 
-**Why excluded**: The subscription system requires user authentication, password management, and email verification - functionality better suited for the official web portal rather than a CLI data extraction tool.
+**Why excluded**: The subscription endpoints are not data endpoints and require user authentication and session management.
 
 ### Recommended Usage
 - **Test First**: Always test commands with small datasets before large-scale usage

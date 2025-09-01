@@ -18,6 +18,7 @@ BDNS Fetch CLI: Command-line interface for BDNS data fetching.
 import typer
 import functools
 import logging
+import click
 from pathlib import Path
 
 from bdns.fetch.utils import extract_option_values, write_to_file
@@ -78,8 +79,9 @@ def cli_wrapper(client_method):
     """
 
     @functools.wraps(client_method)
-    def wrapper(ctx: typer.Context, *args, **kwargs):
-        # Access output_file from context instead of global variable
+    def wrapper(*args, **kwargs):
+        # Access context using Click's get_current_context (no need for ctx parameter!)
+        ctx = click.get_current_context()
         output_file = ctx.obj["output_file"]
         data_generator = client_method(*args, **kwargs)
         write_to_file(data_generator, output_file)

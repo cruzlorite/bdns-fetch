@@ -15,7 +15,10 @@ install: ## Install project dependencies
 dev-install: ## Install project with development dependencies
 	poetry install
 
-test: test-integration ## Run all tests (alias for test-integration)
+test-cli: ## Run CLI tests
+	@echo "🚀 Running CLI Tests..."
+	poetry run python -m pytest tests/test_cli.py -v -s
+	@echo "🎉 CLI Tests Completed!"
 
 test-integration: ## Run integration tests against real BDNS API
 	@echo "🚀 Running Integration Tests Against Real BDNS API..."

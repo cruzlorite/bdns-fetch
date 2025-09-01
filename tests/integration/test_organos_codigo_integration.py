@@ -1,67 +1,38 @@
 # -*- coding: utf-8 -*-
 """
-Integration tests for the organos_codigo command.
+Integration tests for the organos_codigo endpoint.
 These tests make real API calls to the BDNS API.
 """
 
 import pytest
-import json
-
-from bdns.fetch.commands.organos_codigo import organos_codigo
+from bdns.fetch.client import BDNSClient
 
 
 @pytest.mark.integration
-class TestOrganosCodigoIntegration:
-    """Integration tests for the organos_codigo command."""
+class TestOrganoscodigoIntegration:
+    """Integration tests for the organos_codigo endpoint."""
 
-    def test_organos_codigo_real_api(self, get_test_context, cleanup_test_file):
-        """Test organos_codigo command with real API."""
+    def test_organos_codigo_real_api(self):
+        """Test organos_codigo endpoint with real API."""
         # Arrange
-        ctx, output_path = get_test_context("organos_codigo.csv")
+        client = BDNSClient()
 
-        try:
-            # Act - Test with various codigo values to find working ones
-            test_codes = ["L02000034"]
+        # Act
+        data_generator = client.fetch_organos_codigo(codigo="L02000034")
+        data = list(data_generator)
 
-            for code in test_codes:
-                try:
-                    organos_codigo(ctx, codigo=code)
+        # Assert
+        assert len(data) > 0, "Should return some data"
+        # Assert all elements are dicts
+        assert [isinstance(item, dict) for item in data], (
+            "All items should be dictionaries"
+        )
 
-                    # Assert
-                    assert output_path.exists(), (
-                        f"Output file should be created at {output_path}"
-                    )
+        # Validate data structure if we have data
+        if len(data) > 0:
+            for record in data[:3]:  # Check first 3 records
+                assert isinstance(record, dict), "Each record should be a dictionary"
 
-                    # Read and validate JSON data (JSONL format)
-                    data = []
-                    with open(output_path, "r", encoding="utf-8") as f:
-                        for line in f:
-                            if line.strip():
-                                data.append(json.loads(line.strip()))
-
-                    print(
-                        f"✅ Success: Retrieved {len(data)} organos codigo records for code {code}"
-                    )
-                    if len(data) > 0:
-                        print(
-                            f"Sample: tipoAdmon={data[0]['tipoAdmon']}, ids={data[0]['ids']}"
-                        )
-                        break  # Found working code, exit loop
-                    else:
-                        print(f"No results for code {code}, trying next...")
-                        continue
-
-                except Exception as e:
-                    if "204" in str(e) or "RetryError" in str(e):
-                        print(f"No content for code {code}, trying next...")
-                        continue
-                    else:
-                        raise e
-            else:
-                # If all codes return no data, that's an error - we should find at least one working code
-                pytest.fail(
-                    "❌ Error: No valid organos codes found - all test codes failed to return data"
-                )
-
-        finally:
-            cleanup_test_file(output_path)
+        print(f"✅ Success: Retrieved {len(data)} organos_codigo records")
+        if len(data) > 0:
+            print(f"Available fields: {list(data[0].keys())}")

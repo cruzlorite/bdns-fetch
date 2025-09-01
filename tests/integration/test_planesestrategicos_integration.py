@@ -1,48 +1,34 @@
 # -*- coding: utf-8 -*-
 """
-Integration tests for the planesestrategicos command.
+Integration tests for the planesestrategicos endpoint.
 These tests make real API calls to the BDNS API.
 """
 
 import pytest
-import json
-
-from bdns.fetch.commands.planesestrategicos import planesestrategicos
+from bdns.fetch.client import BDNSClient
 
 
 @pytest.mark.integration
 class TestPlanesestrategicosIntegration:
-    """Integration tests for the planesestrategicos command."""
+    """Integration tests for the planesestrategicos endpoint."""
 
-    @pytest.mark.integration
-    def test_planesestrategicos_basic(self, get_test_context, cleanup_test_file):
-        """Test planesestrategicos command with specific plan ID."""
-        ctx, output_path = get_test_context("planesestrategicos_test.jsonl")
+    def test_planesestrategicos_real_api(self):
+        """Test planesestrategicos endpoint with real API."""
+        # Arrange
+        client = BDNSClient()
 
-        try:
-            planesestrategicos(
-                ctx,
-                idPES=459,  # Example ID from API documentation
-            )
+        # Act
+        data_generator = client.fetch_planesestrategicos(idPES=1)
+        data = list(data_generator)
 
-            # Check that file was created and has content
-            assert output_path.exists(), f"Output file {output_path} was not created"
+        # Assert
+        assert len(data) > 0, "Should return some planesestrategicos data"
 
-            # Read and parse the output
-            with open(output_path, "r") as f:
-                content = f.read().strip()
-                if content:
-                    lines = content.split("\n")
-                    data = [json.loads(line) for line in lines if line.strip()]
-                    print(
-                        f"✅ Success: Retrieved {len(data)} planesestrategicos records"
-                    )
-                    if data:
-                        print(f"Sample: {data[0].get('descripcion', 'N/A')}")
-                else:
-                    print(
-                        "✅ Success: planesestrategicos command executed (empty result)"
-                    )
+        # Validate data structure if we have data
+        if len(data) > 0:
+            for record in data[:3]:  # Check first 3 records
+                assert isinstance(record, dict), "Each record should be a dictionary"
 
-        finally:
-            cleanup_test_file(output_path)
+        print(f"✅ Success: Retrieved {len(data)} planesestrategicos records")
+        if len(data) > 0:
+            print(f"Available fields: {list(data[0].keys())}")

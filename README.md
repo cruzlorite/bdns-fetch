@@ -1,191 +1,157 @@
-BDNS Fetch
-===========
+# BDNS Fetch
+
 [![PyPI version](https://badge.fury.io/py/bdns-fetch.svg)](https://badge.fury.io/py/bdns-fetch)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-A comprehensive command-line tool for accessing and processing data from the Base de Datos Nacional de Subvenciones (BDNS) API.
+A comprehensive Python library for accessing data from the **Base de Datos Nacional de Subvenciones (BDNS)** API. Provides both a programmatic client library and a command-line interface for data extraction.
 
 ## ✨ Features
 
-- **29+ Data Extraction Commands**: Covers all key data extraction endpoints from the BDNS API
-- **JSONL Output Format**: Clean JSON Lines format for easy data processing
-- **Flexible Configuration**: Customizable parameters for each command
-- **Clean Error Handling**: User-friendly error messages for API issues
-- **Verbose Logging**: Detailed HTTP request/response logging for debugging
-- **Concurrent Processing**: Built-in pagination and concurrent request handling
-
-## 📋 Available Commands
-
-This tool provides access to **29+ BDNS API data extraction endpoints**. Each command fetches specific data from the Base de Datos Nacional de Subvenciones (BDNS).
-
-For a complete list of all commands and their parameters, use:
-```bash
-bdns-fetch --help
-```
-
-For help on a specific command:
-```bash
-bdns-fetch [command-name] --help
-# Example: bdns-fetch organos --help
-```
-
-**📖 API Documentation**: Complete endpoint documentation is available at [BDNS API Swagger](https://www.infosubvenciones.es/bdnstrans/estaticos/doc/snpsap-api.json)
+- **📚 Complete API Coverage**: 29 BDNS data endpoints with full parameter support
+- **🐍 Python Interface**: Clean, type-hinted client library for programmatic access
+- **📄 Binary Document Support**: Download PDF documents and files from the API
+- **⚙️ Flexible Configuration**: Comprehensive parameter support from official API specification
+- **🔄 Smart Pagination**: Automatic pagination handling with configurable concurrency
+- **🛡️ Robust Error Handling**: Proper exception handling with retry logic
+- **🔧 CLI Tool**: Bonus command-line interface for quick data extraction
 
 ## 🚀 Quick Start
 
 ### Installation
 
-**From PyPI (recommended):**
 ```bash
 pip install bdns-fetch
 ```
 
-**From source:**
-```bash
-git clone https://github.com/cruzlorite/bdns-fetch.git
-cd bdns-fetch
-poetry install
+### BDNS Client
+
+```python
+from bdns.fetch.client import BDNSClient
+from datetime import datetime
+
+# Initialize the client
+client = BDNSClient()
+
+# Fetch government organs
+organs = list(client.fetch_organos())
+print(f"Found {len(organs)} government organs")
+
+# Search for subsidies with filters
+subsidies = client.fetch_ayudasestado_busqueda(
+    descripcion="innovation",
+    fechaDesde=datetime(2023, 1, 1),
+    fechaHasta=datetime(2024, 12, 31),
+    pageSize=100
+)
+
+for subsidy in subsidies:
+    print(f"- {subsidy['descripcion']}: {subsidy['importe']}€")
+
+# Download PDF documents
+pdf_data = client.fetch_convocatorias_pdf(id=608268)
+with open("convocatoria.pdf", "wb") as f:
+    f.write(pdf_data)
 ```
 
-### CLI Usage
+## 📄 Paginated Endpoints
 
-**Getting Help:**
+The BDNS client handles pagination automatically and provides flexible control over data fetching:
+
+### Basic Pagination
+
+You can control the starting page, page size and number of pages to fetch. If `num_pages` is 0, it will fetch all available pages.
+
+```python
+from bdns.fetch.client import BDNSClient
+from datetime import datetime
+
+client = BDNSClient()
+
+subsidies = client.fetch_ayudasestado_busqueda(
+    descripcion="research",
+    pageSize=100,    # Records per page (max: 10000)
+    num_pages=5,     # Limit to 5 pages total
+    from_page=0      # Start from first page
+)
+
+subsidy_list = list(subsidies)
+```
+
+### Binary Documents
+
+```python
+# Download PDF documents from calls for proposals
+pdf_bytes = client.fetch_convocatorias_pdf(id=608268, vpd="A07")
+with open("convocatoria.pdf", "wb") as f:
+    f.write(pdf_bytes)
+
+# Download strategic plan documents
+plan_doc = client.fetch_planesestrategicos_documentos(idDocumento=1272508)
+with open("strategic_plan.pdf", "wb") as f:
+    f.write(plan_doc)
+
+# Download call documents
+call_doc = client.fetch_convocatorias_documentos(idDocumento=36605)
+with open("call_document.pdf", "wb") as f:
+    f.write(call_doc)
+
+# Verify document formats
+def verify_document_format(data, filename):
+    if len(data) > 4:
+        header = data[:4]
+        if header == b'%PDF':
+            print(f"✅ {filename}: Valid PDF ({len(data):,} bytes)")
+        elif header[:2] == b'PK':
+            print(f"✅ {filename}: Office/ZIP document ({len(data):,} bytes)")
+        else:
+            print(f"📄 {filename}: Unknown format ({len(data):,} bytes)")
+
+verify_document_format(pdf_bytes, "convocatoria.pdf")
+verify_document_format(plan_doc, "strategic_plan.pdf")
+verify_document_format(call_doc, "call_document.pdf")
+```
+
+## 🎯 Command Line Interface (Bonus)
+
+For quick data extraction tasks, you can also use the included CLI tool:
+
+### CLI Installation & Usage
+
 ```bash
-# List all available commands
+# Install the package
+pip install bdns-fetch
+
+# Use the CLI for quick tasks
 bdns-fetch --help
-
-# Get help for a specific command  
-bdns-fetch organos --help
-bdns-fetch ayudasestado-busqueda --help
 ```
 
-**Basic Examples:**
+### CLI Examples
+
 ```bash
-# Fetch government organs data to file
+# Fetch government organs to file
 bdns-fetch --output-file government_organs.jsonl organos
 
-# Get economic activities (to stdout by default)
-bdns-fetch actividades
-
-# Search state aids with filters and verbose logging
-bdns-fetch --verbose --output-file innovation_aids.jsonl ayudasestado-busqueda \
+# Search state aids with filters
+bdns-fetch --verbose --output-file results.jsonl ayudasestado-busqueda \
   --descripcion "innovation" \
-  --num-pages 3 \
-  --pageSize 1000
-
-# Get specific strategic plan by ID with debugging
-bdns-fetch --verbose --output-file plan_459.jsonl planesestrategicos \
-  --idPES 459
-```
-
-**Common Parameters:**
-- `--output-file FILE`: Save output to file (defaults to stdout)  
-- `--verbose, -v`: Enable detailed HTTP request/response logging
-- `--num-pages N`: Number of pages to fetch (for paginated commands)
-- `--pageSize N`: Records per page (default: 10000, max: 10000)
-- `--max-concurrent-requests N`: Maximum concurrent API requests (default: 5)
-
-**Paginated Search Example:**
-```bash
-# Search concessions with multiple filters and verbose logging
-bdns-fetch --verbose --output-file research_concessions.jsonl \
-  --max-concurrent-requests 8 concesiones-busqueda \
-  --descripcion "research" \
   --fechaDesde "2023-01-01" \
-  --fechaHasta "2024-12-31" \
-  --tipoAdministracion "C" \
-  --num-pages 10
-```
-
-## 📖 More Examples
-
-```bash
-# Download all government organs
-bdns-fetch --output-file government_structure.jsonl organos
-
-# Search for innovation-related subsidies with verbose logging
-bdns-fetch --verbose --output-file innovation_aids.jsonl ayudasestado-busqueda \
-  --descripcion "innovation"
+  --fechaHasta "2024-12-31"
 
 # Get latest calls for proposals
 bdns-fetch --output-file latest_calls.jsonl convocatorias-ultimas
-
-# Search sanctions data with detailed HTTP logging
-bdns-fetch --verbose --output-file sanctions.jsonl sanciones-busqueda
 ```
 
-Output format (JSON Lines):
+**CLI Output Format (JSON Lines):**
 ```json
 {"id": 1, "descripcion": "MINISTERIO DE AGRICULTURA, PESCA Y ALIMENTACIÓN", "codigo": "E04"}
 {"id": 2, "descripcion": "MINISTERIO DE ASUNTOS EXTERIORES, UNIÓN EUROPEA Y COOPERACIÓN", "codigo": "E05"}
 ```
 
-## 🔧 Error Handling & Debugging
-
-The tool provides user-friendly error messages for common API issues:
-
-```bash
-# Invalid parameter example
-$ bdns-fetch ayudasestado-busqueda --vpd INVALID_PORTAL
-Error (ERR_VALIDACION): El parámetro 'vpd' indica un portal no válido.
-```
-
-Use --verbose for detailed logging.
-
-## ⚠️ Current Limitations
-
-### Missing Commands
-The following commands are **intentionally not included**:
-
-#### Export/Download Endpoints (9 missing)
-These endpoints generate PDF, CSV, or Excel files instead of JSON data:
-- `convocatorias/exportar` - Export search results to files
-- `convocatorias/ultimas/exportar` - Export latest calls to files
-- `concesiones/exportar` - Export concessions search to files
-- `ayudasestado/exportar` - Export state aids search to files
-- `minimis/exportar` - Export minimis search to files
-- `grandesbeneficiarios/exportar` - Export large beneficiaries to files
-- `partidospoliticos/exportar` - Export political parties search to files
-- `planesestrategicos/exportar` - Export strategic plans to files
-- `sanciones/exportar` - Export sanctions search to files
-
-**Why excluded**: These endpoints are thought to be better suited for the official web portal rather than a CLI data extraction tool.
-
-#### Portal Configuration Endpoints (2 missing)
-- `vpd/{vpd}/configuracion` - Get portal navigation configuration
-- `enlaces` - Get portal links and micro-windows
-
-**Why excluded**: These endpoints return web portal configuration data (navigation menus, links) that are not relevant for data extraction purposes.
-
-#### Subscription/Alert System (11 missing)
-- `suscripciones/alta` - Create new alert subscription
-- `suscripciones/altaidentificado` - Create subscription with token
-- `suscripciones/activar` - Activate subscription
-- `suscripciones/login` - Login to subscription service
-- `suscripciones/cerrar` - Close session
-- `suscripciones/detalle` - Get subscription details
-- `suscripciones/modificar` - Modify subscription
-- `suscripciones/anular` - Cancel subscription
-- `suscripciones/reactivar` - Reactivate subscription
-- `suscripciones/recuperarcontrasena` - Recover password
-- `suscripciones/restablecercontrasena` - Reset password
-
-**Why excluded**: The subscription endpoints are not data endpoints and require user authentication and session management.
-
-### Recommended Usage
-- **Test First**: Always test commands with small datasets before large-scale usage
-- **Use Verbose Mode**: Enable `--verbose` for debugging API issues or monitoring large extractions
-- **Check API Status**: Verify that specific endpoints are working before relying on them for production use
-- **Monitor for Updates**: The Spanish government may update the API without notice
-
 ## 🛠️ Development
 
-### Prerequisites
-- Python 3.11+
-- Poetry for dependency management
-
 ### Development Setup
+
 ```bash
 # Clone and setup
 git clone https://github.com/cruzlorite/bdns-fetch.git
@@ -198,10 +164,51 @@ make install            # Install project dependencies
 make dev-install        # Install with development dependencies
 make lint               # Run code linting with ruff
 make format             # Format code with ruff formatter
-make test-integration   # Run integration tests
+make test-integration   # Run integration tests (29 endpoints)
 make clean              # Remove build artifacts
 make all                # Install, lint, format, and test
 ```
+
+## ⚠️ API Limitations
+
+### Not Included
+The following BDNS API endpoints are **intentionally excluded**:
+
+#### Export Endpoints (9 excluded)
+File generation endpoints that create downloadable files rather than returning JSON data:
+- `*/exportar` endpoints for CSV/Excel export functionality
+
+#### Portal Configuration (2 excluded)  
+Web portal UI configuration endpoints:
+- `vpd/{vpd}/configuracion` - Portal navigation menus
+- `enlaces` - Portal links and micro-windows
+
+#### Subscription System (11 excluded)
+User subscription and alert management endpoints requiring authentication:
+- `suscripciones/*` endpoints for managing email alerts and user accounts
+
+**Rationale**: This library focuses on **data extraction**, not web portal functionality or user account management.
+
+## 🔧 Error Handling
+
+The library provides comprehensive error handling:
+
+```python
+from bdns.fetch.exceptions import BDNSAPIError, BDNSConnectionError
+
+try:
+    data = client.fetch_organos()
+except BDNSAPIError as e:
+    print(f"API returned error: {e}")
+    print(f"Status code: {e.status_code}")
+except BDNSConnectionError as e:
+    print(f"Connection failed: {e}")
+```
+
+**Common API Errors:**
+- `ERR_VALIDACION`: Invalid parameter values
+- `ERR_SIN_RESULTADOS`: No results found for query
+- HTTP 404: Endpoint or resource not found
 
 ## 🙏 Acknowledgments
 

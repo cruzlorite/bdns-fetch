@@ -19,7 +19,7 @@ test: test-integration ## Run all tests (alias for test-integration)
 
 test-integration: ## Run integration tests against real BDNS API
 	@echo "🚀 Running Integration Tests Against Real BDNS API..."
-	poetry run pytest tests/integration/ -v -s -m integration
+	poetry run python -m pytest tests/integration/ -v -s -m integration
 	@echo "🎉 Integration Tests Completed!"
 
 lint: ## Run code linting with ruff

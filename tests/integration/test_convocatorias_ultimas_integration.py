@@ -1,51 +1,34 @@
 # -*- coding: utf-8 -*-
 """
-Integration tests for the convocatorias_ultimas command.
+Integration tests for the convocatorias_ultimas endpoint.
 These tests make real API calls to the BDNS API.
 """
 
 import pytest
-import json
-
-from bdns.fetch.commands.convocatorias_ultimas import convocatorias_ultimas
+from bdns.fetch.client import BDNSClient
 
 
 @pytest.mark.integration
-class TestConvocatoriasUltimasIntegration:
-    """Integration tests for the convocatorias_ultimas command."""
+class TestConvocatoriasultimasIntegration:
+    """Integration tests for the convocatorias_ultimas endpoint."""
 
-    def test_convocatorias_ultimas_real_api(self, get_test_context, cleanup_test_file):
-        """Test convocatorias_ultimas command with real API - basic test."""
+    def test_convocatorias_ultimas_real_api(self):
+        """Test convocatorias_ultimas endpoint with real API."""
         # Arrange
-        ctx, output_path = get_test_context("convocatorias_ultimas.csv")
+        client = BDNSClient()
 
-        try:
-            # Act - Test with basic parameters (pageSize=10 to keep response small)
-            convocatorias_ultimas(
-                ctx,
-                vpd="GE",
-                pageSize=10,
-                num_pages=1,
-                from_page=0,
-                order=None,
-                direccion=None,
-            )
+        # Act
+        data_generator = client.fetch_convocatorias_ultimas(vpd="GE")
+        data = list(data_generator)
 
-            # Assert
-            assert output_path.exists(), (
-                f"Output file should be created at {output_path}"
-            )
+        # Assert
+        assert len(data) > 0, "Should return some convocatorias_ultimas data"
 
-            # Read and validate JSON data (JSONL format)
-            data = []
-            with open(output_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
-                        data.append(json.loads(line.strip()))
+        # Validate data structure if we have data
+        if len(data) > 0:
+            for record in data[:3]:  # Check first 3 records
+                assert isinstance(record, dict), "Each record should be a dictionary"
 
-            print(f"✅ Success: Retrieved {len(data)} latest convocatorias records")
-            if len(data) > 0:
-                print(f"Sample: {data[0]['descripcion']}")
-
-        finally:
-            cleanup_test_file(output_path)
+        print(f"✅ Success: Retrieved {len(data)} convocatorias_ultimas records")
+        if len(data) > 0:
+            print(f"Available fields: {list(data[0].keys())}")

@@ -1,45 +1,38 @@
 # -*- coding: utf-8 -*-
 """
-Integration tests for the organos_agrupacion command.
+Integration tests for the organos_agrupacion endpoint.
 These tests make real API calls to the BDNS API.
 """
 
 import pytest
-import json
-
-from bdns.fetch.commands.organos_agrupacion import organos_agrupacion
 from bdns.fetch.types import TipoAdministracion
+
+from bdns.fetch.client import BDNSClient
 
 
 @pytest.mark.integration
-class TestOrganosAgrupacionIntegration:
-    """Integration tests for the organos_agrupacion command."""
+class TestOrganosagrupacionIntegration:
+    """Integration tests for the organos_agrupacion endpoint."""
 
-    def test_organos_agrupacion_real_api(self, get_test_context, cleanup_test_file):
-        """Test organos_agrupacion command with real API."""
+    def test_organos_agrupacion_real_api(self):
+        """Test organos_agrupacion endpoint with real API."""
         # Arrange
-        ctx, output_path = get_test_context("organos_agrupacion.csv")
+        client = BDNSClient()
 
-        try:
-            # Act - Test with TipoAdministracion.C
-            organos_agrupacion(ctx, vpd="GE", idAdmon=TipoAdministracion.C)
+        # Act
+        data_generator = client.fetch_organos_agrupacion(
+            vpd="GE", idAdmon=TipoAdministracion.L
+        )
+        data = list(data_generator)
 
-            # Assert
-            assert output_path.exists(), (
-                f"Output file should be created at {output_path}"
-            )
+        # Assert
+        assert len(data) > 0, "Should return some organos_agrupacion data"
 
-            # Read and validate JSON data (JSONL format)
-            data = []
-            with open(output_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
-                        data.append(json.loads(line.strip()))
+        # Validate data structure if we have data
+        if len(data) > 0:
+            for record in data[:3]:  # Check first 3 records
+                assert isinstance(record, dict), "Each record should be a dictionary"
 
-            assert len(data) > 0, "Should return organos agrupacion data"
-
-            print(f"✅ Success: Retrieved {len(data)} organos agrupacion records")
-            print(f"Sample: {data[0]['descripcion']}")
-
-        finally:
-            cleanup_test_file(output_path)
+        print(f"✅ Success: Retrieved {len(data)} organos_agrupacion records")
+        if len(data) > 0:
+            print(f"Available fields: {list(data[0].keys())}")

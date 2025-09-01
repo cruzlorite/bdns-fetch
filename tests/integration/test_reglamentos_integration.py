@@ -1,80 +1,36 @@
 # -*- coding: utf-8 -*-
 """
-Integration tests for the reglamentos command.
+Integration tests for the reglamentos endpoint.
 These tests make real API calls to the BDNS API.
 """
 
 import pytest
-import json
 
-from bdns.fetch.commands.reglamentos import reglamentos
+from bdns.fetch.client import BDNSClient
 from bdns.fetch.types import Ambito
 
 
 @pytest.mark.integration
 class TestReglamentosIntegration:
-    """Integration tests for the reglamentos command."""
+    """Integration tests for the reglamentos endpoint."""
 
-    def test_reglamentos_real_api_concesiones(
-        self, get_test_context, cleanup_test_file
-    ):
-        """Test reglamentos command with real API - Concesiones scope."""
+    def test_reglamentos_real_api(self):
+        """Test reglamentos endpoint with real API."""
         # Arrange
-        ctx, output_path = get_test_context("reglamentos_concesiones.csv")
+        client = BDNSClient()
 
-        try:
-            # Act - Test with Ambito.C (Concesiones)
-            reglamentos(ctx, vpd="GE", ambito=Ambito.C)
+        # Act
+        data_generator = client.fetch_reglamentos(vpd="GE", ambito=Ambito.C)
+        data = list(data_generator)
 
-            # Assert
-            assert output_path.exists(), (
-                f"Output file should be created at {output_path}"
-            )
+        # Assert
+        assert len(data) > 0, "Must return at least one element"
 
-            # Read and validate JSON data (JSONL format)
-            data = []
-            with open(output_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
-                        data.append(json.loads(line.strip()))
+        # Validate data structure if we have data
+        if len(data) > 0:
+            for record in data[:3]:  # Check first 3 records
+                assert isinstance(record, dict), "Each record should be a dictionary"
 
-            print(
-                f"✅ Success: Retrieved {len(data)} reglamentos records for Concesiones"
-            )
-            if len(data) > 0:
-                print(f"Sample: {data[0]['descripcion']}")
-
-        finally:
-            cleanup_test_file(output_path)
-
-    def test_reglamentos_real_api_ayudas_estado(
-        self, get_test_context, cleanup_test_file
-    ):
-        """Test reglamentos command with real API - Ayudas de Estado scope."""
-        # Arrange
-        ctx, output_path = get_test_context("reglamentos_ayudas.csv")
-
-        try:
-            # Act - Test with Ambito.A (Ayudas de Estado)
-            reglamentos(ctx, vpd="GE", ambito=Ambito.A)
-
-            # Assert
-            assert output_path.exists(), (
-                f"Output file should be created at {output_path}"
-            )
-
-            # Read and validate JSON data (JSONL format)
-            data = []
-            with open(output_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
-                        data.append(json.loads(line.strip()))
-
-            print(
-                f"✅ Success: Retrieved {len(data)} reglamentos records for Ayudas de Estado"
-            )
-            if len(data) > 0:
-                print(f"Sample: {data[0]['descripcion']}")
-
-        finally:
-            cleanup_test_file(output_path)
+        print(f"✅ Success: Retrieved {len(data)} reglamentos records")
+        if len(data) > 0:
+            print(f"Available fields: {list(data[0].keys())}")

@@ -19,9 +19,17 @@ Author: josemariacruzlorite@gmail.com
 import sys
 from contextlib import contextmanager
 from datetime import datetime
-import requests
-import typer
 from enum import Enum
+import functools
+import inspect
+import json
+from typing import Any, Dict, Generator
+import requests
+
+import typer
+from typer.models import OptionInfo
+
+from bdns.fetch.exceptions import handle_api_response
 
 
 def format_date_for_api_request(date: datetime, output_format: str = "%d/%m/%Y"):
@@ -82,20 +90,13 @@ def api_request(url):
 
     if response.status_code == 200:
         result = response.json()
-        # Check if the API returned empty data
         if not result or (isinstance(result, list) and len(result) == 0):
-            from bdns.fetch.exceptions import handle_api_response
-
             raise handle_api_response(200, url, response.text, dict(response.headers))
         return result
     else:
-        # Server returned an error - show the actual server response
-        from bdns.fetch.exceptions import handle_api_response
-
         raise handle_api_response(
             response.status_code, url, response.text, dict(response.headers)
         )
-    return result
 
 
 @contextmanager
@@ -110,3 +111,48 @@ def smart_open(file, *args, **kwargs):
     else:
         with open(file, *args, **kwargs) as f:
             yield f
+
+
+def extract_option_values(func):
+    """
+    Decorator that automatically extracts actual values from OptionInfo parameters.
+
+    This allows methods to use options.* parameters in their signatures (for CLI help)
+    while getting the actual default values when called programmatically.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        # Get the function signature
+        sig = inspect.signature(func)
+
+        # Bind arguments to get the full parameter mapping
+        bound_args = sig.bind(*args, **kwargs)
+        bound_args.apply_defaults()
+
+        # Extract values from all parameters
+        for param_name, value in bound_args.arguments.items():
+            if isinstance(value, OptionInfo):
+                bound_args.arguments[param_name] = value.default
+
+        return func(*bound_args.args, **bound_args.kwargs)
+
+    return wrapper
+
+
+def write_to_file(
+    data_generator: Generator[Dict[str, Any], None, None], output_file: str = None
+) -> None:
+    """
+    Streams data from a generator and writes each item to file as it comes.
+
+    Args:
+        data_generator: Generator that yields individual data items
+        output_file: The output file path. If None, uses global _output_file or stdout
+    """
+    file_to_use = output_file or "-"
+
+    with smart_open(file_to_use, "w", encoding="utf-8", buffering=1) as f:
+        for item in data_generator:
+            f.write(json.dumps(item, ensure_ascii=False) + "\n")
+            f.flush()

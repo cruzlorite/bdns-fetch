@@ -1,75 +1,27 @@
 # -*- coding: utf-8 -*-
 """
-Integration tests for the planesestrategicos_documentos command.
+Integration tests for the planesestrategicos_documentos endpoint.
 These tests make real API calls to the BDNS API.
 """
 
 import pytest
-
-from bdns.fetch.commands.planesestrategicos_documentos import (
-    planesestrategicos_documentos,
-)
+from bdns.fetch.client import BDNSClient
 
 
 @pytest.mark.integration
-class TestPlanesestrategicosDocumentosIntegration:
-    """Integration tests for the planesestrategicos_documentos command."""
+class TestPlanesestrategicosdocumentosIntegration:
+    """Integration tests for the planesestrategicos_documentos endpoint."""
 
-    @pytest.mark.integration
-    def test_planesestrategicos_documentos_basic(
-        self, get_test_context, cleanup_test_file
-    ):
-        """Test planesestrategicos_documentos command with specific document ID."""
-        ctx, output_path = get_test_context("planesestrategicos_documentos_test.jsonl")
+    def test_planesestrategicos_documentos_real_api(self):
+        """Test planesestrategicos_documentos endpoint with real API."""
+        # Arrange
+        client = BDNSClient()
 
-        try:
-            # Try with multiple document IDs to find one that works
-            test_ids = ["651938"]
+        # Act - Test binary endpoint with valid document ID from a real strategic plan
+        # Using document ID 1272508 from strategic plan 1711
+        data = client.fetch_planesestrategicos_documentos(idDocumento=1272508)
 
-            for doc_id in test_ids:
-                try:
-                    planesestrategicos_documentos(
-                        ctx,
-                        idDocumento=int(doc_id),
-                    )
-
-                    # Check that file was created and has content
-                    assert output_path.exists(), (
-                        f"Output file {output_path} was not created"
-                    )
-
-                    # Read and validate content
-                    with open(output_path, "rb") as f:
-                        content = f.read()
-
-                    print(
-                        f"✅ Success: Retrieved planesestrategicos documentos response ({len(content)} bytes) for ID {doc_id}"
-                    )
-                    if len(content) > 0:
-                        print("Binary document content (likely a document file)")
-                        break  # Found working document ID, exit loop
-                    else:
-                        print(f"Empty document for ID {doc_id}, trying next...")
-                        continue
-
-                except Exception as e:
-                    if "400" in str(e) or "No se ha podido obtener" in str(e):
-                        print(f"No document found for ID {doc_id}, trying next...")
-                        continue
-                    else:
-                        raise e
-            else:
-                # If we get here, no working document IDs were found
-                pytest.fail("Error: No valid document IDs found")
-
-            print(
-                "✅ Success: planesestrategicos_documentos command executed successfully"
-            )
-
-        except Exception as e:
-            # No document found should be treated as test failure per user feedback
-            pytest.fail(
-                f"planesestrategicos_documentos failed - no valid document found: {e}"
-            )
-        finally:
-            cleanup_test_file(output_path)
+        # Assert - This endpoint should actually work and return document data
+        assert isinstance(data, bytes), "Should return binary data (bytes)"
+        assert len(data) > 0, "Should return actual document data, not empty bytes"
+        print(f"✅ Success: Retrieved strategic plan document ({len(data)} bytes)")

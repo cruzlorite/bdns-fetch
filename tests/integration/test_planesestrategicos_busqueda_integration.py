@@ -1,54 +1,36 @@
 # -*- coding: utf-8 -*-
 """
-Integration tests for the planesestrategicos_busqueda command.
+Integration tests for the planesestrategicos_busqueda endpoint.
 These tests make real API calls to the BDNS API.
 """
 
 import pytest
-import json
-
-from bdns.fetch.commands.planesestrategicos_busqueda import planesestrategicos_busqueda
+from bdns.fetch.client import BDNSClient
 
 
 @pytest.mark.integration
-class TestPlanesestrategicosBusquedaIntegration:
-    """Integration tests for the planesestrategicos_busqueda command."""
+class TestPlanesestrategicosbusquedaIntegration:
+    """Integration tests for the planesestrategicos_busqueda endpoint."""
 
-    def test_planesestrategicos_busqueda_basic(
-        self, get_test_context, cleanup_test_file
-    ):
-        """Test planesestrategicos_busqueda command with basic parameters."""
+    def test_planesestrategicos_busqueda_real_api(self):
+        """Test planesestrategicos_busqueda endpoint with real API."""
         # Arrange
-        ctx, output_path = get_test_context("planesestrategicos_busqueda.csv")
+        client = BDNSClient()
 
-        try:
-            # Act - Test with basic parameters (minimal to avoid complex free text)
-            planesestrategicos_busqueda(
-                ctx,
-                vigenciaDesde=None,  # Explicitly pass None for date parameters
-                vigenciaHasta=None,
-                pageSize=5,
-                num_pages=1,
-                from_page=0,
-            )
+        # Act
+        data_generator = client.fetch_planesestrategicos_busqueda(
+            vpd="GE", pageSize=5, num_pages=1, from_page=0
+        )
+        data = list(data_generator)
 
-            # Assert
-            assert output_path.exists(), (
-                f"Output file should be created at {output_path}"
-            )
+        # Assert
+        assert len(data) > 0, "Must return at least one element"
 
-            # Read and validate JSON data
-            data = []
-            with open(output_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
-                        data.append(json.loads(line.strip()))
+        # Validate data structure
+        for record in data:
+            assert isinstance(record, dict), "Each record should be a dictionary"
 
-            print(
-                f"✅ Success: Retrieved {len(data)} planes estrategicos search results"
-            )
-            if len(data) > 0:
-                print(f"Sample: {data[0]['descripcion']}")
-
-        finally:
-            cleanup_test_file(output_path)
+        print(f"✅ Success: Retrieved {len(data)} planesestrategicos_busqueda records")
+        print(f"Available fields: {list(data[0].keys())}")
+        if len(data) > 0:
+            print(f"Available fields: {list(data[0].keys())}")

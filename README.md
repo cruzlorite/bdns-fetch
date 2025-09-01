@@ -8,13 +8,11 @@ A comprehensive Python library for accessing data from the **Base de Datos Nacio
 
 ## ✨ Features
 
-- **📚 Complete API Coverage**: 29 BDNS data endpoints with full parameter support
+- **📚 API Coverage**: 29 BDNS data endpoints with full parameter support
 - **🐍 Python Interface**: Clean, type-hinted client library for programmatic access
-- **📄 Binary Document Support**: Download PDF documents and files from the API
-- **⚙️ Flexible Configuration**: Comprehensive parameter support from official API specification
-- **🔄 Smart Pagination**: Automatic pagination handling with configurable concurrency
-- **🛡️ Robust Error Handling**: Proper exception handling with retry logic
-- **🔧 CLI Tool**: Bonus command-line interface for quick data extraction
+- **🔄 Pagination**: Automatic pagination handling with configurable concurrency
+- **🛡️ Error Handling**: Proper exception handling with retry logic
+- **🔧 CLI Tool**: command-line interface for quick testing
 
 ## 🚀 Quick Start
 
@@ -33,25 +31,10 @@ from datetime import datetime
 # Initialize the client
 client = BDNSClient()
 
-# Fetch government organs
-organs = list(client.fetch_organos())
-print(f"Found {len(organs)} government organs")
+results = list(client.fetch_organos())
 
-# Search for subsidies with filters
-subsidies = client.fetch_ayudasestado_busqueda(
-    descripcion="innovation",
-    fechaDesde=datetime(2023, 1, 1),
-    fechaHasta=datetime(2024, 12, 31),
-    pageSize=100
-)
-
-for subsidy in subsidies:
-    print(f"- {subsidy['descripcion']}: {subsidy['importe']}€")
-
-# Download PDF documents
-pdf_data = client.fetch_convocatorias_pdf(id=608268)
-with open("convocatoria.pdf", "wb") as f:
-    f.write(pdf_data)
+for r in results:
+    print(r)
 ```
 
 ## 📄 Paginated Endpoints
@@ -68,20 +51,21 @@ from datetime import datetime
 
 client = BDNSClient()
 
-subsidies = client.fetch_ayudasestado_busqueda(
+results = client.fetch_ayudasestado_busqueda(
     descripcion="research",
     pageSize=100,    # Records per page (max: 10000)
     num_pages=5,     # Limit to 5 pages total
     from_page=0      # Start from first page
 )
 
-subsidy_list = list(subsidies)
+for r in results:
+    print(r)
 ```
 
 ### Binary Documents
 
 ```python
-# Download PDF documents from calls for proposals
+# Download PDF documents
 pdf_bytes = client.fetch_convocatorias_pdf(id=608268, vpd="A07")
 with open("convocatoria.pdf", "wb") as f:
     f.write(pdf_bytes)
@@ -90,26 +74,6 @@ with open("convocatoria.pdf", "wb") as f:
 plan_doc = client.fetch_planesestrategicos_documentos(idDocumento=1272508)
 with open("strategic_plan.pdf", "wb") as f:
     f.write(plan_doc)
-
-# Download call documents
-call_doc = client.fetch_convocatorias_documentos(idDocumento=36605)
-with open("call_document.pdf", "wb") as f:
-    f.write(call_doc)
-
-# Verify document formats
-def verify_document_format(data, filename):
-    if len(data) > 4:
-        header = data[:4]
-        if header == b'%PDF':
-            print(f"✅ {filename}: Valid PDF ({len(data):,} bytes)")
-        elif header[:2] == b'PK':
-            print(f"✅ {filename}: Office/ZIP document ({len(data):,} bytes)")
-        else:
-            print(f"📄 {filename}: Unknown format ({len(data):,} bytes)")
-
-verify_document_format(pdf_bytes, "convocatoria.pdf")
-verify_document_format(plan_doc, "strategic_plan.pdf")
-verify_document_format(call_doc, "call_document.pdf")
 ```
 
 ## 🎯 Command Line Interface (Bonus)
@@ -129,17 +93,14 @@ bdns-fetch --help
 ### CLI Examples
 
 ```bash
-# Fetch government organs to file
-bdns-fetch --output-file government_organs.jsonl organos
+bdns-fetch --output-file results.jsonl organos
 
-# Search state aids with filters
 bdns-fetch --verbose --output-file results.jsonl ayudasestado-busqueda \
   --descripcion "innovation" \
   --fechaDesde "2023-01-01" \
   --fechaHasta "2024-12-31"
 
-# Get latest calls for proposals
-bdns-fetch --output-file latest_calls.jsonl convocatorias-ultimas
+bdns-fetch --output-file results.jsonl convocatorias-ultimas
 ```
 
 **CLI Output Format (JSON Lines):**
@@ -159,7 +120,7 @@ cd bdns-fetch
 poetry install --with dev
 
 # Available Make targets
-make help                # Show all available targets
+make help               # Show all available targets
 make install            # Install project dependencies  
 make dev-install        # Install with development dependencies
 make lint               # Run code linting with ruff
@@ -188,27 +149,6 @@ User subscription and alert management endpoints requiring authentication:
 - `suscripciones/*` endpoints for managing email alerts and user accounts
 
 **Rationale**: This library focuses on **data extraction**, not web portal functionality or user account management.
-
-## 🔧 Error Handling
-
-The library provides comprehensive error handling:
-
-```python
-from bdns.fetch.exceptions import BDNSAPIError, BDNSConnectionError
-
-try:
-    data = client.fetch_organos()
-except BDNSAPIError as e:
-    print(f"API returned error: {e}")
-    print(f"Status code: {e.status_code}")
-except BDNSConnectionError as e:
-    print(f"Connection failed: {e}")
-```
-
-**Common API Errors:**
-- `ERR_VALIDACION`: Invalid parameter values
-- `ERR_SIN_RESULTADOS`: No results found for query
-- HTTP 404: Endpoint or resource not found
 
 ## 🙏 Acknowledgments
 

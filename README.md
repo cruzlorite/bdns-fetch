@@ -42,14 +42,14 @@ To easily check all available endpoints and paramenters:
 bdns-fetch --help
 ```
 
-[![CLI Help Message](img/cli-help-2.png)](img/cli-help-2.png)
+[![CLI Help Message](https://raw.githubusercontent.com/cruzlorite/bdns-fetch/main/img/cli-help-2.png)](https://raw.githubusercontent.com/cruzlorite/bdns-fetch/main/img/cli-help-2.png)
 
 To check the parameters of any given endpoint, use:
 
 ```bash
 bdns-fetch [endpoint] --help
 ```
-[![CLI Help Message](img/cli-help-1.png)](img/cli-help-1.png)
+[![CLI Help Message](https://raw.githubusercontent.com/cruzlorite/bdns-fetch/main/img/cli-help-1.png)](https://raw.githubusercontent.com/cruzlorite/bdns-fetch/main/img/cli-help-1.png)
 
 ## 📄 Paginated Endpoints
 

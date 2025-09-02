@@ -22,8 +22,13 @@ test-cli: ## Run CLI tests
 
 test-integration: ## Run integration tests against real BDNS API
 	@echo "🚀 Running Integration Tests Against Real BDNS API..."
-	poetry run python -m pytest tests/integration/ -v -s -m integration
+	poetry run python -m pytest tests/integration/ -v -s
 	@echo "🎉 Integration Tests Completed!"
+
+test: ## Run all tests (CLI + integration)
+	@echo "🚀 Running All Tests..."
+	poetry run python -m pytest tests/ -v
+	@echo "🎉 All Tests Completed!"
 
 lint: ## Run code linting with ruff
 	poetry run ruff check .

@@ -43,13 +43,35 @@ output_file: Optional[Path] = typer.Option(
     help="File to save the output. '-' means standard output.",
     show_default=True,
 )
-max_concurrent_requests: Optional[int] = typer.Option(
+max_concurrent_requests: int = typer.Option(
     5,
     "--max-concurrent-requests",
     "-mcr",
     min=1,
     help="Maximum number of concurrent requests to the API.",
     show_default=True,
+)
+max_retries: int = typer.Option(
+    3,
+    "--max-retries", 
+    "-mr",
+    min=1,
+    help="Maximum number of retries for failed requests.",
+    show_default=True,
+)
+wait_time: int = typer.Option(
+    2,
+    "--wait-time",
+    "-wt", 
+    min=1,
+    help="Time to wait between retries in seconds.",
+    show_default=True,
+)
+version: Optional[bool] = typer.Option(
+    None,
+    "--version",
+    help="Show the version and exit.",
+    is_flag=True,
 )
 num_pages: Optional[int] = typer.Option(
     1,

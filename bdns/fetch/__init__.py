@@ -1,4 +1,4 @@
-__version__ = "2.1.0"
+__version__ = "3.1.0"
 
 from bdns.fetch.utils import smart_open, format_date_for_api_request, format_url
 from bdns.fetch.types import (

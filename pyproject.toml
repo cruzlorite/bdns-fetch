@@ -1,8 +1,8 @@
 [tool.poetry]
 packages = [{include = "bdns"}]
 name = "bdns-fetch"
-version = "3.0.1"
-description = "A comprehensive command-line tool for accessing Spanish government BDNS subsidies data"
+version = "3.0.2"
+description = "Python client and CLI to fetch data from the Base de Datos Nacional de Subvenciones (BDNS)"
 readme = "README.md"
 authors = ["José María Cruz Lorite <josemariacruzlorite@gmail.com>"]
 license = "GPL-3.0"

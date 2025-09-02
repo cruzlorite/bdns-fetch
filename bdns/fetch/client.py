@@ -416,7 +416,7 @@ class BDNSClient:
     def fetch_convocatorias_documentos(
         self, idDocumento: int = options.idDocumento_required
     ) -> bytes:
-        """Fetches binary document from https://www.infosubvenciones.es/bdnstrans/api/convocatorias/documentos"""
+        """Fetches data from https://www.infosubvenciones.es/bdnstrans/api/convocatorias/documentos"""
         params = {"idDocumento": idDocumento}
         url = format_url(BDNS_API_ENDPOINT_CONVOCATORIAS_DOCUMENTOS, params)
         return fetch_binary(url)
@@ -425,7 +425,7 @@ class BDNSClient:
     def fetch_convocatorias_pdf(
         self, id: int = options.id_required, vpd: str = options.vpd_required
     ) -> bytes:
-        """Fetches PDF document from https://www.infosubvenciones.es/bdnstrans/api/convocatorias/pdf"""
+        """Fetches data from https://www.infosubvenciones.es/bdnstrans/api/convocatorias/pdf"""
         params = {"id": id, "vpd": vpd}
         url = format_url(BDNS_API_ENDPOINT_CONVOCATORIAS_PDF, params)
         return fetch_binary(url)
@@ -582,7 +582,7 @@ class BDNSClient:
     def fetch_planesestrategicos_documentos(
         self, idDocumento: int = options.idDocumento_required
     ) -> bytes:
-        """Fetches binary document from https://www.infosubvenciones.es/bdnstrans/api/planesestrategicos/documentos"""
+        """Fetches data from https://www.infosubvenciones.es/bdnstrans/api/planesestrategicos/documentos"""
         params = {"idDocumento": idDocumento}
         url = format_url(BDNS_API_ENDPOINT_PLANESESTRATEGICOS_DOCUMENTOS, params)
         return fetch_binary(url)

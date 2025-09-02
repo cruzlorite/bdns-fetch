@@ -26,7 +26,6 @@ pip install bdns-fetch
 
 ```python
 from bdns.fetch.client import BDNSClient
-from datetime import datetime
 
 # Initialize the client
 client = BDNSClient()
@@ -36,6 +35,21 @@ results = list(client.fetch_organos())
 for r in results:
     print(r)
 ```
+
+To easily check all available endpoints and paramenters:
+
+```bash
+bdns-fetch --help
+```
+
+[![CLI Help Message](img/cli-help-2.png)](img/cli-help-2.png)
+
+To check the parameters of any given endpoint, use:
+
+```bash
+bdns-fetch [endpoint] --help
+```
+[![CLI Help Message](img/cli-help-1.png)](img/cli-help-1.png)
 
 ## 📄 Paginated Endpoints
 
@@ -47,7 +61,6 @@ You can control the starting page, page size and number of pages to fetch. If `n
 
 ```python
 from bdns.fetch.client import BDNSClient
-from datetime import datetime
 
 client = BDNSClient()
 

@@ -53,7 +53,7 @@ max_concurrent_requests: int = typer.Option(
 )
 max_retries: int = typer.Option(
     3,
-    "--max-retries", 
+    "--max-retries",
     "-mr",
     min=1,
     help="Maximum number of retries for failed requests.",
@@ -62,7 +62,7 @@ max_retries: int = typer.Option(
 wait_time: int = typer.Option(
     2,
     "--wait-time",
-    "-wt", 
+    "-wt",
     min=1,
     help="Time to wait between retries in seconds.",
     show_default=True,

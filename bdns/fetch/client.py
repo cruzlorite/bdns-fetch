@@ -46,18 +46,20 @@ logger = logging.getLogger(__name__)
 class BDNSClient:
     """
     Client for interacting with the BDNS API programmatically.
-    
+
     Provides configurable retry behavior and concurrent request handling
     for all BDNS API endpoints.
     """
 
-    def __init__(self, max_retries: int = 3, wait_time: int = 2, max_concurrent_requests: int = 5):
+    def __init__(
+        self, max_retries: int = 3, wait_time: int = 2, max_concurrent_requests: int = 5
+    ):
         """
         Initialize the BDNS client with configurable retry and concurrency settings.
-        
+
         Args:
             max_retries (int): Maximum number of retries for failed requests. Default: 3
-            wait_time (int): Time to wait between retries in seconds. Default: 2  
+            wait_time (int): Time to wait between retries in seconds. Default: 2
             max_concurrent_requests (int): Maximum concurrent requests for pagination. Default: 5
         """
         self.max_retries = max_retries
@@ -89,7 +91,7 @@ class BDNSClient:
         Fetches data from a single page with error handling and retries.
         """
         retry_decorator = self._create_retry_decorator()
-        
+
         @retry_decorator
         async def fetch_with_retries():
             async with semaphore:
@@ -99,7 +101,9 @@ class BDNSClient:
                 start_time = asyncio.get_event_loop().time()
                 async with session.get(url) as resp:
                     end_time = asyncio.get_event_loop().time()
-                    response_time = (end_time - start_time) * 1000  # Convert to milliseconds
+                    response_time = (
+                        end_time - start_time
+                    ) * 1000  # Convert to milliseconds
 
                     # Log response details
                     logger.debug(
@@ -110,12 +114,16 @@ class BDNSClient:
                     data = await resp.json()
 
                     # Log response content size and basic info
-                    content_size = len(await resp.text()) if hasattr(resp, "text") else 0
+                    content_size = (
+                        len(await resp.text()) if hasattr(resp, "text") else 0
+                    )
                     logger.debug(f"Response Content-Length: {content_size} bytes")
 
                     if isinstance(data, dict):
                         if "content" in data and isinstance(data["content"], list):
-                            logger.debug(f"Response contains {len(data['content'])} items")
+                            logger.debug(
+                                f"Response contains {len(data['content'])} items"
+                            )
                         if "totalPages" in data:
                             logger.debug(f"Total pages available: {data['totalPages']}")
                         if "number" in data:
@@ -126,9 +134,7 @@ class BDNSClient:
                         logger.error(f"API Error Response: {data}")
                         from bdns.fetch.exceptions import BDNSError
 
-                        tech_details = (
-                            f"API error code {data['codigo']}: {data['error']} from {url}"
-                        )
+                        tech_details = f"API error code {data['codigo']}: {data['error']} from {url}"
                         tech_details += f"\nResponse status: {resp.status}"
                         tech_details += f"\nResponse headers: {dict(resp.headers)}"
                         tech_details += f"\nFull response data: {data}"
@@ -152,7 +158,7 @@ class BDNSClient:
                         )
 
                     return data
-        
+
         return await fetch_with_retries()
 
     async def _async_fetch_paginated_generator(
@@ -168,7 +174,7 @@ class BDNSClient:
         """
         if max_concurrent_requests is None:
             max_concurrent_requests = self.max_concurrent_requests
-            
+
         semaphore = asyncio.Semaphore(max_concurrent_requests)
 
         async with aiohttp.ClientSession() as session:
@@ -177,7 +183,9 @@ class BDNSClient:
             first_page_url = format_url(base_url, first_page_params)
 
             try:
-                first_response = await self._async_fetch_page(semaphore, session, first_page_url)
+                first_response = await self._async_fetch_page(
+                    semaphore, session, first_page_url
+                )
                 total_pages = first_response.get("totalPages", 1)
 
                 # Yield items from the first page
@@ -273,7 +281,7 @@ class BDNSClient:
         Fetches data from a single URL with error handling and retries.
         """
         retry_decorator = self._create_retry_decorator()
-        
+
         @retry_decorator
         async def fetch_with_retries():
             # Log the outgoing request
@@ -282,7 +290,9 @@ class BDNSClient:
             start_time = asyncio.get_event_loop().time()
             async with session.get(url) as resp:
                 end_time = asyncio.get_event_loop().time()
-                response_time = (end_time - start_time) * 1000  # Convert to milliseconds
+                response_time = (
+                    end_time - start_time
+                ) * 1000  # Convert to milliseconds
 
                 # Log response details
                 logger.debug(
@@ -325,11 +335,15 @@ class BDNSClient:
                     logger.error(f"Response body: {data}")
                     from bdns.fetch.exceptions import handle_api_error
 
-                    response_text = json.dumps(data) if isinstance(data, dict) else str(data)
-                    raise handle_api_error(resp.status, url, response_text, dict(resp.headers))
+                    response_text = (
+                        json.dumps(data) if isinstance(data, dict) else str(data)
+                    )
+                    raise handle_api_error(
+                        resp.status, url, response_text, dict(resp.headers)
+                    )
 
                 return data
-        
+
         return await fetch_with_retries()
 
     def _fetch(

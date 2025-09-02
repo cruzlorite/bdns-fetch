@@ -57,19 +57,19 @@ def main(
     if version:
         typer.echo(f"bdns-fetch version {__version__}")
         raise typer.Exit()
-    
+
     # If no subcommand is provided and version is not requested, show help
     if ctx.invoked_subcommand is None:
         typer.echo(ctx.get_help())
         raise typer.Exit()
-    
+
     # Create configured client instance
     client = BDNSClient(
         max_retries=max_retries,
-        wait_time=wait_time, 
-        max_concurrent_requests=max_concurrent_requests
+        wait_time=wait_time,
+        max_concurrent_requests=max_concurrent_requests,
     )
-    
+
     ctx.obj = {
         "output_file": output_file,
         "verbose": verbose_flag,
@@ -92,31 +92,31 @@ def main(
 def cli_wrapper(client_method_name):
     """
     Wrapper that executes a client method and writes the result to file.
-    
+
     Args:
         client_method_name: The name of the client method to wrap
 
     Returns:
         A function that can be used as a Typer command
     """
-    
+
     # Get the method signature from a default client instance
     default_client = BDNSClient()
     original_method = getattr(default_client, client_method_name)
-    
+
     @functools.wraps(original_method)
     def wrapper(*args, **kwargs):
         # Get the configured client from context
         ctx = click.get_current_context()
         output_file = ctx.obj["output_file"]
         client = ctx.obj["client"]
-        
+
         # Call the method on the configured client
         client_method = getattr(client, client_method_name)
         data_generator = client_method(*args, **kwargs)
         write_to_file(data_generator, output_file)
         return None
-        
+
     return wrapper
 
 
@@ -143,9 +143,7 @@ app.command("ayudasestado-busqueda")(cli_wrapper("fetch_ayudasestado_busqueda"))
 app.command("terceros")(cli_wrapper("fetch_terceros"))
 app.command("convocatorias-busqueda")(cli_wrapper("fetch_convocatorias_busqueda"))
 app.command("convocatorias-ultimas")(cli_wrapper("fetch_convocatorias_ultimas"))
-app.command("convocatorias-documentos")(
-    cli_wrapper("fetch_convocatorias_documentos")
-)
+app.command("convocatorias-documentos")(cli_wrapper("fetch_convocatorias_documentos"))
 app.command("convocatorias-pdf")(cli_wrapper("fetch_convocatorias_pdf"))
 app.command("grandesbeneficiarios-busqueda")(
     cli_wrapper("fetch_grandesbeneficiarios_busqueda")

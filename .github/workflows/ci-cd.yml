@@ -108,6 +108,7 @@ jobs:
     if: github.event_name == 'release'
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+      deployments: write  # Required for creating deployments
     
     steps:
     - name: Download build artifacts
@@ -116,5 +117,31 @@ jobs:
         name: dist
         path: dist/
     
+    - name: Create deployment
+      uses: chrnorm/deployment-action@v2
+      id: deployment
+      with:
+        token: ${{ github.token }}
+        environment: pypi
+        ref: ${{ github.ref }}
+    
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+      id: pypi-publish
+    
+    - name: Update deployment status (success)
+      if: success()
+      uses: chrnorm/deployment-status@v2
+      with:
+        token: ${{ github.token }}
+        deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+        state: success
+        environment-url: https://pypi.org/project/bdns-fetch/
+    
+    - name: Update deployment status (failure)
+      if: failure()
+      uses: chrnorm/deployment-status@v2
+      with:
+        token: ${{ github.token }}
+        deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+        state: failure

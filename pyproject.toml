@@ -1,7 +1,7 @@
 [tool.poetry]
 packages = [{include = "bdns"}]
 name = "bdns-fetch"
-version = "3.0.3"
+version = "3.0.4"
 description = "Python client and CLI to fetch data from the Base de Datos Nacional de Subvenciones (BDNS)"
 readme = "README.md"
 authors = ["José María Cruz Lorite <josemariacruzlorite@gmail.com>"]

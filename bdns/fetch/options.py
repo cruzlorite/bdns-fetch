@@ -79,7 +79,7 @@ pageSize: Optional[int] = typer.Option(
 order: Optional[Order] = typer.Option(
     None,
     "--order",
-    "-o",
+    "-ord",
     help="Order of the results. Can be 'nivel1', 'nivel2', 'nivel3', 'codConcesion', 'numeroConvocatoria', 'convocatoria', 'descripcionCooficial', 'instrumento', 'urlBR', 'fechaConcesion', 'beneficiario', 'importe', 'ayudaEquivalente' or 'tieneProyecto'.",
     show_default=True,
 )
@@ -106,7 +106,7 @@ vpd_required: str = typer.Option(
 descripcion: Optional[str] = typer.Option(
     None,
     "--descripcion",
-    "-d",
+    "-desc",
     help="Title or part of it, in Spanish or co-official language.",
     show_default=True,
 )
@@ -120,7 +120,7 @@ descripcionTipoBusqueda: Optional[DescripcionTipoBusqueda] = typer.Option(
 numeroConvocatoria: Optional[str] = typer.Option(
     None,
     "--numeroConvocatoria",
-    "-nc",
+    "-nconv",
     help="BDNS number of the call to search for.",
     show_default=True,
 )
@@ -159,7 +159,7 @@ tipoAdministracion: Optional[TipoAdministracion] = typer.Option(
 organos: Optional[List[int]] = typer.Option(
     None,
     "--organos",
-    "-o",
+    "-org",
     help="List of identifiers of the administrative bodies.",
     show_default=True,
 )
@@ -187,7 +187,7 @@ tiposBeneficiario_str: Optional[List[str]] = typer.Option(
 instrumentos: Optional[List[int]] = typer.Option(
     None,
     "--instrumentos",
-    "-i",
+    "-ins",
     help="List of identifiers of the selected aid instruments, separated by commas.",
     show_default=True,
 )
@@ -215,14 +215,14 @@ codConcesion: Optional[str] = typer.Option(
 idDocumento: Optional[int] = typer.Option(
     None,
     "--idDocumento",
-    "-id",
+    "-iddoc",
     help="Identifier of the document to search for.",
     show_default=True,
 )
 idDocumento_required: int = typer.Option(
     ...,
     "--idDocumento",
-    "-id",
+    "-iddoc",
     help="Identifier of the document.",
 )
 nifCif: Optional[str] = typer.Option(
@@ -242,27 +242,27 @@ beneficiario: Optional[str] = typer.Option(
 actividad: Optional[List[int]] = typer.Option(
     None,
     "--actividad",
-    "-a",
+    "-act",
     help="List of identifiers of the selected activities, separated by commas.",
     show_default=True,
 )
 id: Optional[int] = typer.Option(
     None,
     "--id",
-    "-i",
+    "-id",
     help="Identifier of the document to search for.",
     show_default=True,
 )
 id_required: int = typer.Option(
     ...,
     "--id",
-    "-i",
+    "-id",
     help="Identifier of the document.",
 )
 objetivos: Optional[List[int]] = typer.Option(
     None,
     "--objetivos",
-    "-o",
+    "-obj",
     help="List of identifiers of the objectives of the concession, separated by commas.",
     show_default=True,
 )
@@ -309,14 +309,14 @@ idAdmon_required: TipoAdministracion = typer.Option(
 ambito: Optional[Ambito] = typer.Option(
     None,
     "--ambito",
-    "-a",
+    "-amb",
     help="Indicator of the area where the search will be conducted (Concessions (C), State Aid (A), de Minimis (M), Sanctions (S), Political Parties (P), Large Beneficiaries (G)).",
     show_default=True,
 )
 busqueda: Optional[str] = typer.Option(
     None,
     "--busqueda",
-    "-b",
+    "-bus",
     help="Filter for the description field, must have a minimum length of 3.",
     show_default=True,
 )
@@ -330,14 +330,14 @@ idPersona: Optional[int] = typer.Option(
 reglamento: Optional[List[int]] = typer.Option(
     None,
     "--reglamento",
-    "-r",
+    "-reg",
     help="List of identifiers of the selected regulations, separated by commas.",
     show_default=True,
 )
 anios: Optional[List[int]] = typer.Option(
     None,
     "--anios",
-    "-a",
+    "-an",
     help="List of years in which they have been a large beneficiary.",
     show_default=True,
 )
@@ -388,7 +388,7 @@ idPES: Optional[int] = typer.Option(
 codigo: str = typer.Option(
     ...,
     "--codigo",
-    "-c",
+    "-cod",
     help="Organ code.",
 )
 

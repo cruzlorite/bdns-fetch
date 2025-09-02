@@ -89,9 +89,13 @@ with open("strategic_plan.pdf", "wb") as f:
     f.write(plan_doc)
 ```
 
-## 🎯 Command Line Interface (Bonus)
+## 🖥️ Command Line Interface
 
 For quick data extraction tasks, you can also use the included CLI tool:
+
+```bash
+bdns-fetch --help
+```
 
 ### CLI Installation & Usage
 

@@ -24,10 +24,11 @@ import logging
 
 from bdns.fetch.cli import app
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-
 if __name__ == "__main__":
+    # Configure logging only when run as CLI, not when imported
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        force=True,  # Ensure configuration is applied even if basicConfig was called before
+    )
     app()

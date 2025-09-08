@@ -39,8 +39,11 @@ from bdns.fetch.types import (
 )
 from bdns.fetch import options
 
-logging.basicConfig(level=logging.WARNING, stream=sys.stderr)
+# Use a named logger for this module, don't configure at import time
 logger = logging.getLogger(__name__)
+
+# Add a NullHandler to prevent logging errors if no handlers are configured
+logger.addHandler(logging.NullHandler())
 
 
 class BDNSClient:

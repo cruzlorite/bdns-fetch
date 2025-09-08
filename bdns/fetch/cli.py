@@ -78,15 +78,26 @@ def main(
 
     # Configure logging based on verbose flag
     if verbose_flag:
-        # Set detailed logging for HTTP requests/responses
-        logging.getLogger().setLevel(logging.DEBUG)
+        # Set detailed logging only for bdns-fetch related loggers
+        # Don't modify the root logger to avoid affecting other packages
         logging.getLogger("bdns.fetch").setLevel(logging.DEBUG)
         logging.getLogger("aiohttp.client").setLevel(logging.DEBUG)
         # Enable urllib3 logging for even more HTTP details
         logging.getLogger("urllib3.connectionpool").setLevel(logging.DEBUG)
+
+        # Only set up a console handler if none exists for bdns.fetch
+        bdns_logger = logging.getLogger("bdns.fetch")
+        if not bdns_logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter(
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            )
+            handler.setFormatter(formatter)
+            bdns_logger.addHandler(handler)
+            bdns_logger.propagate = False  # Don't propagate to root logger
     else:
-        # Keep default INFO level for normal operation
-        logging.getLogger().setLevel(logging.INFO)
+        # Keep default level for bdns.fetch logger only
+        logging.getLogger("bdns.fetch").setLevel(logging.INFO)
 
 
 def cli_wrapper(client_method_name):

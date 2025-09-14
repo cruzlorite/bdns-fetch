@@ -164,3 +164,17 @@ class TestCLI:
         first_record = json.loads(lines[0])
         assert "descripcion" in first_record, "Should have descripcion field"
         assert "id" in first_record, "Should have id field"
+
+    def test_cli_concesiones_busqueda_dates(self):
+        """Test that the CLI correctly handles date parameters for 'concesiones-busqueda'."""
+        result = self.runner.invoke(
+            app,
+            [
+                "concesiones-busqueda",
+                "--fechaDesde",
+                "two weeks ago",
+                "--fechaHasta",
+                "today",
+            ],
+        )
+        assert result.exit_code == 0

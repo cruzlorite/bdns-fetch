@@ -18,7 +18,7 @@ Author: josemariacruzlorite@gmail.com
 
 import sys
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum
 import functools
 import inspect
@@ -32,7 +32,7 @@ from typer.models import OptionInfo
 from bdns.fetch.exceptions import handle_api_response
 
 
-def format_date_for_api_request(date: datetime, output_format: str = "%d/%m/%Y"):
+def format_date_for_api_request(value: date, output_format: str = "%d/%m/%Y"):
     """
     Formats a date for API requests.
     Args:
@@ -41,11 +41,11 @@ def format_date_for_api_request(date: datetime, output_format: str = "%d/%m/%Y")
     Returns:
         str: The formatted date as a string.
     """
-    if date is None:
+    if value is None:
         return None
-    if not isinstance(date, datetime):
-        raise ValueError("The date must be a datetime object.")
-    return date.strftime(output_format)
+    if not isinstance(value, date):
+        raise ValueError("The date must be a date object.")
+    return value.strftime(output_format)
 
 
 def format_url(url: str, query_params: dict):

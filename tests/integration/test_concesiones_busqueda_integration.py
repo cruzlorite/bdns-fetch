@@ -5,7 +5,7 @@ These tests make real API calls to the BDNS API.
 """
 
 import pytest
-from datetime import datetime
+from datetime import date
 
 from bdns.fetch.client import BDNSClient
 
@@ -25,8 +25,8 @@ class TestConcesionesbusquedaIntegration:
             pageSize=10,
             num_pages=1,
             from_page=0,
-            fechaDesde=datetime(2015, 1, 1),
-            fechaHasta=datetime(2024, 12, 31),
+            fechaDesde=date(2015, 1, 1),
+            fechaHasta=date(2024, 12, 31),
         )
         data = list(data_generator)
 

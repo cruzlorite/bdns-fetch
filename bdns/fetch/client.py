@@ -11,12 +11,11 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import sys
 import json
 import asyncio
 import logging
-from typing import Any, Dict, Generator, List, Union
-from datetime import datetime
+from typing import Any, Dict, Generator, List
+from datetime import date
 from concurrent.futures import ThreadPoolExecutor
 
 import aiohttp
@@ -587,8 +586,8 @@ class BDNSClient:
         descripcion: str = options.descripcion,
         descripcionTipoBusqueda: DescripcionTipoBusqueda = options.descripcionTipoBusqueda,
         numeroConvocatoria: str = options.numeroConvocatoria,
-        fechaDesde: datetime = options.fechaDesde,
-        fechaHasta: datetime = options.fechaHasta,
+        fechaDesde: date = options.fechaDesde,
+        fechaHasta: date = options.fechaHasta,
         tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
         organos: List[int] = options.organos,
         regiones: List[int] = options.regiones,
@@ -650,8 +649,8 @@ class BDNSClient:
         descripcionTipoBusqueda: DescripcionTipoBusqueda = options.descripcionTipoBusqueda,
         numeroConvocatoria: str = options.numeroConvocatoria,
         codConcesion: str = options.codConcesion,
-        fechaDesde: datetime = options.fechaDesde,
-        fechaHasta: datetime = options.fechaHasta,
+        fechaDesde: date = options.fechaDesde,
+        fechaHasta: date = options.fechaHasta,
         tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
         organos: List[int] = options.organos,
         regiones: List[int] = options.regiones,
@@ -744,8 +743,8 @@ class BDNSClient:
         descripcionTipoBusqueda: DescripcionTipoBusqueda = options.descripcionTipoBusqueda,
         numeroConvocatoria: str = options.numeroConvocatoria,
         mrr: bool = options.mrr,
-        fechaDesde: datetime = options.fechaDesde,
-        fechaHasta: datetime = options.fechaHasta,
+        fechaDesde: date = options.fechaDesde,
+        fechaHasta: date = options.fechaHasta,
         tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
         organos: List[int] = options.organos,
         regiones: List[int] = options.regiones,
@@ -869,8 +868,8 @@ class BDNSClient:
         descripcionTipoBusqueda: DescripcionTipoBusqueda = options.descripcionTipoBusqueda,
         numeroConvocatoria: str = options.numeroConvocatoria,
         codConcesion: str = options.codConcesion,
-        fechaDesde: datetime = options.fechaDesde,
-        fechaHasta: datetime = options.fechaHasta,
+        fechaDesde: date = options.fechaDesde,
+        fechaHasta: date = options.fechaHasta,
         tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
         organos: List[int] = options.organos,
         regiones: List[int] = options.regiones,
@@ -934,8 +933,8 @@ class BDNSClient:
         vpd: str = options.vpd,
         descripcion: str = options.descripcion,
         descripcionTipoBusqueda: DescripcionTipoBusqueda = options.descripcionTipoBusqueda,
-        fechaDesde: datetime = options.fechaDesde,
-        fechaHasta: datetime = options.fechaHasta,
+        fechaDesde: date = options.fechaDesde,
+        fechaHasta: date = options.fechaHasta,
     ) -> Generator[Dict[str, Any], None, None]:
         """Fetches data from https://www.infosubvenciones.es/bdnstrans/api/planesestrategicos/busqueda"""
         params = {
@@ -995,8 +994,8 @@ class BDNSClient:
         descripcionTipoBusqueda: DescripcionTipoBusqueda = options.descripcionTipoBusqueda,
         numeroConvocatoria: str = options.numeroConvocatoria,
         codConcesion: str = options.codConcesion,
-        fechaDesde: datetime = options.fechaDesde,
-        fechaHasta: datetime = options.fechaHasta,
+        fechaDesde: date = options.fechaDesde,
+        fechaHasta: date = options.fechaHasta,
         tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
         organos: List[int] = options.organos,
         regiones: List[int] = options.regiones,
@@ -1051,8 +1050,8 @@ class BDNSClient:
         descripcion: str = options.descripcion,
         descripcionTipoBusqueda: DescripcionTipoBusqueda = options.descripcionTipoBusqueda,
         numeroConvocatoria: str = options.numeroConvocatoria,
-        fechaDesde: datetime = options.fechaDesde,
-        fechaHasta: datetime = options.fechaHasta,
+        fechaDesde: date = options.fechaDesde,
+        fechaHasta: date = options.fechaHasta,
         tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
         organos: List[int] = options.organos,
         regiones: List[int] = options.regiones,

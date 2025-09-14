@@ -11,11 +11,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 
-from datetime import datetime, date
+from datetime import date, datetime
 from typing import List, Optional
 from pathlib import Path
 
+import click
 import typer
+import dateparser
 
 from bdns.fetch.types import (
     Order,
@@ -26,14 +28,17 @@ from bdns.fetch.types import (
 )
 
 
-def parse_date(value: str) -> date:
-    try:
-        if value:
-            return datetime.strptime(value, "%Y-%m-%d").date()
-        else:
-            return None
-    except ValueError:
-        raise typer.BadParameter("Date must be in YYYY-MM-DD format")
+class DateParamType(click.ParamType):
+    name = "date"
+
+    def convert(self, value, param, ctx) -> date:
+        dt = dateparser.parse(value)
+        if dt is None:
+            self.fail(f"Could not parse date: {value}", param, ctx)
+        return dt.date()
+
+
+DateType = DateParamType()
 
 
 output_file: Optional[Path] = typer.Option(
@@ -157,18 +162,18 @@ fechaDesde: Optional[date] = typer.Option(
     None,
     "--fechaDesde",
     "-fd",
-    # callback=parse_date,
-    metavar="YYYY-MM-DD",
-    help="Start date of the period indicated for the search.",
+    click_type=DateType,
+    metavar="DATE",
+    help="Start date of the period indicated for the search. See https://github.com/scrapinghub/dateparser for supported formats.",
     show_default=True,
 )
 fechaHasta: Optional[date] = typer.Option(
     None,
     "--fechaHasta",
     "-fh",
-    # callback=parse_date,
-    metavar="YYYY-MM-DD",
-    help="End date of the period indicated for the search.",
+    click_type=DateType,
+    metavar="DATE",
+    help="End date of the period indicated for the search. See https://github.com/scrapinghub/dateparser for supported formats.",
     show_default=True,
 )
 tipoAdministracion: Optional[TipoAdministracion] = typer.Option(
@@ -367,18 +372,18 @@ vigenciaDesde: Optional[date] = typer.Option(
     None,
     "--vigenciaDesde",
     "-vd",
-    # callback=parse_date,
-    metavar="YYYY-MM-DD",
-    help="Start date of the validity of the strategic plan.",
+    click_type=DateType,
+    metavar="DATE",
+    help="Start date of the validity of the strategic plan. See https://github.com/scrapinghub/dateparser for supported formats.",
     show_default=True,
 )
 vigenciaHasta: Optional[date] = typer.Option(
     None,
     "--vigenciaHasta",
     "-vh",
-    # callback=parse_date,
-    metavar="YYYY-MM-DD",
-    help="End date of the validity of the strategic plan.",
+    click_type=DateType,
+    metavar="DATE",
+    help="End date of the validity of the strategic plan. See https://github.com/scrapinghub/dateparser for supported formats.",
     show_default=True,
 )
 numConv: Optional[str] = typer.Option(

@@ -55,7 +55,7 @@ for org in organos:
 
 ```
 
-Otro ejemplo: buscar subvenciones del Estado cuyo texto contenga "investigación". Se controla la paginación definiendo el tamaño de página y cuántas páginas queremos:
+Otro ejemplo: buscar [Ayudas de Estado](https://es.wikipedia.org/wiki/Ayudas_de_Estado_en_la_Uni%C3%B3n_Europea) cuyo texto contenga "investigación". Se controla la paginación definiendo el tamaño de página y cuántas páginas queremos:
 
 ```python
 resultados = client.fetch_ayudasestado_busqueda(

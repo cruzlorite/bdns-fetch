@@ -69,8 +69,8 @@ resultados = client.fetch_ayudasestado_busqueda(
     num_pages=5,     # maximum number of pages to retrieve
     from_page=0      # starting page (0 = first page)
 )
-for subvencion in resultados:
-    print(subvencion["titulo"], "-", subvencion["importe"])
+for element in resultados:
+    print(element["titulo"], "-", element["importe"])
 ```
 
 It is also possible to download associated binary documents (e.g., calls for proposals or strategic plans) using the appropriate methods that return bytes. For example:

@@ -64,8 +64,8 @@ resultados = client.fetch_ayudasestado_busqueda(
     num_pages=5,     # número máximo de páginas a recuperar
     from_page=0      # página de inicio (0 = primera página)
 )
-for subvencion in resultados:
-    print(subvencion["titulo"], "-", subvencion["importe"])
+for element in resultados:
+    print(element["titulo"], "-", element["importe"])
 
 ```
 

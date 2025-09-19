@@ -15,17 +15,21 @@
 BDNS Fetch CLI: Command-line interface for BDNS data fetching.
 """
 
+
 import typer
 import functools
 import logging
 import click
 from pathlib import Path
 
-from bdns.fetch.utils import extract_option_values, write_to_file
+from bdns.fetch.utils import write_to_file
 from bdns.fetch.client import BDNSClient
 from bdns.fetch import options
 from bdns.fetch import __version__
 
+
+# Define a global BDNSClient instance with default parameters
+bnds_client = None
 app = typer.Typer()
 
 
@@ -63,8 +67,10 @@ def main(
         typer.echo(ctx.get_help())
         raise typer.Exit()
 
+
     # Create configured client instance
-    client = BDNSClient(
+    global bnds_client
+    bnds_client = BDNSClient(
         max_retries=max_retries,
         wait_time=wait_time,
         max_concurrent_requests=max_concurrent_requests,
@@ -73,7 +79,7 @@ def main(
     ctx.obj = {
         "output_file": output_file,
         "verbose": verbose_flag,
-        "client": client,  # Store configured client in context
+        "client": bnds_client,  # Store configured client in context
     }
 
     # Configure logging based on verbose flag
@@ -110,20 +116,17 @@ def cli_wrapper(client_method_name):
     Returns:
         A function that can be used as a Typer command
     """
-
-    # Get the method signature from a default client instance
-    default_client = BDNSClient()
-    original_method = getattr(default_client, client_method_name)
+    # Get the method signature from the global client instance
+    client = BDNSClient()
+    original_method = getattr(client, client_method_name)
 
     @functools.wraps(original_method)
     def wrapper(*args, **kwargs):
-        # Get the configured client from context
         ctx = click.get_current_context()
         output_file = ctx.obj["output_file"]
-        client = ctx.obj["client"]
 
-        # Call the method on the configured client
-        client_method = getattr(client, client_method_name)
+        # Call the method on the selected client
+        client_method = getattr(bnds_client, client_method_name)
         data_generator = client_method(*args, **kwargs)
         write_to_file(data_generator, output_file)
         return None

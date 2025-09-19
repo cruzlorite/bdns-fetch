@@ -15,7 +15,6 @@
 BDNS Fetch CLI: Command-line interface for BDNS data fetching.
 """
 
-
 import typer
 import functools
 import logging
@@ -66,7 +65,6 @@ def main(
     if ctx.invoked_subcommand is None:
         typer.echo(ctx.get_help())
         raise typer.Exit()
-
 
     # Create configured client instance
     global bnds_client

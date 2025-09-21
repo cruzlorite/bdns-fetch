@@ -220,7 +220,7 @@ class BDNSClient:
                     for task in tqdm(
                         asyncio.as_completed(tasks),
                         total=len(tasks),
-                        desc=f"Fetching from page {from_page + 1} to page {to_page - 1} out of {total_pages} pages"
+                        desc=f"Fetching from page {from_page + 1} to page {to_page - 1} out of {total_pages} pages",
                     ):
                         response = await task
                         content = response.get("content", [])

@@ -220,17 +220,13 @@ class BDNSClient:
                     for task in tqdm(
                         asyncio.as_completed(tasks),
                         total=len(tasks),
-                        desc="Fetching pages",
+                        desc=f"Fetching from page {from_page + 1} to page {to_page - 1} out of {total_pages} pages"
                     ):
-                        try:
-                            response = await task
-                            content = response.get("content", [])
-                            if isinstance(content, list):
-                                for item in content:
-                                    yield item
-                        except Exception as e:
-                            logger.error(f"Error fetching page: {e}")
-                            continue
+                        response = await task
+                        content = response.get("content", [])
+                        if isinstance(content, list):
+                            for item in content:
+                                yield item
 
             except Exception as e:
                 logger.error(f"Error in paginated fetch: {e}")

@@ -1,6 +1,6 @@
 """BDNS Fetch - Base de Datos Nacional de Subvenciones (BDNS) Client."""
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 from bdns.fetch.utils import smart_open, format_date_for_api_request, format_url
 from bdns.fetch.types import (

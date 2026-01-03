@@ -19,9 +19,9 @@ Legal data retention also applies: grants remain published for 4 years from thei
 
 ## Project Purpose
 
-The goal of the **bdns-fetch** repository is to facilitate **programmatic** access to BDNS data. It is a Python library and command-line tool (CLI) that implements the official BDNS API, enabling automated extraction and analysis of subsidies. Specifically, bdns-fetch covers all 29 data endpoints available in the BDNS API, with full parameter support, automatic pagination handling, and configurable concurrency. It offers both a clean, typed Python client interface and a `bdns-fetch` command for quick testing.  
+The goal of the **bdns-fetch** repository is to facilitate **programmatic** access to BDNS data. It is a Python library and command-line tool (CLI) that implements the official BDNS API, enabling automated extraction and analysis of subsidies. Specifically, bdns-fetch covers all 29 data endpoints available in the BDNS API, with full parameter support and automatic pagination handling. It offers both a clean, typed Python client interface and a `bdns-fetch` command for quick testing.  
 
-This overcomes the limitations of the official web portal (basic and often slow search, no option for bulk downloads) since bdns-fetch allows parallel queries and full extraction of data into JSONL files.
+This overcomes the limitations of the official web portal (basic and often slow search, no option for bulk downloads) since bdns-fetch allows automated queries and full extraction of data into JSONL files.
 
 **Key advantages of bdns-fetch:**  
 - Quickly download subsidies filtered by criteria (organization, date, description, etc.)  

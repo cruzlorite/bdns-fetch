@@ -36,7 +36,6 @@ app = typer.Typer()
 def main(
     ctx: typer.Context,
     output_file: Path = options.output_file,
-    max_concurrent_requests: int = options.max_concurrent_requests,
     max_retries: int = options.max_retries,
     wait_time: int = options.wait_time,
     version: bool = options.version,
@@ -50,7 +49,7 @@ def main(
     \b
     Examples:
       bdns-fetch --output-file organos.jsonl organos
-      bdns-fetch --max-concurrent-requests 10 --output-file convocatorias.jsonl convocatorias-busqueda --fechaDesde "2024-01-01"
+      bdns-fetch --output-file convocatorias.jsonl convocatorias-busqueda --fechaDesde "2024-01-01"
       bdns-fetch --max-retries 5 --wait-time 1 ayudasestado-busqueda --descripcion "innovation"
 
     \b
@@ -71,7 +70,6 @@ def main(
     bnds_client = BDNSClient(
         max_retries=max_retries,
         wait_time=wait_time,
-        max_concurrent_requests=max_concurrent_requests,
     )
 
     ctx.obj = {

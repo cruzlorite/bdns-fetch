@@ -12,15 +12,12 @@
 # with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import json
-import asyncio
 import logging
 from typing import Any, Dict, Generator, List
 from datetime import date
-from concurrent.futures import ThreadPoolExecutor
 
-import aiohttp
 import requests
-from tqdm.asyncio import tqdm
+from tqdm import tqdm
 from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_fixed
 
 from bdns.fetch.utils import (
@@ -49,24 +46,19 @@ class BDNSClient:
     """
     Client for interacting with the BDNS API programmatically.
 
-    Provides configurable retry behavior and concurrent request handling
-    for all BDNS API endpoints.
+    Provides configurable retry behavior for all BDNS API endpoints.
     """
 
-    def __init__(
-        self, max_retries: int = 3, wait_time: int = 2, max_concurrent_requests: int = 5
-    ):
+    def __init__(self, max_retries: int = 3, wait_time: int = 2):
         """
-        Initialize the BDNS client with configurable retry and concurrency settings.
+        Initialize the BDNS client with configurable retry settings.
 
         Args:
             max_retries (int): Maximum number of retries for failed requests. Default: 3
             wait_time (int): Time to wait between retries in seconds. Default: 2
-            max_concurrent_requests (int): Maximum concurrent requests for pagination. Default: 5
         """
         self.max_retries = max_retries
         self.wait_time = wait_time
-        self.max_concurrent_requests = max_concurrent_requests
 
     def _log_retry_attempt(self, retry_state):
         """Log retry attempts with instance-specific retry count."""
@@ -83,154 +75,87 @@ class BDNSClient:
         """Create a retry decorator with instance-specific settings."""
         return retry(
             stop=stop_after_attempt(self.max_retries),
-            retry=retry_if_exception_type((aiohttp.ClientError, asyncio.TimeoutError)),
+            retry=retry_if_exception_type((requests.RequestException,)),
             wait=wait_fixed(self.wait_time),
             before_sleep=self._log_retry_attempt,
         )
 
-    async def _async_fetch_page(self, semaphore, session, url):
+    def _fetch_single_page(self, url: str) -> Dict[str, Any]:
         """
         Fetches data from a single page with error handling and retries.
         """
         retry_decorator = self._create_retry_decorator()
 
         @retry_decorator
-        async def fetch_with_retries():
-            async with semaphore:
-                # Log the outgoing request
-                logger.debug(f"HTTP REQUEST: GET {url}")
+        def fetch_with_retries():
+            # Log the outgoing request
+            logger.debug(f"HTTP REQUEST: GET {url}")
 
-                start_time = asyncio.get_event_loop().time()
-                async with session.get(url) as resp:
-                    end_time = asyncio.get_event_loop().time()
-                    response_time = (
-                        end_time - start_time
-                    ) * 1000  # Convert to milliseconds
+            import time
 
-                    # Log response details
-                    logger.debug(
-                        f"HTTP RESPONSE: {resp.status} {resp.reason} - {response_time:.1f}ms"
-                    )
-                    logger.debug(f"Response Headers: {dict(resp.headers)}")
+            start_time = time.time()
 
-                    data = await resp.json()
+            response = requests.get(url, timeout=30)
 
-                    # Log response content size and basic info
-                    content_size = (
-                        len(await resp.text()) if hasattr(resp, "text") else 0
-                    )
-                    logger.debug(f"Response Content-Length: {content_size} bytes")
+            end_time = time.time()
+            response_time = (end_time - start_time) * 1000  # Convert to milliseconds
 
-                    if isinstance(data, dict):
-                        if "content" in data and isinstance(data["content"], list):
-                            logger.debug(
-                                f"Response contains {len(data['content'])} items"
-                            )
-                        if "totalPages" in data:
-                            logger.debug(f"Total pages available: {data['totalPages']}")
-                        if "number" in data:
-                            logger.debug(f"Current page: {data['number']}")
-
-                    # Handle API errors
-                    if "codigo" in data and "error" in data:
-                        logger.error(f"API Error Response: {data}")
-                        from bdns.fetch.exceptions import BDNSError
-
-                        tech_details = f"API error code {data['codigo']}: {data['error']} from {url}"
-                        tech_details += f"\nResponse status: {resp.status}"
-                        tech_details += f"\nResponse headers: {dict(resp.headers)}"
-                        tech_details += f"\nFull response data: {data}"
-
-                        raise BDNSError(
-                            message=f"API returned error: {data['error']}",
-                            suggestion="Check your parameters and try again. Use --help for valid options.",
-                            technical_details=tech_details,
-                        )
-
-                    if resp.status != 200:
-                        logger.error(f"HTTP Error {resp.status}: {resp.reason}")
-                        logger.error(f"Response body: {data}")
-                        from bdns.fetch.exceptions import handle_api_error
-
-                        response_text = (
-                            json.dumps(data) if isinstance(data, dict) else str(data)
-                        )
-                        raise handle_api_error(
-                            resp.status, url, response_text, dict(resp.headers)
-                        )
-
-                    return data
-
-        return await fetch_with_retries()
-
-    async def _async_fetch_paginated_generator(
-        self,
-        base_url: str,
-        params: Dict[str, Any],
-        from_page: int = 0,
-        num_pages: int = 0,
-        max_concurrent_requests: int = None,
-    ):
-        """
-        Async generator that fetches paginated data with concurrent requests.
-        """
-        if max_concurrent_requests is None:
-            max_concurrent_requests = self.max_concurrent_requests
-
-        semaphore = asyncio.Semaphore(max_concurrent_requests)
-
-        async with aiohttp.ClientSession() as session:
-            # Fetch the first page to get total page count
-            first_page_params = {**params, "page": from_page}
-            first_page_url = format_url(base_url, first_page_params)
+            # Log response details
+            logger.debug(
+                f"HTTP RESPONSE: {response.status_code} {response.reason} - {response_time:.1f}ms"
+            )
+            logger.debug(f"Response Headers: {dict(response.headers)}")
 
             try:
-                first_response = await self._async_fetch_page(
-                    semaphore, session, first_page_url
+                data = response.json()
+            except ValueError:
+                data = response.text
+
+            # Log response content size and basic info
+            content_size = len(response.text)
+            logger.debug(f"Response Content-Length: {content_size} bytes")
+
+            if isinstance(data, dict):
+                if "content" in data and isinstance(data["content"], list):
+                    logger.debug(f"Response contains {len(data['content'])} items")
+                if "totalPages" in data:
+                    logger.debug(f"Total pages available: {data['totalPages']}")
+                if "number" in data:
+                    logger.debug(f"Current page: {data['number']}")
+
+            # Handle API errors
+            if isinstance(data, dict) and "codigo" in data and "error" in data:
+                logger.error(f"API Error Response: {data}")
+                from bdns.fetch.exceptions import BDNSError
+
+                tech_details = (
+                    f"API error code {data['codigo']}: {data['error']} from {url}"
                 )
-                total_pages = first_response.get("totalPages", 1)
+                tech_details += f"\nResponse status: {response.status_code}"
+                tech_details += f"\nResponse headers: {dict(response.headers)}"
+                tech_details += f"\nFull response data: {data}"
 
-                # Yield items from the first page
-                content = first_response.get("content", [])
-                if isinstance(content, list):
-                    for item in content:
-                        yield item
-
-                # Determine pages to fetch
-                to_page = (
-                    total_pages
-                    if num_pages == 0
-                    else min(from_page + num_pages, total_pages)
+                raise BDNSError(
+                    message=f"API returned error: {data['error']}",
+                    suggestion="Check your parameters and try again. Use --help for valid options.",
+                    technical_details=tech_details,
                 )
 
-                # If there are more pages, fetch them concurrently
-                if from_page + 1 < to_page:
-                    # Create tasks for remaining pages
-                    tasks = []
-                    for page in range(from_page + 1, to_page):
-                        page_params = {**params, "page": page}
-                        page_url = format_url(base_url, page_params)
-                        tasks.append(
-                            asyncio.create_task(
-                                self._async_fetch_page(semaphore, session, page_url)
-                            )
-                        )
+            if response.status_code != 200:
+                logger.error(f"HTTP Error {response.status_code}: {response.reason}")
+                logger.error(f"Response body: {data}")
+                from bdns.fetch.exceptions import handle_api_error
 
-                    # Process completed tasks as they finish
-                    for task in tqdm(
-                        asyncio.as_completed(tasks),
-                        total=len(tasks),
-                        desc=f"Fetching from page {from_page + 1} to page {to_page - 1} out of {total_pages} pages",
-                    ):
-                        response = await task
-                        content = response.get("content", [])
-                        if isinstance(content, list):
-                            for item in content:
-                                yield item
+                response_text = (
+                    json.dumps(data) if isinstance(data, dict) else str(data)
+                )
+                raise handle_api_error(
+                    response.status_code, url, response_text, dict(response.headers)
+                )
 
-            except Exception as e:
-                logger.error(f"Error in paginated fetch: {e}")
-                raise
+            return data
+
+        return fetch_with_retries()
 
     def _fetch_paginated(
         self,
@@ -238,111 +163,50 @@ class BDNSClient:
         params: Dict[str, Any],
         from_page: int = 0,
         num_pages: int = 0,
-        max_concurrent_requests: int = None,
     ) -> Generator[Dict[str, Any], None, None]:
         """
-        Synchronous generator wrapper for paginated data fetching.
+        Synchronous generator for paginated data fetching.
         """
-        if max_concurrent_requests is None:
-            max_concurrent_requests = self.max_concurrent_requests
+        # Fetch the first page to get total page count
+        first_page_params = {**params, "page": from_page}
+        first_page_url = format_url(base_url, first_page_params)
 
-        # Run the async generator in a new event loop
-        def run_async_generator():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                async_gen = self._async_fetch_paginated_generator(
-                    base_url, params, from_page, num_pages, max_concurrent_requests
-                )
+        try:
+            first_response = self._fetch_single_page(first_page_url)
+            total_pages = first_response.get("totalPages", 1)
 
-                async def collect_items():
-                    items = []
-                    async for item in async_gen:
-                        items.append(item)
-                    return items
+            # Yield items from the first page
+            content = first_response.get("content", [])
+            if isinstance(content, list):
+                for item in content:
+                    yield item
 
-                return loop.run_until_complete(collect_items())
-            finally:
-                loop.close()
+            # Determine pages to fetch
+            to_page = (
+                total_pages
+                if num_pages == 0
+                else min(from_page + num_pages, total_pages)
+            )
 
-        # Use ThreadPoolExecutor to avoid blocking the main thread
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(run_async_generator)
-            items = future.result()
+            # If there are more pages, fetch them sequentially
+            if from_page + 1 < to_page:
+                pages_to_fetch = list(range(from_page + 1, to_page))
 
-        # Yield each item
-        for item in items:
-            yield item
+                for page in tqdm(
+                    pages_to_fetch,
+                    desc=f"Fetching from page {from_page + 1} to page {to_page} out of {total_pages} pages",
+                ):
+                    page_params = {**params, "page": page}
+                    page_url = format_url(base_url, page_params)
+                    response = self._fetch_single_page(page_url)
+                    content = response.get("content", [])
+                    if isinstance(content, list):
+                        for item in content:
+                            yield item
 
-    async def _async_fetch_single(self, session, url):
-        """
-        Fetches data from a single URL with error handling and retries.
-        """
-        retry_decorator = self._create_retry_decorator()
-
-        @retry_decorator
-        async def fetch_with_retries():
-            # Log the outgoing request
-            logger.debug(f"HTTP REQUEST: GET {url}")
-
-            start_time = asyncio.get_event_loop().time()
-            async with session.get(url) as resp:
-                end_time = asyncio.get_event_loop().time()
-                response_time = (
-                    end_time - start_time
-                ) * 1000  # Convert to milliseconds
-
-                # Log response details
-                logger.debug(
-                    f"HTTP RESPONSE: {resp.status} {resp.reason} - {response_time:.1f}ms"
-                )
-                logger.debug(f"Response Headers: {dict(resp.headers)}")
-
-                data = await resp.json()
-
-                # Log response content size and basic info
-                content_size = len(await resp.text()) if hasattr(resp, "text") else 0
-                logger.debug(f"Response Content-Length: {content_size} bytes")
-
-                if isinstance(data, dict):
-                    if "content" in data and isinstance(data["content"], list):
-                        logger.debug(f"Response contains {len(data['content'])} items")
-                elif isinstance(data, list):
-                    logger.debug(f"Response contains {len(data)} items")
-
-                # Handle API errors
-                if isinstance(data, dict) and "codigo" in data and "error" in data:
-                    logger.error(f"API Error Response: {data}")
-                    from bdns.fetch.exceptions import BDNSAPIError
-
-                    tech_details = (
-                        f"API error code {data['codigo']}: {data['error']} from {url}"
-                    )
-                    tech_details += f"\nResponse status: {resp.status}"
-                    tech_details += f"\nResponse headers: {dict(resp.headers)}"
-                    tech_details += f"\nFull response data: {data}"
-
-                    raise BDNSAPIError(
-                        message=f"API returned error: {data['error']}",
-                        suggestion="Check your parameters and try again. Use --help for valid options.",
-                        technical_details=tech_details,
-                    )
-
-                if resp.status != 200:
-                    logger.error(f"HTTP Error {resp.status}: {resp.reason}")
-                    logger.error(f"Response body: {data}")
-                    from bdns.fetch.exceptions import handle_api_error
-
-                    response_text = (
-                        json.dumps(data) if isinstance(data, dict) else str(data)
-                    )
-                    raise handle_api_error(
-                        resp.status, url, response_text, dict(resp.headers)
-                    )
-
-                return data
-
-        return await fetch_with_retries()
+        except Exception as e:
+            logger.error(f"Error in paginated fetch: {e}")
+            raise
 
     def _fetch(
         self, url: str, params: Dict[str, Any] = None
@@ -356,24 +220,8 @@ class BDNSClient:
         else:
             full_url = url
 
-        # Run the async fetch in a new event loop
-        def run_async_fetch():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-
-                async def fetch_data():
-                    async with aiohttp.ClientSession() as session:
-                        return await self._async_fetch_single(session, full_url)
-
-                return loop.run_until_complete(fetch_data())
-            finally:
-                loop.close()
-
-        # Use ThreadPoolExecutor to avoid blocking the main thread
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(run_async_fetch)
-            data = future.result()
+        # Use the synchronous single page fetch method
+        data = self._fetch_single_page(full_url)
 
         # Yield individual items based on response structure
         if isinstance(data, list):
@@ -629,7 +477,6 @@ class BDNSClient:
             params=params,
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=self.max_concurrent_requests,
         )
 
     @extract_option_values
@@ -698,7 +545,6 @@ class BDNSClient:
             params=params,
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=self.max_concurrent_requests,
         )
 
     @extract_option_values
@@ -784,7 +630,6 @@ class BDNSClient:
             params=params,
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=self.max_concurrent_requests,
         )
 
     @extract_option_values
@@ -848,7 +693,6 @@ class BDNSClient:
             params=params,
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=self.max_concurrent_requests,
         )
 
     @extract_option_values
@@ -915,7 +759,6 @@ class BDNSClient:
             params=params,
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=self.max_concurrent_requests,
         )
 
     @extract_option_values
@@ -956,7 +799,6 @@ class BDNSClient:
             params=params,
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=self.max_concurrent_requests,
         )
 
     @extract_option_values
@@ -1031,7 +873,6 @@ class BDNSClient:
             params=params,
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=self.max_concurrent_requests,
         )
 
     @extract_option_values
@@ -1092,5 +933,4 @@ class BDNSClient:
             params=params,
             from_page=from_page,
             num_pages=num_pages,
-            max_concurrent_requests=self.max_concurrent_requests,
         )

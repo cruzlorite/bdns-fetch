@@ -38,6 +38,8 @@ def main(
     output_file: Path = options.output_file,
     max_retries: int = options.max_retries,
     wait_time: int = options.wait_time,
+    max_workers: int = options.max_workers,
+    return_raw: bool = options.return_raw,
     version: bool = options.version,
     verbose_flag: bool = options.verbose_flag,
 ):
@@ -70,6 +72,8 @@ def main(
     bnds_client = BDNSClient(
         max_retries=max_retries,
         wait_time=wait_time,
+        max_workers=max_workers,
+        return_raw=return_raw,
     )
 
     ctx.obj = {

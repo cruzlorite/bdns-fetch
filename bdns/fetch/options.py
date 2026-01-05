@@ -418,3 +418,21 @@ verbose_flag: bool = typer.Option(
     help="Enable verbose logging to show detailed HTTP requests and responses.",
     show_default=True,
 )
+
+max_workers: int = typer.Option(
+    5,
+    "--max-workers",
+    "-mw",
+    min=1,
+    max=20,
+    help="Maximum number of concurrent threads for paginated requests.",
+    show_default=True,
+)
+
+return_raw: bool = typer.Option(
+    False,
+    "--return-raw",
+    "-rr",
+    help="Return raw page objects instead of individual items from paginated responses.",
+    show_default=True,
+)

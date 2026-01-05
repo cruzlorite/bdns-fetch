@@ -50,16 +50,26 @@ class BDNSClient:
     Provides configurable retry behavior for all BDNS API endpoints.
     """
 
-    def __init__(self, max_retries: int = 3, wait_time: int = 2):
+    def __init__(
+        self,
+        max_retries: int = 3,
+        wait_time: int = 2,
+        max_workers: int = 5,
+        return_raw: bool = False,
+    ):
         """
         Initialize the BDNS client with configurable retry settings.
 
         Args:
             max_retries (int): Maximum number of retries for failed requests. Default: 3
             wait_time (int): Time to wait between retries in seconds. Default: 2
+            max_workers (int): Maximum number of concurrent threads for paginated requests. Default: 5
+            return_raw (bool): Return raw page objects instead of individual items from paginated responses. Default: False
         """
         self.max_retries = max_retries
         self.wait_time = wait_time
+        self.max_workers = max_workers
+        self.return_raw = return_raw
 
     def _log_retry_attempt(self, retry_state):
         """Log retry attempts with instance-specific retry count."""
@@ -167,7 +177,7 @@ class BDNSClient:
     ) -> Generator[Dict[str, Any], None, None]:
         """
         Synchronous generator for paginated data fetching.
-        """            
+        """
         # Fetch the first page to get total page count
         first_page_params = {**params, "page": from_page}
         first_page_url = format_url(base_url, first_page_params)
@@ -176,10 +186,13 @@ class BDNSClient:
             first_response = self._fetch_single_page(first_page_url)
             total_pages = first_response.get("totalPages", 1)
 
-            # Yield items from the first page
-            content = first_response.get("content", [])
-            if isinstance(content, list):
-                for item in content:
+            # Handle first page based on return_raw setting
+            if self.return_raw:
+                # Yield the entire first page response
+                yield first_response
+            else:
+                # Yield individual items from the first page
+                for item in first_response["content"]:
                     yield item
 
             # Determine pages to fetch
@@ -211,20 +224,29 @@ class BDNSClient:
                 for page in pages_to_fetch
             ]
 
-
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.max_workers
+            ) as executor:
                 # Submit all tasks, getting a future for each
-                futures = [executor.submit(self._fetch_single_page, url) for url in urls]
+                futures = [
+                    executor.submit(self._fetch_single_page, url) for url in urls
+                ]
 
                 # Process results as they complete
                 for future in tqdm(
-                        concurrent.futures.as_completed(futures),
-                        total=len(futures),
-                        desc="Fetching pages"):
+                    concurrent.futures.as_completed(futures),
+                    total=len(futures),
+                    desc="Fetching pages",
+                ):
                     data = future.result()
                     if isinstance(data, dict):
-                        for item in data.get("content", []):
-                            yield item
+                        if self.return_raw:
+                            # Yield the entire page response
+                            yield data
+                        else:
+                            # Yield individual items from content
+                            for item in data["content"]:
+                                yield item
                     futures.remove(future)
 
         except Exception as e:
@@ -246,22 +268,27 @@ class BDNSClient:
         # Use the synchronous single page fetch method
         data = self._fetch_single_page(full_url)
 
-        # Yield individual items based on response structure
-        if isinstance(data, list):
-            # Direct list response
-            for item in data:
-                yield item
-        elif isinstance(data, dict):
-            if "content" in data and isinstance(data["content"], list):
-                # Paginated response structure (but single page)
-                for item in data["content"]:
-                    yield item
-            else:
-                # Single object response
-                yield data
-        else:
-            logger.warning(f"Unexpected response type: {type(data)}")
+        # Handle return_raw setting
+        if self.return_raw:
+            # Yield the entire response object as returned by _fetch_single_page
             yield data
+        else:
+            # Yield individual items based on response structure
+            if isinstance(data, list):
+                # Direct list response
+                for item in data:
+                    yield item
+            elif isinstance(data, dict):
+                if "content" in data and isinstance(data["content"], list):
+                    # Paginated response structure (but single page)
+                    for item in data["content"]:
+                        yield item
+                else:
+                    # Single object response
+                    yield data
+            else:
+                logger.warning(f"Unexpected response type: {type(data)}")
+                yield data
 
     def _fetch_binary(self, url: str) -> bytes:
         """

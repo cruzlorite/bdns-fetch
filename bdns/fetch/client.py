@@ -15,6 +15,7 @@ import json
 import logging
 from typing import Any, Dict, Generator, List
 from datetime import date
+import concurrent.futures
 
 import requests
 from tqdm import tqdm
@@ -166,7 +167,7 @@ class BDNSClient:
     ) -> Generator[Dict[str, Any], None, None]:
         """
         Synchronous generator for paginated data fetching.
-        """
+        """            
         # Fetch the first page to get total page count
         first_page_params = {**params, "page": from_page}
         first_page_url = format_url(base_url, first_page_params)
@@ -188,21 +189,43 @@ class BDNSClient:
                 else min(from_page + num_pages, total_pages)
             )
 
-            # If there are more pages, fetch them sequentially
-            if from_page + 1 < to_page:
-                pages_to_fetch = list(range(from_page + 1, to_page))
+            # # If there are more pages, fetch them sequentially
+            # if from_page + 1 < to_page:
+            #     pages_to_fetch = list(range(from_page + 1, to_page))
 
-                for page in tqdm(
-                    pages_to_fetch,
-                    desc=f"Fetching from page {from_page + 1} to page {to_page} out of {total_pages} pages",
-                ):
-                    page_params = {**params, "page": page}
-                    page_url = format_url(base_url, page_params)
-                    response = self._fetch_single_page(page_url)
-                    content = response.get("content", [])
-                    if isinstance(content, list):
-                        for item in content:
+            #     for page in tqdm(
+            #         pages_to_fetch,
+            #         desc=f"Fetching from page {from_page + 1} to page {to_page} out of {total_pages} pages",
+            #     ):
+            #         page_params = {**params, "page": page}
+            #         page_url = format_url(base_url, page_params)
+            #         response = self._fetch_single_page(page_url)
+            #         content = response.get("content", [])
+            #         if isinstance(content, list):
+            #             for item in content:
+            #                 yield item
+
+            pages_to_fetch = list(range(from_page + 1, to_page))
+            urls = [
+                format_url(base_url, {**params, "page": page})
+                for page in pages_to_fetch
+            ]
+
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                # Submit all tasks, getting a future for each
+                futures = [executor.submit(self._fetch_single_page, url) for url in urls]
+
+                # Process results as they complete
+                for future in tqdm(
+                        concurrent.futures.as_completed(futures),
+                        total=len(futures),
+                        desc="Fetching pages"):
+                    data = future.result()
+                    if isinstance(data, dict):
+                        for item in data.get("content", []):
                             yield item
+                    futures.remove(future)
 
         except Exception as e:
             logger.error(f"Error in paginated fetch: {e}")

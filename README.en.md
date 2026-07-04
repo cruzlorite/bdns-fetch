@@ -133,6 +133,14 @@ Global options:
 | `sanciones-busqueda` | `fetch_sanciones_busqueda` |
 | `terceros` | `fetch_terceros` |
 
+## Good practices (official)
+
+Per the official ["Buenas prácticas API SNPSAP"](https://www.infosubvenciones.es/bdnstrans/estaticos/ayuda/Buenas%20pr%C3%A1cticas%20API%20SNPSAP.pdf) document:
+
+- **Rate limit**: max 10 GET requests/second per IP. `bdns-fetch` enforces this internally with a shared token-bucket limiter across all HTTP calls, regardless of `--max-workers`.
+- **Incremental sync**: use `fechaRegInicio`/`fechaRegFin` (registration date) to detect new/changed records — not `fechaConcesion`/`fechaDesde`/`fechaHasta` (grant date), a separate, independent filter. Available on `concesiones-busqueda`, `ayudasestado-busqueda`, `minimis-busqueda`, `partidospoliticos-busqueda`.
+- **`terceros`**: the document flags this endpoint as redundant — `concesiones-busqueda` already returns full beneficiary data. Prefer `concesiones-busqueda` and skip `terceros`.
+
 ## Limitations
 
 - Export endpoints (CSV/XLSX generation) and portal configuration routes are not implemented.

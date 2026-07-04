@@ -25,6 +25,7 @@ from bdns.fetch.utils import (
     format_url,
     format_date_for_api_request,
     extract_option_values,
+    RateLimiter,
 )
 from bdns.fetch.endpoints import *
 from bdns.fetch.types import (
@@ -49,6 +50,10 @@ class BDNSClient:
 
     Provides configurable retry behavior for all BDNS API endpoints.
     """
+
+    # Shared across all instances/threads: the API allows at most 10 GET
+    # requests per second per IP, regardless of how many workers fetch pages.
+    _rate_limiter = RateLimiter(rate=10, per=1.0)
 
     def __init__(
         self,
@@ -104,6 +109,7 @@ class BDNSClient:
 
             import time
 
+            self._rate_limiter.acquire()
             start_time = time.time()
 
             response = requests.get(url, timeout=30)
@@ -301,6 +307,7 @@ class BDNSClient:
 
         @retry_decorator
         def fetch_with_retries():
+            self._rate_limiter.acquire()
             response = requests.get(url, timeout=30)
 
             logger.debug(
@@ -486,6 +493,8 @@ class BDNSClient:
         numeroConvocatoria: str = options.numeroConvocatoria,
         fechaDesde: date = options.fechaDesde,
         fechaHasta: date = options.fechaHasta,
+        fechaRegInicio: date = options.fechaRegInicio,
+        fechaRegFin: date = options.fechaRegFin,
         tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
         organos: List[int] = options.organos,
         regiones: List[int] = options.regiones,
@@ -513,6 +522,12 @@ class BDNSClient:
             else None,
             "fechaHasta": format_date_for_api_request(fechaHasta)
             if fechaHasta
+            else None,
+            "fechaRegInicio": format_date_for_api_request(fechaRegInicio)
+            if fechaRegInicio
+            else None,
+            "fechaRegFin": format_date_for_api_request(fechaRegFin)
+            if fechaRegFin
             else None,
             "organos": organos,
             "regiones": regiones,
@@ -548,6 +563,8 @@ class BDNSClient:
         codConcesion: str = options.codConcesion,
         fechaDesde: date = options.fechaDesde,
         fechaHasta: date = options.fechaHasta,
+        fechaRegInicio: date = options.fechaRegInicio,
+        fechaRegFin: date = options.fechaRegFin,
         tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
         organos: List[int] = options.organos,
         regiones: List[int] = options.regiones,
@@ -578,6 +595,12 @@ class BDNSClient:
             else None,
             "fechaHasta": format_date_for_api_request(fechaHasta)
             if fechaHasta
+            else None,
+            "fechaRegInicio": format_date_for_api_request(fechaRegInicio)
+            if fechaRegInicio
+            else None,
+            "fechaRegFin": format_date_for_api_request(fechaRegFin)
+            if fechaRegFin
             else None,
             "organos": organos,
             "regiones": regiones,
@@ -764,6 +787,8 @@ class BDNSClient:
         codConcesion: str = options.codConcesion,
         fechaDesde: date = options.fechaDesde,
         fechaHasta: date = options.fechaHasta,
+        fechaRegInicio: date = options.fechaRegInicio,
+        fechaRegFin: date = options.fechaRegFin,
         tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
         organos: List[int] = options.organos,
         regiones: List[int] = options.regiones,
@@ -792,6 +817,12 @@ class BDNSClient:
             else None,
             "fechaHasta": format_date_for_api_request(fechaHasta)
             if fechaHasta
+            else None,
+            "fechaRegInicio": format_date_for_api_request(fechaRegInicio)
+            if fechaRegInicio
+            else None,
+            "fechaRegFin": format_date_for_api_request(fechaRegFin)
+            if fechaRegFin
             else None,
             "tipoAdministracion": tipoAdministracion.value
             if tipoAdministracion
@@ -888,6 +919,8 @@ class BDNSClient:
         codConcesion: str = options.codConcesion,
         fechaDesde: date = options.fechaDesde,
         fechaHasta: date = options.fechaHasta,
+        fechaRegInicio: date = options.fechaRegInicio,
+        fechaRegFin: date = options.fechaRegFin,
         tipoAdministracion: TipoAdministracion = options.tipoAdministracion,
         organos: List[int] = options.organos,
         regiones: List[int] = options.regiones,
@@ -911,6 +944,12 @@ class BDNSClient:
             else None,
             "fechaHasta": format_date_for_api_request(fechaHasta)
             if fechaHasta
+            else None,
+            "fechaRegInicio": format_date_for_api_request(fechaRegInicio)
+            if fechaRegInicio
+            else None,
+            "fechaRegFin": format_date_for_api_request(fechaRegFin)
+            if fechaRegFin
             else None,
             "tipoAdministracion": tipoAdministracion.value
             if tipoAdministracion

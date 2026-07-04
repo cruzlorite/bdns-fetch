@@ -168,6 +168,24 @@ fechaHasta: Optional[date] = typer.Option(
     help="End date of the period indicated for the search. See https://github.com/scrapinghub/dateparser for supported formats.",
     show_default=True,
 )
+fechaRegInicio: Optional[date] = typer.Option(
+    None,
+    "--fechaRegInicio",
+    "-fri",
+    click_type=DateType,
+    metavar="DATE",
+    help="Start date of the registration date period for the search (independent of fechaConcesion). See https://github.com/scrapinghub/dateparser for supported formats.",
+    show_default=True,
+)
+fechaRegFin: Optional[date] = typer.Option(
+    None,
+    "--fechaRegFin",
+    "-frf",
+    click_type=DateType,
+    metavar="DATE",
+    help="End date of the registration date period for the search (independent of fechaConcesion). See https://github.com/scrapinghub/dateparser for supported formats.",
+    show_default=True,
+)
 tipoAdministracion: Optional[TipoAdministracion] = typer.Option(
     None,
     "--tipoAdministracion",

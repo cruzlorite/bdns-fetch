@@ -133,6 +133,14 @@ Opciones globales:
 | `sanciones-busqueda` | `fetch_sanciones_busqueda` |
 | `terceros` | `fetch_terceros` |
 
+## Buenas prácticas (oficiales)
+
+Según el documento oficial ["Buenas prácticas API SNPSAP"](https://www.infosubvenciones.es/bdnstrans/estaticos/ayuda/Buenas%20pr%C3%A1cticas%20API%20SNPSAP.pdf):
+
+- **Límite de peticiones**: máximo 10 peticiones GET/segundo por IP. `bdns-fetch` lo aplica internamente con un limitador tipo token-bucket compartido entre todas las peticiones HTTP, independientemente de `--max-workers`.
+- **Sincronización incremental**: usa `fechaRegInicio`/`fechaRegFin` (fecha de registro) para detectar altas/cambios, no `fechaConcesion`/`fechaDesde`/`fechaHasta` (fecha de concesión) — son filtros independientes. Disponible en `concesiones-busqueda`, `ayudasestado-busqueda`, `minimis-busqueda`, `partidospoliticos-busqueda`.
+- **`terceros`**: el documento señala este endpoint como redundante — `concesiones-busqueda` ya devuelve toda la información del beneficiario. Usa `concesiones-busqueda` y evita `terceros`.
+
 ## Limitaciones
 
 - No implementa los endpoints de exportación (CSV/XLSX) ni los de configuración del portal.

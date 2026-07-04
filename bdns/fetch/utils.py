@@ -17,6 +17,8 @@ Author: josemariacruzlorite@gmail.com
 """
 
 import sys
+import threading
+import time
 from contextlib import contextmanager
 from datetime import datetime, date
 from enum import Enum
@@ -31,6 +33,32 @@ import typer
 from typer.models import OptionInfo
 
 from bdns.fetch.exceptions import handle_api_response
+
+
+class RateLimiter:
+    """Thread-safe token-bucket rate limiter shared across concurrent requests."""
+
+    def __init__(self, rate: float, per: float = 1.0):
+        self.rate = rate
+        self.per = per
+        self._tokens = rate
+        self._last = time.monotonic()
+        self._lock = threading.Lock()
+
+    def acquire(self) -> None:
+        while True:
+            with self._lock:
+                now = time.monotonic()
+                self._tokens = min(
+                    self.rate,
+                    self._tokens + (now - self._last) * (self.rate / self.per),
+                )
+                self._last = now
+                if self._tokens >= 1:
+                    self._tokens -= 1
+                    return
+                wait = (1 - self._tokens) * (self.per / self.rate)
+            time.sleep(wait)
 
 
 def format_date_for_api_request(value: date, output_format: str = "%d/%m/%Y"):

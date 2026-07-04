@@ -192,7 +192,7 @@ class BDNSClient:
                 yield first_response
             else:
                 # Yield individual items from the first page
-                for item in first_response["content"]:
+                for item in first_response.get("content", []):
                     yield item
 
             # Determine pages to fetch
@@ -245,9 +245,8 @@ class BDNSClient:
                             yield data
                         else:
                             # Yield individual items from content
-                            for item in data["content"]:
+                            for item in data.get("content", []):
                                 yield item
-                    futures.remove(future)
 
         except Exception as e:
             logger.error(f"Error in paginated fetch: {e}")
@@ -292,13 +291,16 @@ class BDNSClient:
 
     def _fetch_binary(self, url: str) -> bytes:
         """
-        Synchronously fetches binary content from a URL using requests.
+        Synchronously fetches binary content from a URL using requests, with retries.
         """
         from bdns.fetch.exceptions import handle_api_response
 
         logger.debug(f"Starting binary fetch from: {url}")
 
-        try:
+        retry_decorator = self._create_retry_decorator()
+
+        @retry_decorator
+        def fetch_with_retries():
             response = requests.get(url, timeout=30)
 
             logger.debug(
@@ -316,10 +318,12 @@ class BDNSClient:
                 logger.warning(f"Resource not found (404) for URL: {url}")
                 return b""
             else:
-                # Handle API errors using existing error handler
                 raise handle_api_response(
                     response.status_code, url, response.text, dict(response.headers)
                 )
+
+        try:
+            return fetch_with_retries()
         except requests.RequestException as e:
             logger.error(f"Request failed for binary fetch: {e}")
             raise
@@ -443,7 +447,7 @@ class BDNSClient:
 
     @extract_option_values
     def fetch_organos_codigo(
-        self, codigo: str = options.codigo
+        self, codigo: str = options.codigo_required
     ) -> Generator[Dict[str, Any], None, None]:
         """Fetches data from https://www.infosubvenciones.es/bdnstrans/api/organos/codigo"""
         params = {"codigo": codigo}
@@ -553,7 +557,7 @@ class BDNSClient:
         instrumentos: List[int] = options.instrumentos,
         actividad: List[int] = options.actividad,
         ayudaEstado: str = options.ayudaEstado,
-        reglamento: int = options.reglamento,
+        reglamento: List[int] = options.reglamento,
         finalidad: int = options.finalidad,
     ) -> Generator[Dict[str, Any], None, None]:
         """Fetches data from https://www.infosubvenciones.es/bdnstrans/api/ayudasestado/busqueda"""
@@ -767,8 +771,8 @@ class BDNSClient:
         beneficiario: int = options.beneficiario,
         instrumentos: List[int] = options.instrumentos,
         actividad: List[int] = options.actividad,
-        reglamento: int = options.reglamento,
-        producto: int = options.producto,
+        reglamento: List[int] = options.reglamento,
+        producto: List[int] = options.producto,
         finalidad: int = options.finalidad,
     ) -> Generator[Dict[str, Any], None, None]:
         """Fetches data from https://www.infosubvenciones.es/bdnstrans/api/minimis/busqueda"""

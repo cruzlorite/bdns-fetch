@@ -24,6 +24,7 @@ import functools
 import inspect
 import json
 from typing import Any, Dict, Generator
+from urllib.parse import urlencode
 import requests
 
 import typer
@@ -70,7 +71,7 @@ def format_url(url: str, query_params: dict):
             else:
                 filtered_params[key] = value
 
-    url += "&".join([f"{key}={value}" for key, value in filtered_params.items()])
+    url += urlencode(filtered_params, doseq=True)
     return url
 
 

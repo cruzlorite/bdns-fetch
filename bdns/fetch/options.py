@@ -251,7 +251,7 @@ nifCif: Optional[str] = typer.Option(
     help="NIF/CIF of the beneficiary.",
     show_default=True,
 )
-beneficiario: Optional[str] = typer.Option(
+beneficiario: Optional[int] = typer.Option(
     None,
     "--beneficiario",
     "-b",
@@ -404,7 +404,7 @@ idPES: Optional[int] = typer.Option(
     help="Identifier of the strategic plan.",
     show_default=True,
 )
-codigo: str = typer.Option(
+codigo_required: str = typer.Option(
     ...,
     "--codigo",
     "-cod",

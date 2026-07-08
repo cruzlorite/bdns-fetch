@@ -12,31 +12,37 @@ import queue
 import threading
 import time
 from collections.abc import Callable, Iterable, Iterator
-from typing import Any, Optional
+from typing import Any
 
 
-def buffered_chunks(
-    items: Iterable[Any],
-    chunk_size: int,
-    transform: Optional[Callable[[Any], Any]] = None,
-) -> Iterator[list[Any]]:
-    """Group `items` into lists of `chunk_size`, reading ahead on a helper
-    thread.
+def chunked(items: Iterable[Any], chunk_size: int) -> Iterator[list[Any]]:
+    """Group `items` into lists of at most `chunk_size`. Pure: no threads."""
+    chunk = []
+    for item in items:
+        chunk.append(item)
+        if len(chunk) >= chunk_size:
+            yield chunk
+            chunk = []
+    if chunk:
+        yield chunk
 
-    While the caller processes one chunk, the helper thread is already
-    building the next one, so work on both sides overlaps. The queue holds
-    at most two chunks: if the caller falls behind, the helper blocks
-    instead of filling memory.
+
+def prefetch(iterable: Iterable[Any]) -> Iterator[Any]:
+    """Yield the items of `iterable`, pulling them on a helper thread that
+    reads ahead of the caller.
+
+    While the caller processes one item, the helper is already producing
+    the next. The queue holds at most two items: if the caller falls
+    behind, the helper blocks instead of filling memory.
 
     The caller does its work on its own thread. That matters for SQLite
     connections, which must stay on the thread that created them.
-    `transform`, if given, runs on the helper thread, one item at a time.
 
     If the helper raises, the exception is re-raised here. If the caller
     stops iterating early, the helper is unblocked and joined before the
     generator exits.
     """
-    chunk_queue: queue.Queue = queue.Queue(maxsize=2)
+    item_queue: queue.Queue = queue.Queue(maxsize=2)
     done = object()
     consumer_gone = threading.Event()
 
@@ -45,7 +51,7 @@ def buffered_chunks(
         # this, a full queue would block the helper thread forever.
         while not consumer_gone.is_set():
             try:
-                chunk_queue.put(item, timeout=1)
+                item_queue.put(item, timeout=1)
                 return True
             except queue.Full:
                 continue
@@ -53,15 +59,9 @@ def buffered_chunks(
 
     def read_ahead():
         try:
-            chunk = []
-            for item in items:
-                chunk.append(transform(item) if transform else item)
-                if len(chunk) >= chunk_size:
-                    if not put(chunk):
-                        return  # consumer is gone, nothing left to do
-                    chunk = []
-            if chunk:
-                put(chunk)
+            for item in iterable:
+                if not put(item):
+                    return  # consumer is gone, nothing left to do
             put(done)
         except Exception as exc:
             put(exc)  # re-raised on the caller's thread below
@@ -70,7 +70,7 @@ def buffered_chunks(
     helper.start()
     try:
         while True:
-            item = chunk_queue.get()
+            item = item_queue.get()
             if item is done:
                 return
             if isinstance(item, Exception):
@@ -101,13 +101,14 @@ def rate_limited_map(
     the exception propagates and stops the iteration.
     """
     lock = threading.Lock()
-    next_start = [0.0]
+    next_start = 0.0
 
     def run_one(key):
+        nonlocal next_start
         with lock:
             now = time.monotonic()
-            wait = max(0.0, next_start[0] - now)
-            next_start[0] = now + wait + spacing_seconds
+            wait = max(0.0, next_start - now)
+            next_start = now + wait + spacing_seconds
         if wait:
             time.sleep(wait)
         return key, fn(key)

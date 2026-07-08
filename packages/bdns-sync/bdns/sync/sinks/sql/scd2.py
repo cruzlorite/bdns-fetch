@@ -26,7 +26,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.sql.schema import Table
 
 from bdns.sync.hashing import natural_key, row_hash
-from bdns.sync.pipeline import buffered_chunks
+from bdns.sync.pipeline import chunked, prefetch
 from bdns.sync.sinks.sql.dialects import get_adapter
 
 logger = logging.getLogger(__name__)
@@ -136,8 +136,8 @@ def _load_staging(
 ) -> int:
     """Write `rows` into the staging table in chunks.
 
-    `buffered_chunks` fetches the next chunk on a helper thread while this
-    thread writes the current one. Writes have to stay on this thread:
+    `prefetch` builds the next chunk on a helper thread while this thread
+    writes the current one. Writes have to stay on this thread:
     `conn` must not leave the thread that created it (SQLite requires
     this). They also stay serial on purpose: BigQuery caps table update
     operations at a low fixed rate, and concurrent writes trip a hard 429
@@ -157,7 +157,7 @@ def _load_staging(
         return staged
 
     fetched = 0
-    for chunk in buffered_chunks(rows, chunk_size, transform=stage):
+    for chunk in prefetch(chunked(map(stage, rows), chunk_size)):
         adapter.insert_rows(conn, staging, chunk)
         fetched += len(chunk)
         # Staging a multi-million-row backfill takes hours; log every

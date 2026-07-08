@@ -1,0 +1,82 @@
+[
+  {
+    "reg_days_ago": 0,
+    "payload": {
+      "id": 900003001,
+      "codConcesion": "SB900003001",
+      "fechaConcesion": "2026-07-04",
+      "beneficiario": "V00000001 GRUP MUNICIPAL FICTICIO UNO",
+      "instrumento": "SUBVENCIÓN Y ENTREGA DINERARIA SIN CONTRAPRESTACIÓN",
+      "importe": 1050.69,
+      "ayudaEquivalente": 1050.69,
+      "urlBR": "https://example.org/boe/1",
+      "tieneProyecto": false,
+      "numeroConvocatoria": "830001",
+      "idConvocatoria": 930001,
+      "convocatoria": "APORTACIÓN GRUPOS MUNICIPALES FICTICIOS 2026",
+      "nivel1": "LOCAL",
+      "nivel2": "MUNICIPIO FICTICIO",
+      "nivel3": "AYUNTAMIENTO DE MUNICIPIO FICTICIO"
+    }
+  },
+  {
+    "reg_days_ago": 5,
+    "payload": {
+      "id": 900003002,
+      "codConcesion": "SB900003002",
+      "fechaConcesion": "2026-06-29",
+      "beneficiario": "V00000002 GRUP MUNICIPAL FICTICIO DOS",
+      "instrumento": "SUBVENCIÓN Y ENTREGA DINERARIA SIN CONTRAPRESTACIÓN",
+      "importe": 1127.19,
+      "ayudaEquivalente": 1127.19,
+      "urlBR": "https://example.org/boe/1",
+      "tieneProyecto": false,
+      "numeroConvocatoria": "830001",
+      "idConvocatoria": 930001,
+      "convocatoria": "APORTACIÓN GRUPOS MUNICIPALES FICTICIOS 2026",
+      "nivel1": "LOCAL",
+      "nivel2": "MUNICIPIO FICTICIO",
+      "nivel3": "AYUNTAMIENTO DE MUNICIPIO FICTICIO"
+    }
+  },
+  {
+    "reg_days_ago": 20,
+    "payload": {
+      "id": 900003003,
+      "codConcesion": "SB900003003",
+      "fechaConcesion": "2026-06-14",
+      "beneficiario": "V00000003 GRUP MUNICIPAL FICTICIO TRES",
+      "instrumento": "SUBVENCIÓN Y ENTREGA DINERARIA SIN CONTRAPRESTACIÓN",
+      "importe": 980.0,
+      "ayudaEquivalente": 980.0,
+      "urlBR": "https://example.org/boe/2",
+      "tieneProyecto": false,
+      "numeroConvocatoria": "830002",
+      "idConvocatoria": 930002,
+      "convocatoria": "APORTACIÓN GRUPOS AUTONÓMICOS FICTICIOS 2026",
+      "nivel1": "AUTONOMICA",
+      "nivel2": "COMUNIDAD FICTICIA",
+      "nivel3": "PARLAMENTO FICTICIO"
+    }
+  },
+  {
+    "reg_days_ago": 100,
+    "payload": {
+      "id": 900003004,
+      "codConcesion": "SB900003004",
+      "fechaConcesion": "2026-03-26",
+      "beneficiario": "V00000004 GRUP MUNICIPAL FICTICIO CUATRO",
+      "instrumento": "SUBVENCIÓN Y ENTREGA DINERARIA SIN CONTRAPRESTACIÓN",
+      "importe": 750.0,
+      "ayudaEquivalente": 750.0,
+      "urlBR": "https://example.org/boe/3",
+      "tieneProyecto": false,
+      "numeroConvocatoria": "830003",
+      "idConvocatoria": 930003,
+      "convocatoria": "APORTACIÓN GRUPOS MUNICIPALES FICTICIOS 2026",
+      "nivel1": "LOCAL",
+      "nivel2": "OTRO MUNICIPIO FICTICIO",
+      "nivel3": "AYUNTAMIENTO DE OTRO MUNICIPIO FICTICIO"
+    }
+  }
+]

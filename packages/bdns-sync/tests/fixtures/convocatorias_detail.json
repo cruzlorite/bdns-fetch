@@ -1,0 +1,164 @@
+{
+  "927266": {
+    "id": 2118827,
+    "organo": {
+      "nivel1": "LOCAL",
+      "nivel2": "MUNICIPIO FICTICIO",
+      "nivel3": "AYUNTAMIENTO DE MUNICIPIO FICTICIO"
+    },
+    "sedeElectronica": null,
+    "codigoBDNS": "927266",
+    "fechaRecepcion": "2026-07-04",
+    "instrumentos": [
+      {
+        "descripcion": "SUBVENCIÓN Y ENTREGA DINERARIA SIN CONTRAPRESTACIÓN"
+      }
+    ],
+    "tipoConvocatoria": "Concesión directa - instrumental",
+    "presupuestoTotal": 3000,
+    "mrr": false,
+    "descripcion": "Subvención nominativa ficticia Uno 2026",
+    "descripcionLeng": null,
+    "tiposBeneficiarios": [
+      {
+        "descripcion": "PYME Y PERSONAS FÍSICAS QUE DESARROLLAN ACTIVIDAD ECONÓMICA"
+      }
+    ],
+    "sectores": [
+      {
+        "descripcion": "Actividades culturales",
+        "codigo": "91"
+      }
+    ],
+    "regiones": [
+      {
+        "descripcion": "REGIÓN FICTICIA"
+      }
+    ],
+    "descripcionFinalidad": "Cultura",
+    "descripcionBasesReguladoras": "Subvención nominativa ficticia Uno 2026",
+    "urlBasesReguladoras": "https://example.org/bases/1",
+    "sePublicaDiarioOficial": false,
+    "abierto": false,
+    "fechaInicioSolicitud": "2026-01-01",
+    "fechaFinSolicitud": "2026-12-15",
+    "textInicio": null,
+    "textFin": null,
+    "ayudaEstado": null,
+    "urlAyudaEstado": null,
+    "fondos": [],
+    "reglamento": null,
+    "objetivos": [],
+    "sectoresProductos": [],
+    "documentos": [],
+    "anuncios": []
+  },
+  "927267": {
+    "id": 2118828,
+    "organo": {
+      "nivel1": "LOCAL",
+      "nivel2": "MUNICIPIO FICTICIO",
+      "nivel3": "AYUNTAMIENTO DE MUNICIPIO FICTICIO"
+    },
+    "sedeElectronica": null,
+    "codigoBDNS": "927267",
+    "fechaRecepcion": "2026-06-29",
+    "instrumentos": [
+      {
+        "descripcion": "SUBVENCIÓN Y ENTREGA DINERARIA SIN CONTRAPRESTACIÓN"
+      }
+    ],
+    "tipoConvocatoria": "Concesión directa - instrumental",
+    "presupuestoTotal": 5000,
+    "mrr": false,
+    "descripcion": "Subvención nominativa ficticia Dos 2026",
+    "descripcionLeng": null,
+    "tiposBeneficiarios": [
+      {
+        "descripcion": "PYME Y PERSONAS FÍSICAS QUE DESARROLLAN ACTIVIDAD ECONÓMICA"
+      }
+    ],
+    "sectores": [
+      {
+        "descripcion": "Actividades deportivas",
+        "codigo": "93"
+      }
+    ],
+    "regiones": [
+      {
+        "descripcion": "REGIÓN FICTICIA"
+      }
+    ],
+    "descripcionFinalidad": "Deporte",
+    "descripcionBasesReguladoras": "Subvención nominativa ficticia Dos 2026",
+    "urlBasesReguladoras": "https://example.org/bases/2",
+    "sePublicaDiarioOficial": false,
+    "abierto": false,
+    "fechaInicioSolicitud": "2026-01-01",
+    "fechaFinSolicitud": "2026-12-15",
+    "textInicio": null,
+    "textFin": null,
+    "ayudaEstado": null,
+    "urlAyudaEstado": null,
+    "fondos": [],
+    "reglamento": null,
+    "objetivos": [],
+    "sectoresProductos": [],
+    "documentos": [],
+    "anuncios": []
+  },
+  "927268": {
+    "id": 2118829,
+    "organo": {
+      "nivel1": "AUTONOMICA",
+      "nivel2": "COMUNIDAD FICTICIA",
+      "nivel3": "DIRECCIÓN GENERAL FICTICIA"
+    },
+    "sedeElectronica": null,
+    "codigoBDNS": "927268",
+    "fechaRecepcion": "2026-06-14",
+    "instrumentos": [
+      {
+        "descripcion": "PRÉSTAMO"
+      }
+    ],
+    "tipoConvocatoria": "Concurrencia competitiva",
+    "presupuestoTotal": 250000,
+    "mrr": false,
+    "descripcion": "Subvención nominativa ficticia Tres 2026",
+    "descripcionLeng": null,
+    "tiposBeneficiarios": [
+      {
+        "descripcion": "GRAN EMPRESA"
+      }
+    ],
+    "sectores": [
+      {
+        "descripcion": "Industria manufacturera",
+        "codigo": "25"
+      }
+    ],
+    "regiones": [
+      {
+        "descripcion": "COMUNIDAD FICTICIA"
+      }
+    ],
+    "descripcionFinalidad": "Industria",
+    "descripcionBasesReguladoras": "Subvención nominativa ficticia Tres 2026",
+    "urlBasesReguladoras": "https://example.org/bases/3",
+    "sePublicaDiarioOficial": true,
+    "abierto": true,
+    "fechaInicioSolicitud": "2026-01-01",
+    "fechaFinSolicitud": "2026-12-15",
+    "textInicio": null,
+    "textFin": null,
+    "ayudaEstado": null,
+    "urlAyudaEstado": null,
+    "fondos": [],
+    "reglamento": null,
+    "objetivos": [],
+    "sectoresProductos": [],
+    "documentos": [],
+    "anuncios": []
+  }
+}

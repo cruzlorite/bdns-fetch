@@ -1,0 +1,41 @@
+[
+  {
+    "id": 1,
+    "descripcion": "ES - ESPAÑA ",
+    "children": [
+      {
+        "id": 12,
+        "descripcion": "ES2 - NORESTE",
+        "children": [
+          {
+            "id": 13,
+            "descripcion": "ES21 - PAIS VASCO",
+            "children": [
+              {
+                "id": 14,
+                "descripcion": "ES211 - Araba/Álava",
+                "children": []
+              },
+              {
+                "id": 16,
+                "descripcion": "ES213 - Bizkaia",
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 90,
+    "descripcion": "BE - BELGIQUE-BELGIË ",
+    "children": [
+      {
+        "id": 91,
+        "descripcion": "BE1 - RÉGION DE BRUXELLES-CAPITALE",
+        "children": []
+      }
+    ]
+  }
+]

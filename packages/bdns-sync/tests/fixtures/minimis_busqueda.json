@@ -1,0 +1,78 @@
+[
+  {
+    "reg_days_ago": 0,
+    "payload": {
+      "idConcesion": 900002001,
+      "numeroConvocatoria": "820001",
+      "idConvocatoria": 920001,
+      "idPersona": 9200001,
+      "codigoConcesion": "SB900002001",
+      "convocante": "AUTONOMICA COMUNIDAD FICTICIA CONSEJERÍA ECONOMÍA Y EMPLEO",
+      "reglamento": "REG (UE) 2023/2831 de minimis, General",
+      "sectorProducto": null,
+      "instrumento": "SUBVENCIÓN Y ENTREGA DINERARIA SIN CONTRAPRESTACIÓN",
+      "fechaConcesion": "2026-07-04",
+      "fechaRegistro": "2026-07-04",
+      "beneficiario": "B00000005 ALBA FICTICIA SL",
+      "sectorActividad": "S - ACTIVIDADES ARTÍSTICAS; A - AGRICULTURA; C - INDUSTRIA MANUFACTURERA",
+      "ayudaEquivalente": 89470.94
+    }
+  },
+  {
+    "reg_days_ago": 5,
+    "payload": {
+      "idConcesion": 900002002,
+      "numeroConvocatoria": "820001",
+      "idConvocatoria": 920001,
+      "idPersona": 9200002,
+      "codigoConcesion": "SB900002002",
+      "convocante": "AUTONOMICA COMUNIDAD FICTICIA CONSEJERÍA ECONOMÍA Y EMPLEO",
+      "reglamento": "REG (UE) 2023/2831 de minimis, General",
+      "sectorProducto": null,
+      "instrumento": "SUBVENCIÓN Y ENTREGA DINERARIA SIN CONTRAPRESTACIÓN",
+      "fechaConcesion": "2026-06-29",
+      "fechaRegistro": "2026-06-29",
+      "beneficiario": "B00000006 IRONTEK FICTICIA SL",
+      "sectorActividad": "S - ACTIVIDADES ARTÍSTICAS; A - AGRICULTURA; C - INDUSTRIA MANUFACTURERA",
+      "ayudaEquivalente": 199960
+    }
+  },
+  {
+    "reg_days_ago": 20,
+    "payload": {
+      "idConcesion": 900002003,
+      "numeroConvocatoria": "820002",
+      "idConvocatoria": 920002,
+      "idPersona": 9200003,
+      "codigoConcesion": "SB900002003",
+      "convocante": "ESTATAL MINISTERIO FICTICIO DE INDUSTRIA",
+      "reglamento": "REG (UE) 1407/2013 de minimis",
+      "sectorProducto": null,
+      "instrumento": "PRÉSTAMO",
+      "fechaConcesion": "2026-06-14",
+      "fechaRegistro": "2026-06-14",
+      "beneficiario": "B00000007 TALLERES FICTICIOS SL",
+      "sectorActividad": "C - INDUSTRIA MANUFACTURERA",
+      "ayudaEquivalente": 15000
+    }
+  },
+  {
+    "reg_days_ago": 100,
+    "payload": {
+      "idConcesion": 900002004,
+      "numeroConvocatoria": "820003",
+      "idConvocatoria": 920003,
+      "idPersona": 9200004,
+      "codigoConcesion": "SB900002004",
+      "convocante": "LOCAL AYUNTAMIENTO FICTICIO",
+      "reglamento": "REG (UE) 2023/2831 de minimis, General",
+      "sectorProducto": null,
+      "instrumento": "SUBVENCIÓN Y ENTREGA DINERARIA SIN CONTRAPRESTACIÓN",
+      "fechaConcesion": "2026-03-26",
+      "fechaRegistro": "2026-03-26",
+      "beneficiario": "B00000008 COMERCIOS FICTICIOS ASOCIADOS SL",
+      "sectorActividad": "G - COMERCIO",
+      "ayudaEquivalente": 8000
+    }
+  }
+]

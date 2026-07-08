@@ -1,0 +1,26 @@
+[
+  {
+    "id": 2118825,
+    "mrr": false,
+    "numeroConvocatoria": "927264",
+    "descripcion": "CONVOCATORIA DE AYUDAS ECONÓMICAS POR LA ADQUISICIÓN DE PRIMERA VIVIENDA",
+    "descripcionLeng": null,
+    "fechaRecepcion": "2026-07-04",
+    "nivel1": "LOCAL",
+    "nivel2": "VILAFICTICIA",
+    "nivel3": "AYUNTAMIENTO DE VILAFICTICIA",
+    "codigoInvente": null
+  },
+  {
+    "id": 2118824,
+    "mrr": false,
+    "numeroConvocatoria": "927263",
+    "descripcion": "Convocatoria contratación personal investigador en formación",
+    "descripcionLeng": null,
+    "fechaRecepcion": "2026-07-04",
+    "nivel1": "AUTONOMICA",
+    "nivel2": "COMUNIDAD FICTICIA",
+    "nivel3": "DIRECCIÓN GENERAL DE UNIVERSIDADES E INVESTIGACIÓN",
+    "codigoInvente": null
+  }
+]

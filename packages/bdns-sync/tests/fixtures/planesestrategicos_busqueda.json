@@ -1,0 +1,20 @@
+[
+  {
+    "descripcion": "PES FICTICIO DE ENSEÑANZAS ARTÍSTICAS 2026-2028",
+    "descripcionCooficial": null,
+    "tipoPlan": "Plan/Programa relativo a políticas sectoriales",
+    "vigenciaDesde": 2026,
+    "vigenciaHasta": 2028,
+    "id": 3078,
+    "ambitos": "COMUNIDAD FICTICIA"
+  },
+  {
+    "descripcion": "PLAN ESTRATÉGICO FICTICIO ECONOMÍA Y EMPLEO 2026-2028",
+    "descripcionCooficial": null,
+    "tipoPlan": "Plan/Programa relativo a políticas sectoriales",
+    "vigenciaDesde": 2026,
+    "vigenciaHasta": 2028,
+    "id": 3067,
+    "ambitos": "COMUNIDAD FICTICIA"
+  }
+]

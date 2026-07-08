@@ -1,0 +1,63 @@
+[tool.poetry]
+packages = [{include = "bdns"}]
+name = "bdns-sync"
+version = "0.1.0"
+description = "Sync engine that keeps target databases in SCD2 form from the Base de Datos Nacional de Subvenciones (BDNS) API"
+readme = "README.md"
+authors = ["José María Cruz Lorite <josemariacruzlorite@gmail.com>"]
+license = "GPL-3.0"
+homepage = "https://github.com/cruzlorite/bdns-sync"
+repository = "https://github.com/cruzlorite/bdns-sync"
+documentation = "https://github.com/cruzlorite/bdns-sync#readme"
+keywords = ["bdns", "subsidies", "spanish-government", "sync", "scd2", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.15"
+bdns-fetch = "^1.3.0"
+sqlalchemy = "^2.0.0"
+typer = { version = "^0.17.4", extras = ["all"] }
+# BigQuery support is opt-in: `pip install bdns-sync[bigquery]` /
+# `poetry install -E bigquery`. Keeps the google-cloud stack out of
+# SQLite/Postgres/MySQL installs.
+sqlalchemy-bigquery = { version = "^1.17.0", optional = true }
+google-cloud-bigquery-storage = { version = "^2.32.0", optional = true }
+
+[tool.poetry.extras]
+bigquery = ["sqlalchemy-bigquery", "google-cloud-bigquery-storage"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.2"
+pytest-cov = "^6.3.0"
+pytest-mock = "^3.15.0"
+ruff = "^0.12.12"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+bdns-sync = "bdns.sync.__main__:app"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = [
+    "E741",  # ambiguous variable name (O is required by API)
+    "E501",  # long lines: docstrings/comments carry verified-live evidence
+]

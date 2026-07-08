@@ -180,16 +180,10 @@ Shared across all endpoints, with the `_sync_` prefix:
 
 ```mermaid
 flowchart TD
-    A(["<b>started</b> event<br/>committed before any data work"]) --> B{"fetch → staging<br/>→ SCD2 diff"}
+    A(["<b>started</b> event<br/>committed before any data work"]) --> B["fetch → staging → SCD2 diff"]
     B -->|all OK| C(["<b>success</b> event<br/>written after the data commit"])
     B -->|error| D(["<b>failed</b> event<br/>error recorded"])
     B -->|crash / kill / outage| E(["no terminal event<br/>process died mid-run"])
-    classDef ok fill:#e6f4ea,stroke:#2e7d32,color:#1b5e20
-    classDef bad fill:#fdecea,stroke:#c62828,color:#b71c1c
-    classDef dead fill:#eceff1,stroke:#607d8b,color:#37474f
-    class C ok
-    class D bad
-    class E dead
 ```
 
 A run's state is its **latest event**. Guarantees, per engine:

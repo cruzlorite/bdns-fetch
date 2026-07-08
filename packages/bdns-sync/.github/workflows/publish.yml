@@ -1,0 +1,38 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # OIDC token for PyPI trusted publishing; no API key needed
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Check tag matches package version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(poetry version --short)"
+          if [ "$tag" != "$version" ]; then
+            echo "Tag v$tag does not match pyproject version $version" >&2
+            exit 1
+          fi
+
+      - name: Build
+        run: poetry build
+
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1

@@ -186,8 +186,8 @@ flowchart TD
 
 El estado de una ejecución es su **último evento**. Las garantías, por motor:
 
-- **`success`** ⇒ los datos están commiteados en la tabla final, en todos los motores (el evento se escribe después del commit de datos, nunca dentro).
-- **`failed` o `started` sin terminal** ⇒ si el motor de destino soporta transacciones (p. ej. SQLite, PostgreSQL), la tabla final queda intacta por rollback. Si no las soporta (p. ej. BigQuery, cuyo `commit()` de driver es un no-op verificado en vivo), un fallo a mitad del diff puede dejar cambios parciales; aun así el diseño converge, porque el staging se vacía y reconstruye al inicio de cada ejecución y re-ejecutar el mismo rango repara cualquier estado intermedio. La regla operativa es la misma en todos los motores: **sin evento `success`, re-ejecuta**; la herramienta es idempotente.
+- **`success`**: los datos están commiteados en la tabla final, en todos los motores (el evento se escribe después del commit de datos, nunca dentro).
+- **`failed` o `started` sin terminal**: si el motor de destino soporta transacciones (p. ej. SQLite, PostgreSQL), la tabla final queda intacta por rollback. Si no las soporta (p. ej. BigQuery, cuyo `commit()` de driver es un no-op verificado en vivo), un fallo a mitad del diff puede dejar cambios parciales; aun así el diseño converge, porque el staging se vacía y reconstruye al inicio de cada ejecución y re-ejecutar el mismo rango repara cualquier estado intermedio. La regla operativa es la misma en todos los motores: **sin evento `success`, re-ejecuta**; la herramienta es idempotente.
 
 ## Tipos de endpoint
 
@@ -222,7 +222,7 @@ Endpoints con decenas de millones de filas, donde el reemplazo completo no es vi
 
 El paso de detalle de `convocatorias` es el caro: una llamada real por código descubierto, sin paginación posible. Está paralelizado con arranques de petición espaciados (8 hilos, ~9,5 peticiones/segundo, justo bajo el límite oficial de 10/s), lo que reduce un mes real de horas a minutos sin ningún `429`; cifras en la [sección 7 de docs/bdns-api-behavior.md](docs/bdns-api-behavior.md#7-rendimiento-medido). La misma maquinaria ([`bdns/sync/pipeline.py`](bdns/sync/pipeline.py)) la usan los pasos de detalle de `planesestrategicos` y `planesestrategicos_vigencia`.
 
-La fecha de registro de un registro no cambia cuando este se edita, por lo que reconsultar la misma ventana más adelante no encuentra altas nuevas, pero sí detecta ediciones mediante el hash. Las correcciones se concentran cerca de la fecha de registro y disminuyen con la antigüedad; de ahí la cascada de ventanas: cada nivel llega hasta ayer (`window_bounds`), así que `annual ⊃ monthly ⊃ weekly ⊃ daily` el mismo día. `scripts/delta_load.sh` ejecuta solo la más ancha que toque ese día (anual el 1 de enero, mensual el día 1, semanal en domingo, diaria el resto), nunca varias apiladas: la más ancha ya cubre entera a las más estrechas, apilarlas sería re-consultar y re-diferenciar el mismo rango dos veces sin ganar detección.
+La fecha de registro de un registro no cambia cuando este se edita, por lo que reconsultar la misma ventana más adelante no encuentra altas nuevas, pero sí detecta ediciones mediante el hash. Las correcciones se concentran cerca de la fecha de registro y disminuyen con la antigüedad; de ahí la cascada de ventanas: cada nivel llega hasta ayer (`window_bounds`), así que `annual` contiene a `monthly`, que contiene a `weekly`, que contiene a `daily`, el mismo día. `scripts/delta_load.sh` ejecuta solo la más ancha que toque ese día (anual el 1 de enero, mensual el día 1, semanal en domingo, diaria el resto), nunca varias apiladas: la más ancha ya cubre entera a las más estrechas, apilarlas sería re-consultar y re-diferenciar el mismo rango dos veces sin ganar detección.
 
 ## Ventanas de fecha y carga histórica
 

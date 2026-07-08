@@ -188,8 +188,8 @@ flowchart TD
 
 A run's state is its **latest event**. Guarantees, per engine:
 
-- **`success`** ⇒ the data is committed in the final table, on every engine (the event is written after the data commit, never inside it).
-- **`failed` or `started` with no terminal event** ⇒ if the target engine supports transactions (e.g. SQLite, PostgreSQL), the final table is left untouched by rollback. If it does not (e.g. BigQuery, whose driver `commit()` is a verified no-op), a failure mid-diff can leave partially-applied changes; even so the design converges, because staging is cleared and rebuilt at the start of every run and re-running the same range heals any intermediate state. The operational rule is the same on every engine: **no `success` event, re-run**; the tool is idempotent.
+- **`success`**: the data is committed in the final table, on every engine (the event is written after the data commit, never inside it).
+- **`failed` or `started` with no terminal event**: if the target engine supports transactions (e.g. SQLite, PostgreSQL), the final table is left untouched by rollback. If it does not (e.g. BigQuery, whose driver `commit()` is a verified no-op), a failure mid-diff can leave partially-applied changes; even so the design converges, because staging is cleared and rebuilt at the start of every run and re-running the same range heals any intermediate state. The operational rule is the same on every engine: **no `success` event, re-run**; the tool is idempotent.
 
 ## Endpoint types
 
@@ -224,7 +224,7 @@ Endpoints with tens of millions of rows, where full replacement is not viable.
 
 The detail step of `convocatorias` is the expensive one: one real API call per discovered code, with no pagination possible. It is parallelized with paced request starts (8 workers, ~9.5 req/s, just under the official 10/s cap), which cuts a real month from hours to minutes with zero `429`s; figures in [section 7 of docs/bdns-api-behavior.en.md](docs/bdns-api-behavior.en.md#7-measured-performance). The same machinery ([`bdns/sync/pipeline.py`](bdns/sync/pipeline.py)) drives the detail steps of `planesestrategicos` and `planesestrategicos_vigencia`.
 
-A record's registration date does not change when the record is edited, so re-querying the same window later finds no new additions, but does detect edits via the hash. Corrections cluster near the registration date and taper off with age; hence the window cascade: every level reaches back to yesterday (`window_bounds`), so `annual ⊃ monthly ⊃ weekly ⊃ daily` on any given day. `scripts/delta_load.sh` runs only the widest one that applies that day (annual on Jan 1st, monthly on the 1st, weekly on Sunday, daily otherwise), never stacked: the widest already covers the narrower ones entirely, so stacking would just re-fetch and re-diff the same range twice for no extra detection.
+A record's registration date does not change when the record is edited, so re-querying the same window later finds no new additions, but does detect edits via the hash. Corrections cluster near the registration date and taper off with age; hence the window cascade: every level reaches back to yesterday (`window_bounds`), so `annual` contains `monthly` contains `weekly` contains `daily` on any given day. `scripts/delta_load.sh` runs only the widest one that applies that day (annual on Jan 1st, monthly on the 1st, weekly on Sunday, daily otherwise), never stacked: the widest already covers the narrower ones entirely, so stacking would just re-fetch and re-diff the same range twice for no extra detection.
 
 ## Date windows and historical load
 

@@ -189,7 +189,7 @@ flowchart TD
 A run's state is its **latest event**. Guarantees, per engine:
 
 - **`success`** ⇒ the data is committed in the final table, on every engine (the event is written after the data commit, never inside it).
-- **`failed` or `started` with no terminal event** ⇒ on SQLite/PostgreSQL the final table is untouched (real transaction, rollback). On BigQuery **there are no transactions** (its driver's `commit()` is a no-op, verified live): a failure mid-diff can leave partially-applied changes, but the design converges — staging is cleared and rebuilt at the start of every run, and re-running the same range heals any intermediate state. The operational rule is the same on every engine: **no `success` event, re-run**; the tool is idempotent.
+- **`failed` or `started` with no terminal event** ⇒ if the target engine supports transactions (e.g. SQLite, PostgreSQL), the final table is left untouched by rollback. If it does not (e.g. BigQuery, whose driver `commit()` is a verified no-op), a failure mid-diff can leave partially-applied changes; even so the design converges, because staging is cleared and rebuilt at the start of every run and re-running the same range heals any intermediate state. The operational rule is the same on every engine: **no `success` event, re-run**; the tool is idempotent.
 
 ## Endpoint types
 

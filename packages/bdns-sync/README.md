@@ -187,7 +187,7 @@ flowchart TD
 El estado de una ejecución es su **último evento**. Las garantías, por motor:
 
 - **`success`** ⇒ los datos están commiteados en la tabla final, en todos los motores (el evento se escribe después del commit de datos, nunca dentro).
-- **`failed` o `started` sin terminal** ⇒ en SQLite/PostgreSQL la tabla final está intacta (transacción real, rollback). En BigQuery **no existen transacciones** (el `commit()` de su driver es un no-op, verificado en vivo): un fallo a mitad del diff puede dejar cambios parciales, pero el diseño converge — el staging se vacía y reconstruye al inicio de cada ejecución, y re-ejecutar el mismo rango repara cualquier estado intermedio. La regla operativa es la misma en todos los motores: **sin evento `success`, re-ejecuta**; la herramienta es idempotente.
+- **`failed` o `started` sin terminal** ⇒ si el motor de destino soporta transacciones (p. ej. SQLite, PostgreSQL), la tabla final queda intacta por rollback. Si no las soporta (p. ej. BigQuery, cuyo `commit()` de driver es un no-op verificado en vivo), un fallo a mitad del diff puede dejar cambios parciales; aun así el diseño converge, porque el staging se vacía y reconstruye al inicio de cada ejecución y re-ejecutar el mismo rango repara cualquier estado intermedio. La regla operativa es la misma en todos los motores: **sin evento `success`, re-ejecuta**; la herramienta es idempotente.
 
 ## Tipos de endpoint
 

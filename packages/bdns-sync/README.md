@@ -178,10 +178,16 @@ Compartidas por todos los endpoints, con prefijo `_sync_`:
 
 ```mermaid
 flowchart TD
-    A["evento <b>started</b><br/>commiteado ANTES de tocar datos"] --> B{"fetch → staging → diff SCD2"}
-    B -->|todo OK| C["evento <b>success</b><br/>escrito DESPUÉS de commitear los datos"]
-    B -->|error| D["evento <b>failed</b><br/>error registrado"]
-    B -->|crash / kill / corte| E["sin evento terminal<br/>proceso muerto a medias"]
+    A(["evento <b>started</b><br/>commiteado antes de tocar datos"]) --> B{"fetch → staging<br/>→ diff SCD2"}
+    B -->|todo OK| C(["evento <b>success</b><br/>escrito tras commitear los datos"])
+    B -->|error| D(["evento <b>failed</b><br/>error registrado"])
+    B -->|crash / kill / corte| E(["sin evento terminal<br/>proceso muerto a medias"])
+    classDef ok fill:#e6f4ea,stroke:#2e7d32,color:#1b5e20
+    classDef bad fill:#fdecea,stroke:#c62828,color:#b71c1c
+    classDef dead fill:#eceff1,stroke:#607d8b,color:#37474f
+    class C ok
+    class D bad
+    class E dead
 ```
 
 El estado de una ejecución es su **último evento**. Las garantías, por motor:

@@ -125,6 +125,47 @@ Cada endpoint sincronizado tiene su propia tabla, y todas comparten el mismo esq
 
 Si el API añade o elimina un campo no se requiere migración: el cambio se detecta por hash y se versiona como cualquier otro.
 
+```mermaid
+erDiagram
+    "<entidad> (una por endpoint)" {
+        string  _natural_key   "clave de negocio (JSON)"
+        string  _row_hash      "SHA-256 del payload canónico"
+        datetime _valid_from
+        datetime _valid_to     "NULL si es la versión vigente"
+        bool    _is_current
+        datetime _synced_at
+        date    _reg_date      "solo en detección de bajas por ventana"
+        json    payload        "registro íntegro del API"
+    }
+    _sync_state {
+        string   table_name PK
+        datetime last_synced_at
+        int      last_run_id FK
+    }
+    _sync_runs {
+        int      run_id
+        string   table_name
+        string   run_type
+        string   event         "started / success / failed"
+        datetime occurred_at
+        int      rows_fetched
+        int      rows_inserted
+        int      rows_soft_deleted
+        int      rows_skipped
+        string   error
+    }
+    _sync_errors {
+        int      error_id PK
+        int      run_id FK
+        string   table_name
+        string   context
+        string   content
+        datetime occurred_at
+    }
+    _sync_runs ||--o{ _sync_errors : "run_id"
+    _sync_runs ||--o| _sync_state : "last_run_id"
+```
+
 ### Tablas de control
 
 Compartidas por todos los endpoints, con prefijo `_sync_`:
@@ -135,19 +176,12 @@ Compartidas por todos los endpoints, con prefijo `_sync_`:
 
 ### Ciclo de vida de una ejecución
 
-```
-                    ┌─────────────┐
-     evento         │   started   │   commiteado ANTES de tocar datos
-    `started` ────► └──────┬──────┘
-                           │  fetch → staging → diff SCD2
-              ┌────────────┴─────────────┐
-              ▼                          ▼
-       ┌─────────────┐            ┌─────────────┐
-       │   success   │            │   failed    │  error registrado
-       └─────────────┘            └─────────────┘
-        escrito DESPUÉS de         (sin evento terminal =
-        commitear los datos         proceso muerto a medias:
-                                    crash, kill, corte)
+```mermaid
+flowchart TD
+    A["evento <b>started</b><br/>commiteado ANTES de tocar datos"] --> B{"fetch → staging → diff SCD2"}
+    B -->|todo OK| C["evento <b>success</b><br/>escrito DESPUÉS de commitear los datos"]
+    B -->|error| D["evento <b>failed</b><br/>error registrado"]
+    B -->|crash / kill / corte| E["sin evento terminal<br/>proceso muerto a medias"]
 ```
 
 El estado de una ejecución es su **último evento**. Las garantías, por motor:

@@ -127,6 +127,47 @@ Each synced endpoint has its own table, and all tables share the same generic sc
 
 If the API adds or removes a field, no migration is required: the change is detected via the hash and versioned like any other.
 
+```mermaid
+erDiagram
+    "<entity> (one per endpoint)" {
+        string  _natural_key   "business key (JSON)"
+        string  _row_hash      "SHA-256 of canonical payload"
+        datetime _valid_from
+        datetime _valid_to     "NULL while current version"
+        bool    _is_current
+        datetime _synced_at
+        date    _reg_date      "only for window-scoped deletion detection"
+        json    payload        "full record from the API"
+    }
+    _sync_state {
+        string   table_name PK
+        datetime last_synced_at
+        int      last_run_id FK
+    }
+    _sync_runs {
+        int      run_id
+        string   table_name
+        string   run_type
+        string   event         "started / success / failed"
+        datetime occurred_at
+        int      rows_fetched
+        int      rows_inserted
+        int      rows_soft_deleted
+        int      rows_skipped
+        string   error
+    }
+    _sync_errors {
+        int      error_id PK
+        int      run_id FK
+        string   table_name
+        string   context
+        string   content
+        datetime occurred_at
+    }
+    _sync_runs ||--o{ _sync_errors : "run_id"
+    _sync_runs ||--o| _sync_state : "last_run_id"
+```
+
 ### Control tables
 
 Shared across all endpoints, with the `_sync_` prefix:
@@ -137,19 +178,12 @@ Shared across all endpoints, with the `_sync_` prefix:
 
 ### Run lifecycle
 
-```
-                    ┌─────────────┐
-      event         │   started   │   committed BEFORE any data work
-    `started` ────► └──────┬──────┘
-                           │  fetch → staging → SCD2 diff
-              ┌────────────┴─────────────┐
-              ▼                          ▼
-       ┌─────────────┐            ┌─────────────┐
-       │   success   │            │   failed    │  error recorded
-       └─────────────┘            └─────────────┘
-        written AFTER the          (no terminal event =
-        data commit                 process died mid-run:
-                                    crash, kill, outage)
+```mermaid
+flowchart TD
+    A["<b>started</b> event<br/>committed BEFORE any data work"] --> B{"fetch → staging → SCD2 diff"}
+    B -->|all OK| C["<b>success</b> event<br/>written AFTER the data commit"]
+    B -->|error| D["<b>failed</b> event<br/>error recorded"]
+    B -->|crash / kill / outage| E["no terminal event<br/>process died mid-run"]
 ```
 
 A run's state is its **latest event**. Guarantees, per engine:

@@ -115,37 +115,37 @@ erDiagram
     "<entity> (one per endpoint)" {
         string  _natural_key   "business key (JSON)"
         string  _row_hash      "SHA-256 of canonical payload"
-        datetime _valid_from
+        datetime _valid_from   "when this version became current"
         datetime _valid_to     "NULL while current version"
-        bool    _is_current
-        datetime _synced_at
+        bool    _is_current    "TRUE only on the current version"
+        datetime _synced_at    "last time observed at the source"
         date    _reg_date      "only for window-scoped deletion detection"
         json    payload        "full record from the API"
     }
     _sync_state {
-        string   table_name PK
-        datetime last_synced_at
-        int      last_run_id FK
+        string   table_name PK "one row per synced table"
+        datetime last_synced_at "watermark of the last successful run"
+        int      last_run_id FK "run that set the watermark"
     }
     _sync_runs {
-        int      run_id
-        string   table_name
-        string   run_type
+        int      run_id        "epoch microseconds, app-generated"
+        string   table_name    "table the event belongs to"
+        string   run_type      "full / daily / weekly / monthly / annual / backfill"
         string   event         "started / success / failed"
-        datetime occurred_at
-        int      rows_fetched
-        int      rows_inserted
-        int      rows_soft_deleted
-        int      rows_skipped
-        string   error
+        datetime occurred_at   "when the event happened"
+        int      rows_fetched  "counters, terminal event only"
+        int      rows_inserted "new versions inserted"
+        int      rows_soft_deleted "deletions detected and closed"
+        int      rows_skipped  "malformed records discarded"
+        string   error         "message, failed only"
     }
     _sync_errors {
-        int      error_id PK
-        int      run_id FK
-        string   table_name
-        string   context
-        string   content
-        datetime occurred_at
+        int      error_id PK   "epoch microseconds, app-generated"
+        int      run_id FK     "run that discarded the record"
+        string   table_name    "affected table"
+        string   context       "step where the record was discarded"
+        string   content       "offending record, truncated to 200 characters"
+        datetime occurred_at   "when it was discarded"
     }
     _sync_runs ||--o{ _sync_errors : "run_id"
     _sync_runs ||--o| _sync_state : "last_run_id"
@@ -173,6 +173,8 @@ A run's state is its **latest event**. Guarantees, per engine:
 
 - **`success`**: the data is committed in the final table, on every engine (the event is written after the data commit, never inside it).
 - **`failed` or `started` with no terminal event**: if the target engine supports transactions (e.g. SQLite, PostgreSQL), the final table is left untouched by rollback. If it does not (e.g. BigQuery, whose driver `commit()` is a verified no-op), a failure mid-diff can leave partially-applied changes; even so the design converges, because staging is cleared and rebuilt at the start of every run and re-running the same range heals any intermediate state. The operational rule is the same on every engine: **no `success` event, re-run**; the tool is idempotent.
+
+Because the `success` event is written in its own transaction, after the data commit, there is a theoretical window where the ingest completes but writing the event fails. This is tolerated on purpose: the worst case is that a correct run shows no terminal event and an already-applied range gets re-run, which is harmless by idempotency. The alternative (writing the event inside the data transaction) would be worse: a `success` could describe rolled-back data.
 
 ## Endpoint types
 

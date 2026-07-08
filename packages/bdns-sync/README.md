@@ -113,37 +113,37 @@ erDiagram
     "<entidad> (una por endpoint)" {
         string  _natural_key   "clave de negocio (JSON)"
         string  _row_hash      "SHA-256 del payload canónico"
-        datetime _valid_from
+        datetime _valid_from   "inicio de vigencia de esta versión"
         datetime _valid_to     "NULL si es la versión vigente"
-        bool    _is_current
-        datetime _synced_at
+        bool    _is_current    "TRUE solo en la versión vigente"
+        datetime _synced_at    "última vez observado en el origen"
         date    _reg_date      "solo en detección de bajas por ventana"
         json    payload        "registro íntegro del API"
     }
     _sync_state {
-        string   table_name PK
-        datetime last_synced_at
-        int      last_run_id FK
+        string   table_name PK "una fila por tabla sincronizada"
+        datetime last_synced_at "marca de agua de la última ejecución con éxito"
+        int      last_run_id FK "run que dejó la marca de agua"
     }
     _sync_runs {
-        int      run_id
-        string   table_name
-        string   run_type
+        int      run_id        "microsegundos de época, generado por la app"
+        string   table_name    "tabla a la que pertenece el evento"
+        string   run_type      "full / daily / weekly / monthly / annual / backfill"
         string   event         "started / success / failed"
-        datetime occurred_at
-        int      rows_fetched
-        int      rows_inserted
-        int      rows_soft_deleted
-        int      rows_skipped
-        string   error
+        datetime occurred_at   "momento del evento"
+        int      rows_fetched  "contadores, solo en el evento terminal"
+        int      rows_inserted "versiones nuevas insertadas"
+        int      rows_soft_deleted "bajas detectadas y cerradas"
+        int      rows_skipped  "registros malformados descartados"
+        string   error         "mensaje, solo en failed"
     }
     _sync_errors {
-        int      error_id PK
-        int      run_id FK
-        string   table_name
-        string   context
-        string   content
-        datetime occurred_at
+        int      error_id PK   "microsegundos de época, generado por la app"
+        int      run_id FK     "run en el que se descartó"
+        string   table_name    "tabla afectada"
+        string   context       "paso donde se descartó el registro"
+        string   content       "registro ofensivo, truncado a 200 caracteres"
+        datetime occurred_at   "momento del descarte"
     }
     _sync_runs ||--o{ _sync_errors : "run_id"
     _sync_runs ||--o| _sync_state : "last_run_id"
@@ -171,6 +171,8 @@ El estado de una ejecución es su **último evento**. Las garantías, por motor:
 
 - **`success`**: los datos están commiteados en la tabla final, en todos los motores (el evento se escribe después del commit de datos, nunca dentro).
 - **`failed` o `started` sin terminal**: si el motor de destino soporta transacciones (p. ej. SQLite, PostgreSQL), la tabla final queda intacta por rollback. Si no las soporta (p. ej. BigQuery, cuyo `commit()` de driver es un no-op verificado en vivo), un fallo a mitad del diff puede dejar cambios parciales; aun así el diseño converge, porque el staging se vacía y reconstruye al inicio de cada ejecución y re-ejecutar el mismo rango repara cualquier estado intermedio. La regla operativa es la misma en todos los motores: **sin evento `success`, re-ejecuta**; la herramienta es idempotente.
+
+Como el evento `success` se escribe en su propia transacción, después del commit de datos, existe una ventana teórica en la que la ingesta termina bien pero la escritura del evento falla. Se tolera a propósito: el peor caso es que una ejecución correcta aparezca sin terminal y se re-ejecute un rango ya aplicado, lo cual es inocuo por idempotencia. La alternativa (escribir el evento dentro de la transacción de datos) sería peor: un `success` podría describir datos revertidos.
 
 ## Tipos de endpoint
 

@@ -174,7 +174,7 @@ A run's state is its **latest event**. Guarantees, per engine:
 - **`success`**: the data is committed in the final table, on every engine (the event is written after the data commit, never inside it).
 - **`failed` or `started` with no terminal event**: if the target engine supports transactions (e.g. SQLite, PostgreSQL), the final table is left untouched by rollback. If it does not (e.g. BigQuery, whose driver `commit()` is a verified no-op), a failure mid-diff can leave partially-applied changes; even so the design converges, because staging is cleared and rebuilt at the start of every run and re-running the same range heals any intermediate state. The operational rule is the same on every engine: **no `success` event, re-run**; the tool is idempotent.
 
-Because the `success` event is written in its own transaction, after the data commit, there is a theoretical window where the ingest completes but writing the event fails. This is tolerated on purpose: the worst case is that a correct run shows no terminal event and an already-applied range gets re-run, which is harmless by idempotency. The alternative (writing the event inside the data transaction) would be worse: a `success` could describe rolled-back data.
+Because the `success` event is written in its own transaction, after the data commit, there is a theoretical window where the ingest completes but the event never gets recorded. That risk is accepted because the `_sync_*` tables are purely informational: the sync logic never reads them (what gets synced, and over which range, is decided by the CLI flags), so a lost event affects neither the data already written nor future runs.
 
 ## Endpoint types
 

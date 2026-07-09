@@ -25,6 +25,7 @@ set -euo pipefail
 run() { echo ">>> $*"; "$@"; }
 
 # groups A/B/C/F/G -- full replace every run, no window concept
+echo "=== full-replace catalogs ==="
 run bdns-sync sync sectores
 run bdns-sync sync actividades
 run bdns-sync sync finalidades
@@ -46,6 +47,7 @@ run bdns-sync sync planesestrategicos_vigencia
 # group D + convocatorias -- reg-date incremental, cascading windows
 run_window() {
   local window="$1"
+  echo "=== windowed endpoints ($window) ==="
   run bdns-sync sync concesiones_busqueda --window "$window"
   run bdns-sync sync ayudasestado_busqueda --window "$window"
   run bdns-sync sync minimis_busqueda --window "$window"

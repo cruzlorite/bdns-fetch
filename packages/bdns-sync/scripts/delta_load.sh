@@ -22,34 +22,36 @@ set -euo pipefail
 
 : "${BDNS_SYNC_TARGET_URL:?set BDNS_SYNC_TARGET_URL to the target DB URL}"
 
+run() { echo ">>> $*"; "$@"; }
+
 # groups A/B/C/F/G -- full replace every run, no window concept
-bdns-sync sync sectores
-bdns-sync sync actividades
-bdns-sync sync finalidades
-bdns-sync sync beneficiarios
-bdns-sync sync instrumentos
-bdns-sync sync objetivos
-bdns-sync sync convocatorias_ultimas
-bdns-sync sync organos
-bdns-sync sync organos_agrupacion
-bdns-sync sync regiones
-bdns-sync sync reglamentos
-bdns-sync sync sanciones_busqueda
-bdns-sync sync grandesbeneficiarios_anios
-bdns-sync sync grandesbeneficiarios_busqueda
-bdns-sync sync planesestrategicos_busqueda
-bdns-sync sync planesestrategicos
-bdns-sync sync planesestrategicos_vigencia
+run bdns-sync sync sectores
+run bdns-sync sync actividades
+run bdns-sync sync finalidades
+run bdns-sync sync beneficiarios
+run bdns-sync sync instrumentos
+run bdns-sync sync objetivos
+run bdns-sync sync convocatorias_ultimas
+run bdns-sync sync organos
+run bdns-sync sync organos_agrupacion
+run bdns-sync sync regiones
+run bdns-sync sync reglamentos
+run bdns-sync sync sanciones_busqueda
+run bdns-sync sync grandesbeneficiarios_anios
+run bdns-sync sync grandesbeneficiarios_busqueda
+run bdns-sync sync planesestrategicos_busqueda
+run bdns-sync sync planesestrategicos
+run bdns-sync sync planesestrategicos_vigencia
 
 # group D + convocatorias -- reg-date incremental, cascading windows
 run_window() {
   local window="$1"
-  bdns-sync sync concesiones_busqueda --window "$window"
-  bdns-sync sync ayudasestado_busqueda --window "$window"
-  bdns-sync sync minimis_busqueda --window "$window"
-  bdns-sync sync partidospoliticos_busqueda --window "$window"
-  bdns-sync sync convocatorias_busqueda --window "$window"
-  bdns-sync sync convocatorias --window "$window"
+  run bdns-sync sync concesiones_busqueda --window "$window"
+  run bdns-sync sync ayudasestado_busqueda --window "$window"
+  run bdns-sync sync minimis_busqueda --window "$window"
+  run bdns-sync sync partidospoliticos_busqueda --window "$window"
+  run bdns-sync sync convocatorias_busqueda --window "$window"
+  run bdns-sync sync convocatorias --window "$window"
 }
 
 case "$(date +%m-%d)" in

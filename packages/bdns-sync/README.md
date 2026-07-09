@@ -78,7 +78,7 @@ Detalles de arquitectura (interfaz `Sink`, adaptadores por dialecto, pipeline de
 
 ## Operación programada
 
-Para la operación continua basta una línea de cron. El script `delta_load.sh` decide internamente qué entidades y ventanas ejecutar cada día (cadencia diaria, semanal, mensual y anual):
+Para la operación continua basta una línea de cron. El script `delta_load.sh` decide internamente qué entidades y ventanas ejecutar cada día (ventana semanal a diario, mensual los lunes, anual tres veces al año):
 
 ```
 0 2 * * * BDNS_SYNC_TARGET_URL=bigquery://proyecto/dataset /ruta/al/repo/scripts/delta_load.sh

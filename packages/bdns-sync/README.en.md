@@ -80,7 +80,7 @@ Architecture details (the `Sink` interface, per-dialect adapters, the staging lo
 
 ## Scheduled operation
 
-Continuous operation requires a single cron line. The `delta_load.sh` script decides internally which entities and windows to run each day (daily, weekly, monthly, and annual cadence):
+Continuous operation requires a single cron line. The `delta_load.sh` script decides internally which entities and windows to run each day (weekly window daily, monthly on Mondays, annual three times a year):
 
 ```
 0 2 * * * BDNS_SYNC_TARGET_URL=bigquery://project/dataset /path/to/repo/scripts/delta_load.sh

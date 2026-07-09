@@ -9,11 +9,15 @@
 # Windows are nested, not independent: every window ends at yesterday
 # (window_bounds in generic.py), so annual ⊃ monthly ⊃ weekly ⊃ daily on any
 # given day. Running the widest window that applies today already covers
-# every narrower one for free -- running daily too on a day that's also
-# monthly would just re-fetch and re-diff yesterday's range a second time
-# for zero extra detection. So exactly one window runs per day, the widest
-# that applies (e.g. Jan 1st on a Sunday runs annual only, not daily +
-# weekly + monthly + annual stacked).
+# every narrower one for free, so exactly one window runs per day, the
+# widest that applies.
+#
+# The baseline is weekly, not daily: records can surface with a reg-date
+# days in the past, and deletion detection only looks inside the window it
+# runs with, so a 7-day lookback every day catches late arrivals and late
+# removals that a 1-day window would miss until the next wide pass. Mondays
+# widen to monthly, and three days a year (Jan/May/Sep 1st) to annual, for
+# progressively deeper reconciliation.
 set -euo pipefail
 
 : "${BDNS_SYNC_TARGET_URL:?set BDNS_SYNC_TARGET_URL to the target DB URL}"
@@ -48,12 +52,15 @@ run_window() {
   bdns-sync sync convocatorias --window "$window"
 }
 
-if [ "$(date +%m-%d)" = 01-01 ]; then
-  run_window annual                        # Jan 1st
-elif [ "$(date +%d)" = 01 ]; then
-  run_window monthly                       # 1st of month
-elif [ "$(date +%u)" = 7 ]; then
-  run_window weekly                        # Sunday
-else
-  run_window daily
-fi
+case "$(date +%m-%d)" in
+  01-01|05-01|09-01)
+    run_window annual                      # three times a year
+    ;;
+  *)
+    if [ "$(date +%u)" = 1 ]; then
+      run_window monthly                   # Monday
+    else
+      run_window weekly                    # every other day
+    fi
+    ;;
+esac

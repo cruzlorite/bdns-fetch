@@ -30,18 +30,29 @@ gcloud projects add-iam-policy-binding $PROJECT --member serviceAccount:$SA --ro
 gcloud projects add-iam-policy-binding $PROJECT --member serviceAccount:$SA --role roles/bigquery.dataEditor
 # (dataEditor puede concederse solo sobre el dataset si se prefiere)
 
-# 2. El job de la delta diaria
+# 2. Cloud Run no puede tirar de ghcr.io directamente: un repo remoto en
+#    Artifact Registry hace de proxy (pull-through) de ghcr
+gcloud artifacts repositories create ghcr \
+  --project $PROJECT --location $REGION \
+  --repository-format docker --mode remote-repository \
+  --remote-docker-repo https://ghcr.io
+
+# 3. El job de la delta diaria
 gcloud run jobs create bdns-sync-delta \
   --project $PROJECT --region $REGION \
-  --image ghcr.io/cruzlorite/bdns-sync:latest \
+  --image $REGION-docker.pkg.dev/$PROJECT/ghcr/cruzlorite/bdns-sync:latest \
   --service-account $SA \
   --set-env-vars BDNS_SYNC_TARGET_URL=bigquery://$PROJECT/$DATASET \
   --memory 1Gi --task-timeout 6h --max-retries 0
+gcloud run jobs add-iam-policy-binding bdns-sync-delta \
+  --project $PROJECT --region $REGION \
+  --member serviceAccount:$SA --role roles/run.invoker
 
-# 3. El cron
+# 4. El cron (Cloud Scheduler no existe en todas las regiones; vale
+#    cualquiera, solo llama a la API del job)
 gcloud scheduler jobs create http bdns-sync-delta-daily \
-  --project $PROJECT --location $REGION \
-  --schedule "0 2 * * *" \
+  --project $PROJECT --location europe-west1 \
+  --schedule "0 2 * * *" --time-zone "Europe/Madrid" \
   --uri "https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/bdns-sync-delta:run" \
   --http-method POST \
   --oauth-service-account-email $SA
@@ -51,7 +62,22 @@ Notas:
 
 - `--task-timeout 6h` da holgura a las ventanas `monthly`/`annual`; la weekly diaria tarda ~20 min.
 - `--max-retries 0`: si un run muere, el siguiente cron lo repara (idempotente); reintentar en caliente solo duplica trabajo de fetch.
-- El scheduler necesita, la primera vez, conceder a la SA `roles/run.invoker` sobre el job (o usar una SA aparte para invocar).
+
+### Coste y candados
+
+Con este esquema los servicios de pago en juego son dos, y el gasto esperado es de céntimos al mes (el job corre ~20 min/día con 1 vCPU; los load jobs de BigQuery son gratis; las queries del diff escanean pocos GB):
+
+- **Presupuesto**: los presupuestos de Google Cloud **solo avisan, no cortan**. Para un tope de gasto real el único candado nativo es la cuota de BigQuery.
+- **Cuota dura de BigQuery** (esto sí corta): límite diario de bytes escaneados por queries. 500 GiB/día cubre de sobra las ventanas anuales y acota el peor caso a ~3 €/día:
+
+  ```bash
+  gcloud alpha services quota update --service bigquery.googleapis.com \
+    --consumer projects/$PROJECT \
+    --metric bigquery.googleapis.com/quota/query/usage \
+    --unit 1/d/{project} --value 512000 --force
+  ```
+
+- **Alerta de fallo del job** (Cloud Monitoring): política sobre la métrica `run.googleapis.com/job/completed_execution_count` con `result=failed` hacia un canal de email. Un run fallido no exige acción inmediata — el cron del día siguiente lo repara — pero conviene enterarse.
 
 ## La carga inicial (bootstrap)
 

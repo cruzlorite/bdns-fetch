@@ -38,6 +38,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
 
   image:
+    needs: publish  # don't ship an image for a tag whose PyPI release failed
     runs-on: ubuntu-latest
     permissions:
       contents: read

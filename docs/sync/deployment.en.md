@@ -1,10 +1,8 @@
 # Cloud deployment
 
-How to keep a target synced without a machine of your own. The tool already has the right shape: pure CLI, configured by one environment variable, no local state (everything lives in the target database). The pattern is the same on any cloud:
+How to keep a target synced without a machine of your own. `bdns-sync` is a CLI with no local state — all configuration is one environment variable, and everything persistent lives in the target database — so the pattern is the same on any cloud:
 
 > **container image + scheduled job + `BDNS_SYNC_TARGET_URL`**
-
-There is deliberately no Terraform in this repository: the recipe is ~10 CLI lines, and per-cloud modules age badly. Terraform users can translate it in minutes.
 
 ## The image
 
@@ -57,7 +55,7 @@ Notes:
 
 ## The initial load (bootstrap)
 
-A one-off ~24 h operation (see the README table); not worth automating. Two options:
+A one-off ~24 h operation (see the README table), launched by hand. Two options:
 
 - **A second job** with the full-load command and the timeout at its maximum (24 h on Cloud Run Jobs — a tight fit; if an outage cuts it, re-running heals: the one-year slices commit independently):
 
@@ -66,7 +64,7 @@ A one-off ~24 h operation (see the README table); not worth automating. Two opti
   gcloud run jobs execute bdns-sync-full --project $PROJECT --region $REGION
   ```
 
-- **Any machine with Docker** (the boring, reliable option): `docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync /app/scripts/full_load.sh`
+- **Any machine with Docker**: `docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync /app/scripts/full_load.sh`
 
 ## Other clouds
 

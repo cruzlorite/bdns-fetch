@@ -207,7 +207,7 @@ Endpoints con decenas de millones de filas, donde el reemplazo completo no es vi
 
 El paso de detalle de `convocatorias` es el caro: una llamada real por código descubierto, sin paginación posible. Está paralelizado con arranques de petición espaciados (8 hilos, ~9,5 peticiones/segundo, justo bajo el límite oficial de 10/s), lo que reduce un mes real de horas a minutos sin ningún `429`; cifras en la [sección 7 de docs/bdns-api-behavior.md](docs/bdns-api-behavior.md#7-rendimiento-medido). La misma maquinaria ([`bdns/sync/pipeline.py`](bdns/sync/pipeline.py)) la usan los pasos de detalle de `planesestrategicos` y `planesestrategicos_vigencia`.
 
-La fecha de registro de un registro no cambia cuando este se edita, por lo que reconsultar la misma ventana más adelante no encuentra altas nuevas, pero sí detecta ediciones mediante el hash. Las correcciones se concentran cerca de la fecha de registro y disminuyen con la antigüedad; de ahí la cascada de ventanas: cada nivel llega hasta ayer (`window_bounds`), así que `annual` contiene a `monthly`, que contiene a `weekly`, que contiene a `daily`, el mismo día. `scripts/delta_load.sh` ejecuta solo la más ancha que toque ese día (anual el 1 de enero, mensual el día 1, semanal en domingo, diaria el resto), nunca varias apiladas: la más ancha ya cubre entera a las más estrechas, apilarlas sería re-consultar y re-diferenciar el mismo rango dos veces sin ganar detección.
+La fecha de registro de un registro no cambia cuando este se edita, por lo que reconsultar la misma ventana más adelante no encuentra altas nuevas, pero sí detecta ediciones mediante el hash. Las correcciones se concentran cerca de la fecha de registro y disminuyen con la antigüedad; de ahí la cascada de ventanas: cada nivel llega hasta ayer (`window_bounds`), así que `annual` contiene a `monthly`, que contiene a `weekly`, que contiene a `daily`, el mismo día. `scripts/delta_load.sh` ejecuta solo la más ancha que toque ese día (semanal a diario, mensual los lunes, anual el 1 de enero/mayo/septiembre), nunca varias apiladas: la más ancha ya cubre entera a las más estrechas, apilarlas sería re-consultar y re-diferenciar el mismo rango dos veces sin ganar detección.
 
 ## Ventanas de fecha y carga histórica
 
@@ -220,6 +220,22 @@ El manejo de fechas contra el API tiene varias sutilezas verificadas en vivo, do
 - Cuatro de las cinco entidades incrementales detectan además bajas reales, comparando lo obtenido contra las filas de la tabla cuya fecha de registro cae en el mismo rango.
 
 Las ventanas en cascada llegan como máximo a 365 días atrás. Para la carga histórica completa se usa `--since DATE [--until DATE]`, que emplea exactamente la misma maquinaria. La profundidad histórica disponible depende de la retención del API por endpoint, desde ~4 años (`concesiones_busqueda`) hasta ~12 (`convocatorias`); [`scripts/full_load.sh`](scripts/full_load.sh) ya incluye fechas de inicio conservadoras por entidad. Ver la tabla completa en [docs/bdns-api-behavior.md](docs/bdns-api-behavior.md#6-profundidad-histórica-por-endpoint).
+
+### Qué esperar de la carga inicial
+
+Duraciones medidas en una carga inicial completa real (julio de 2026, destino BigQuery, una sola máquina). El cuello de botella es siempre el API de origen, no el destino:
+
+| Carga | Filas | Duración |
+|---|---|---|
+| Los 17 catálogos de reemplazo completo | ~150.000 | ~10 s la mayoría; `planesestrategicos` y `planesestrategicos_vigencia` ~4 min cada uno (detalle por clave), `grandesbeneficiarios_busqueda` ~2 min |
+| `concesiones_busqueda` (desde 2020) | 27,7 M | ~2,5 h |
+| `ayudasestado_busqueda` (desde 2015) | 6,4 M | ~2 h |
+| `minimis_busqueda` (desde 2015) | 4,3 M | ~30 min |
+| `convocatorias_busqueda` (desde 2013) | 636 K | ~6 min |
+| `partidospoliticos_busqueda` (desde 2020) | 6 K | ~2 min |
+| `convocatorias` (desde 2013) | 636 K | **~19 h** |
+
+En total, un bootstrap completo ronda las **24 horas**, dominado por `convocatorias`: cada código descubierto exige una llamada de detalle individual, paralelizada justo por debajo del límite oficial de 10 peticiones/segundo — es coste de API puro y no depende del motor de destino. `full_load.sh` trocea los backfills en rodajas de un año que se confirman de forma independiente, así que una interrupción solo cuesta la rodaja en curso; re-ejecutar es siempre seguro (idempotente). Los cortes transitorios del API (timeouts, mantenimiento nocturno) los absorben los reintentos con backoff del cliente.
 
 ## Buenas prácticas oficiales
 

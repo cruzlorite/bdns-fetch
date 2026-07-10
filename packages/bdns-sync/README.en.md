@@ -209,7 +209,7 @@ Endpoints with tens of millions of rows, where full replacement is not viable.
 
 The detail step of `convocatorias` is the expensive one: one real API call per discovered code, with no pagination possible. It is parallelized with paced request starts (8 workers, ~9.5 req/s, just under the official 10/s cap), which cuts a real month from hours to minutes with zero `429`s; figures in [section 7 of docs/bdns-api-behavior.en.md](docs/bdns-api-behavior.en.md#7-measured-performance). The same machinery ([`bdns/sync/pipeline.py`](bdns/sync/pipeline.py)) drives the detail steps of `planesestrategicos` and `planesestrategicos_vigencia`.
 
-A record's registration date does not change when the record is edited, so re-querying the same window later finds no new additions, but does detect edits via the hash. Corrections cluster near the registration date and taper off with age; hence the window cascade: every level reaches back to yesterday (`window_bounds`), so `annual` contains `monthly` contains `weekly` contains `daily` on any given day. `scripts/delta_load.sh` runs only the widest one that applies that day (annual on Jan 1st, monthly on the 1st, weekly on Sunday, daily otherwise), never stacked: the widest already covers the narrower ones entirely, so stacking would just re-fetch and re-diff the same range twice for no extra detection.
+A record's registration date does not change when the record is edited, so re-querying the same window later finds no new additions, but does detect edits via the hash. Corrections cluster near the registration date and taper off with age; hence the window cascade: every level reaches back to yesterday (`window_bounds`), so `annual` contains `monthly` contains `weekly` contains `daily` on any given day. `scripts/delta_load.sh` runs only the widest one that applies that day (weekly daily, monthly on Mondays, annual on Jan/May/Sep 1st), never stacked: the widest already covers the narrower ones entirely, so stacking would just re-fetch and re-diff the same range twice for no extra detection.
 
 ## Date windows and historical load
 
@@ -222,6 +222,22 @@ Date handling against the API involves several subtleties verified live, documen
 - Four of the five incremental entities also detect real deletions, by comparing the fetched data against the table rows whose registration date falls in the same range.
 
 The cascade windows reach at most 365 days back. For a full historical load, use `--since DATE [--until DATE]`, which runs through exactly the same machinery. The available historical depth depends on the API's retention per endpoint, from ~4 years (`concesiones_busqueda`) to ~12 (`convocatorias`); [`scripts/full_load.sh`](scripts/full_load.sh) already includes conservative per-entity start dates. See the full table in [docs/bdns-api-behavior.en.md](docs/bdns-api-behavior.en.md#6-historical-depth-per-endpoint).
+
+### What to expect from the initial load
+
+Durations measured on a real full bootstrap (July 2026, BigQuery target, single machine). The bottleneck is always the source API, never the target:
+
+| Load | Rows | Duration |
+|---|---|---|
+| All 17 full-replace catalogs | ~150K | ~10 s most; `planesestrategicos` and `planesestrategicos_vigencia` ~4 min each (per-key detail), `grandesbeneficiarios_busqueda` ~2 min |
+| `concesiones_busqueda` (since 2020) | 27.7 M | ~2.5 h |
+| `ayudasestado_busqueda` (since 2015) | 6.4 M | ~2 h |
+| `minimis_busqueda` (since 2015) | 4.3 M | ~30 min |
+| `convocatorias_busqueda` (since 2013) | 636 K | ~6 min |
+| `partidospoliticos_busqueda` (since 2020) | 6 K | ~2 min |
+| `convocatorias` (since 2013) | 636 K | **~19 h** |
+
+A full bootstrap totals around **24 hours**, dominated by `convocatorias`: every discovered code requires an individual detail call, parallelized just under the official 10 requests/second cap — pure API cost, independent of the target engine. `full_load.sh` slices the backfills into one-year pieces that commit independently, so an interruption only costs the slice in flight; re-running is always safe (idempotent). Transient API outages (timeouts, nightly maintenance) are absorbed by the client's backoff retries.
 
 ## Official good practices
 

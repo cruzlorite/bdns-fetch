@@ -94,6 +94,8 @@ BDNS_SYNC_TARGET_URL=bigquery://project/dataset /path/to/repo/scripts/full_load.
 
 The load is idempotent: re-running it does not duplicate data.
 
+To operate without a machine of your own there is a published container image (`ghcr.io/cruzlorite/bdns-sync`, with the BigQuery extra and the scripts included) and a cloud deployment recipe with a scheduled job: see [docs/deployment.en.md](docs/deployment.en.md).
+
 ## Data model
 
 Each synced endpoint has its own table, and all tables share the same generic schema, with no endpoint-specific fields. The original record is stored whole in `payload`; the remaining columns are SCD2 control columns:

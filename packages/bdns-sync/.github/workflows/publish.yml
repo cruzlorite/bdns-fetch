@@ -36,3 +36,24 @@ jobs:
 
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to ghcr.io
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and push image
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          docker build \
+            -t "ghcr.io/${{ github.repository }}:$version" \
+            -t "ghcr.io/${{ github.repository }}:latest" \
+            .
+          docker push --all-tags "ghcr.io/${{ github.repository }}"

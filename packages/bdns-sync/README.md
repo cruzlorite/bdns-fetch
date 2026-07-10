@@ -92,6 +92,8 @@ BDNS_SYNC_TARGET_URL=bigquery://proyecto/dataset /ruta/al/repo/scripts/full_load
 
 La carga es idempotente: reejecutarla no duplica datos.
 
+Para operar sin máquina propia hay imagen de contenedor publicada (`ghcr.io/cruzlorite/bdns-sync`, con el extra de BigQuery y los scripts incluidos) y una receta de despliegue con job programado en la nube: ver [docs/deployment.md](docs/deployment.md).
+
 ## Modelo de datos
 
 Cada endpoint sincronizado tiene su propia tabla, y todas comparten el mismo esquema genérico, sin campos específicos por endpoint. El registro original se almacena íntegro en `payload`; el resto son columnas de control SCD2:

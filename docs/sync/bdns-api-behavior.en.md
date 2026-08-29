@@ -1,6 +1,6 @@
 # BDNS API behavior: date windows
 
-[🇪🇸 Spanish version](./api-behavior.md)
+[🇪🇸 Spanish version](./bdns-api-behavior.md)
 
 This document records the actual behavior of the BDNS API with respect to date parameters, verified through live tests against the service. It is documented in detail because these behaviors are subtle, absent from the official documentation (or contradicted by it), and mishandling them causes silent data loss.
 

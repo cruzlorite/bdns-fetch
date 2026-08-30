@@ -5,7 +5,18 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.1] - 2026-08-30
+
+### Changed
+
+- Spanish documentation rewritten in natural Spanish (tone, vocabulary and register); no technical content changed.
+- Cloud Run recipe documents `--memory 2Gi`: 1 GiB gets OOM-killed on the wide `concesiones_busqueda` windows.
+
+### Fixed
+
+- Broken cross-links between `bdns-api-behavior.md` and its English mirror.
+
+## [0.2.0] - 2026-07-10
 
 ### Added
 

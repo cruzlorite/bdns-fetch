@@ -43,7 +43,7 @@ gcloud run jobs create bdns-sync-delta \
   --image $REGION-docker.pkg.dev/$PROJECT/ghcr/cruzlorite/bdns-sync:latest \
   --service-account $SA \
   --set-env-vars BDNS_SYNC_TARGET_URL=bigquery://$PROJECT/$DATASET \
-  --memory 1Gi --task-timeout 6h --max-retries 0
+  --memory 2Gi --task-timeout 6h --max-retries 0
 gcloud run jobs add-iam-policy-binding bdns-sync-delta \
   --project $PROJECT --region $REGION \
   --member serviceAccount:$SA --role roles/run.invoker
@@ -60,6 +60,7 @@ gcloud scheduler jobs create http bdns-sync-delta-daily \
 
 Notas:
 
+- `--memory 2Gi`, no menos: con 1 Gi el proceso muere por falta de memoria en las ventanas anchas de `concesiones_busqueda`. En BigQuery el staging se carga en bloques de 50.000 filas y la cola acotada llega a tener tres en vuelo a la vez. Medido en real: con 1 Gi hubo cuatro ejecuciones seguidas muertas sin evento terminal; con 2 Gi, ninguna.
 - `--task-timeout 6h` deja holgura para las ventanas `monthly` y `annual`; la semanal, que se lanza a diario, tarda unos 20 min.
 - `--max-retries 0`: si una ejecución se cae, la del cron del día siguiente lo arregla, porque el proceso es idempotente; reintentar en caliente solo repite trabajo de descarga.
 

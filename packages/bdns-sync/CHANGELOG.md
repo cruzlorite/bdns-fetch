@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-30
+
+### Fixed
+
+- `grandesbeneficiarios_busqueda` no longer re-versions half the table on every run: the API returns a different
+  spelling of `beneficiario` for the same `idPersona` on nearly every call, so that field is now excluded from the
+  content hash. It is still stored whole in the payload. The first run after upgrading re-versions the table once,
+  because every hash changes.
+
+### Added
+
+- `exclude_from_hash` on the `Sink` interface: payload fields that do not count as changes. The parameter existed
+  inside the SCD2 layer but was never reachable from a caller.
+
 ## [0.2.1] - 2026-08-30
 
 ### Changed

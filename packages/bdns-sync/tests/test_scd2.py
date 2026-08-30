@@ -83,6 +83,37 @@ def test_composite_natural_key(table):
         assert len(current_rows(conn, tbl)) == 2
 
 
+def test_excluded_field_changing_does_not_version_the_row(table):
+    """grandesbeneficiarios_busqueda returns a different spelling of
+    `beneficiario` on almost every call; hashing it re-versioned half the
+    table daily (see section 8 of docs/bdns-api-behavior.md).
+    """
+    engine, tbl, staging = table
+    first = [{"id": 1, "beneficiario": "M&M, S.L.", "importe": 100}]
+    second = [{"id": 1, "beneficiario": "MM SL", "importe": 100}]
+    with engine.begin() as conn:
+        apply_full_reconciliation(conn, tbl, staging, first, ("id",), ("beneficiario",))
+        stats = apply_full_reconciliation(conn, tbl, staging, second, ("id",), ("beneficiario",))
+        assert stats["inserted"] == 0
+        assert stats["updated"] == 0
+        assert stats["touched"] == 1
+        rows = current_rows(conn, tbl)
+        assert len(rows) == 1
+        # the payload is stored whole; only the hash ignores the field
+        assert rows[0]["payload"]["beneficiario"] == "M&M, S.L."
+
+
+def test_a_real_change_still_versions_a_row_with_exclusions(table):
+    engine, tbl, staging = table
+    first = [{"id": 1, "beneficiario": "M&M, S.L.", "importe": 100}]
+    second = [{"id": 1, "beneficiario": "MM SL", "importe": 250}]
+    with engine.begin() as conn:
+        apply_full_reconciliation(conn, tbl, staging, first, ("id",), ("beneficiario",))
+        stats = apply_full_reconciliation(conn, tbl, staging, second, ("id",), ("beneficiario",))
+        assert stats["updated"] == 1
+        assert current_rows(conn, tbl)[0]["payload"]["importe"] == 250
+
+
 def test_incremental_never_closes_out_absent_keys(table):
     """A reg-date window is a subset of the table, so absence isn't deletion."""
     engine, tbl, staging = table

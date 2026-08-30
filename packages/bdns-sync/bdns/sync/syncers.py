@@ -421,11 +421,19 @@ def sync_grandesbeneficiarios_anios(sink: Sink, client: BDNSClient) -> dict[str,
 
 
 def sync_grandesbeneficiarios_busqueda(sink: Sink, client: BDNSClient) -> dict[str, int]:
+    """`beneficiario` is left out of the content hash: the API returns a
+    different spelling of the same name on almost every call (six variants
+    observed for one idPersona, with the amount unchanged), so hashing it
+    re-versioned half the table daily. Identity is `idPersona`; the name is
+    still stored, it just no longer counts as a change. See section 8 of
+    docs/bdns-api-behavior.md.
+    """
     anios = [item["id"] for item in client.fetch_grandesbeneficiarios_anios()]
     return sink.sync_full(
         "grandesbeneficiarios_busqueda",
         all_pages(client.fetch_grandesbeneficiarios_busqueda)(anios=anios),
         ("idPersona", "ejercicio"),
+        exclude_from_hash=("beneficiario",),
     )
 
 

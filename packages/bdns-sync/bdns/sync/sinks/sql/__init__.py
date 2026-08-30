@@ -44,10 +44,13 @@ class SQLSink(Sink):
         rows: Iterable[dict[str, Any]],
         key_fields: Sequence[str],
         *,
+        exclude_from_hash: Optional[Sequence[str]] = None,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
         def apply_fn(conn, table, staging):
-            stats = apply_full_reconciliation(conn, table, staging, rows, key_fields)
+            stats = apply_full_reconciliation(
+                conn, table, staging, rows, key_fields, exclude_from_hash
+            )
             return _attach_skips(stats, skipped)
 
         return run_with_bookkeeping(self.engine, endpoint, run_type="full", apply_fn=apply_fn)
@@ -62,6 +65,7 @@ class SQLSink(Sink):
         window_end: date,
         run_type: str,
         reg_date_field: Optional[str] = None,
+        exclude_from_hash: Optional[Sequence[str]] = None,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
         def apply_fn(conn, table, staging):
@@ -71,6 +75,7 @@ class SQLSink(Sink):
                 staging,
                 rows,
                 key_fields,
+                exclude_from_hash,
                 reg_date_field=reg_date_field,
                 window_start=window_start,
                 window_end=window_end,

@@ -69,13 +69,13 @@ Notes:
 Two paid services are involved, and the expected spend is cents per month (the job runs ~20 min/day on 1 vCPU; BigQuery load jobs are free; the diff queries scan a few GB):
 
 - **Budgets**: Google Cloud budgets **only notify, they never cut off**. For a real spending cap the only native lock is the BigQuery quota.
-- **BigQuery hard quota** (this one does cut off): daily limit on bytes scanned by queries. Consumption has two very different regimes: a normal day is ~0.2 GiB, but on the three days a year the `annual` window of `concesiones_busqueda` runs, the diff scans between 40 and 60 GiB, because it correlates the table's 29 million rows against staging's ~20 million several times over. Size the cap for those three days, not for the average. 200,000 MiB (195 GiB) leaves headroom and bounds the worst case at a little over €1/day:
+- **BigQuery hard quota** (this one does cut off): daily limit on bytes scanned by queries. Consumption has two very different regimes: a normal day is ~0.2 GiB, but on the three days a year the `annual` window runs, the diff scans around 127 GiB, of which 115 is `concesiones_busqueda` alone: it correlates the table's 29 million rows against staging's ~20 million, and does so several times across the counts, the `_synced_at` refresh, the version closing, and the insert. Size the cap for those three days, not for the average, and leave room for any manual query that lands the same day. 300,000 MiB (293 GiB) is a bit over twice what was measured and bounds the worst case at under €2/day:
 
   ```bash
   gcloud alpha services quota update --service bigquery.googleapis.com \
     --consumer projects/$PROJECT \
     --metric bigquery.googleapis.com/quota/query/usage \
-    --unit 1/d/{project} --value 200000 --force
+    --unit 1/d/{project} --value 300000 --force
   ```
 
 - **Job failure alert** (Cloud Monitoring): a policy on the `run.googleapis.com/job/completed_execution_count` metric with `result=failed` towards an email channel. A failed run needs no immediate action — the next day's cron heals it — but you want to know.

@@ -69,13 +69,13 @@ Notas:
 Con este esquema hay dos servicios de pago en juego, y el gasto esperado son céntimos al mes (el job corre unos 20 min al día con 1 vCPU, los load jobs de BigQuery son gratis y las consultas del diff escanean pocos GB):
 
 - **Presupuestos**: los de Google Cloud **solo avisan, no cortan**. Para poner un tope de gasto de verdad, el único freno nativo es la cuota de BigQuery.
-- **Cuota dura de BigQuery** (esta sí corta): límite diario de bytes escaneados por consultas. El consumo tiene dos regímenes muy distintos: un día normal son ~0,2 GiB, pero los tres días al año que corre la ventana `annual` de `concesiones_busqueda` el diff escanea entre 40 y 60 GiB, porque correlaciona los 29 millones de filas de la tabla con los ~20 millones del staging varias veces. El tope hay que ponerlo pensando en esos tres días, no en la media. 200.000 MiB (195 GiB) dejan margen y acotan el peor caso a algo más de 1 € al día:
+- **Cuota dura de BigQuery** (esta sí corta): límite diario de bytes escaneados por consultas. El consumo tiene dos regímenes muy distintos: un día normal son ~0,2 GiB, pero los tres días al año que corre la ventana `annual` el diff escanea unos 127 GiB, de los cuales 115 son solo `concesiones_busqueda`: correlaciona los 29 millones de filas de la tabla con los ~20 millones del staging, y lo hace varias veces entre los recuentos, el refresco de `_synced_at`, el cierre de versiones y la inserción. El tope hay que ponerlo pensando en esos tres días, no en la media, y con holgura para cualquier consulta manual que caiga el mismo día. 300.000 MiB (293 GiB) dan algo más del doble de lo medido y acotan el peor caso a menos de 2 € al día:
 
   ```bash
   gcloud alpha services quota update --service bigquery.googleapis.com \
     --consumer projects/$PROJECT \
     --metric bigquery.googleapis.com/quota/query/usage \
-    --unit 1/d/{project} --value 200000 --force
+    --unit 1/d/{project} --value 300000 --force
   ```
 
 - **Aviso si falla el job** (Cloud Monitoring): una política sobre la métrica `run.googleapis.com/job/completed_execution_count` con `result=failed` hacia un canal de email. Una ejecución fallida no obliga a hacer nada de inmediato, porque el cron del día siguiente la repara, pero conviene enterarse.

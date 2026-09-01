@@ -43,7 +43,7 @@ gcloud run jobs create bdns-sync-delta \
   --image $REGION-docker.pkg.dev/$PROJECT/ghcr/cruzlorite/bdns-sync:latest \
   --service-account $SA \
   --set-env-vars BDNS_SYNC_TARGET_URL=bigquery://$PROJECT/$DATASET \
-  --memory 2Gi --task-timeout 6h --max-retries 0
+  --memory 4Gi --task-timeout 6h --max-retries 0
 gcloud run jobs add-iam-policy-binding bdns-sync-delta \
   --project $PROJECT --region $REGION \
   --member serviceAccount:$SA --role roles/run.invoker
@@ -60,7 +60,7 @@ gcloud scheduler jobs create http bdns-sync-delta-daily \
 
 Notes:
 
-- `--memory 2Gi`, no less: at 1 GiB the process gets OOM-killed on the wide `concesiones_busqueda` windows. On BigQuery, staging is loaded in 50,000-row batches and the bounded queue holds up to three of them in flight. Measured live: at 1 GiB, four consecutive runs died with no terminal event; at 2 GiB, none.
+- `--memory 4Gi`, no less. Consumption is set by the widest window, the `annual` pass over `concesiones_busqueda`, which runs three days a year and stages around 20 million rows: measured peak **2.33 GB**. Both times it has been too small it showed up live, with the same signature — an `exit 137` and no terminal event in `_sync_runs`: at 1 GiB, four consecutive weekly runs died in July 2026; at 2 GiB, the annual run of 1 September died. Going from 2 to 4 GiB costs about $0.18 a month and does not force a higher vCPU tier.
 - `--task-timeout 6h` leaves slack for the `monthly`/`annual` windows; the daily weekly run takes ~20 min.
 - `--max-retries 0`: if a run dies, the next cron heals it (idempotent); hot retries only duplicate fetch work.
 
@@ -69,13 +69,13 @@ Notes:
 Two paid services are involved, and the expected spend is cents per month (the job runs ~20 min/day on 1 vCPU; BigQuery load jobs are free; the diff queries scan a few GB):
 
 - **Budgets**: Google Cloud budgets **only notify, they never cut off**. For a real spending cap the only native lock is the BigQuery quota.
-- **BigQuery hard quota** (this one does cut off): daily limit on bytes scanned by queries. 500 GiB/day comfortably covers the annual windows and bounds the worst case at ~€3/day:
+- **BigQuery hard quota** (this one does cut off): daily limit on bytes scanned by queries. Consumption has two very different regimes: a normal day is ~0.2 GiB, but on the three days a year the `annual` window of `concesiones_busqueda` runs, the diff scans between 40 and 60 GiB, because it correlates the table's 29 million rows against staging's ~20 million several times over. Size the cap for those three days, not for the average. 200,000 MiB (195 GiB) leaves headroom and bounds the worst case at a little over €1/day:
 
   ```bash
   gcloud alpha services quota update --service bigquery.googleapis.com \
     --consumer projects/$PROJECT \
     --metric bigquery.googleapis.com/quota/query/usage \
-    --unit 1/d/{project} --value 512000 --force
+    --unit 1/d/{project} --value 200000 --force
   ```
 
 - **Job failure alert** (Cloud Monitoring): a policy on the `run.googleapis.com/job/completed_execution_count` metric with `result=failed` towards an email channel. A failed run needs no immediate action — the next day's cron heals it — but you want to know.

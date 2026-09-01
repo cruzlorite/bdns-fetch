@@ -43,7 +43,7 @@ gcloud run jobs create bdns-sync-delta \
   --image $REGION-docker.pkg.dev/$PROJECT/ghcr/cruzlorite/bdns-sync:latest \
   --service-account $SA \
   --set-env-vars BDNS_SYNC_TARGET_URL=bigquery://$PROJECT/$DATASET \
-  --memory 2Gi --task-timeout 6h --max-retries 0
+  --memory 4Gi --task-timeout 6h --max-retries 0
 gcloud run jobs add-iam-policy-binding bdns-sync-delta \
   --project $PROJECT --region $REGION \
   --member serviceAccount:$SA --role roles/run.invoker
@@ -60,7 +60,7 @@ gcloud scheduler jobs create http bdns-sync-delta-daily \
 
 Notas:
 
-- `--memory 2Gi`, no menos: con 1 Gi el proceso muere por falta de memoria en las ventanas anchas de `concesiones_busqueda`. En BigQuery el staging se carga en bloques de 50.000 filas y la cola acotada llega a tener tres en vuelo a la vez. Medido en real: con 1 Gi hubo cuatro ejecuciones seguidas muertas sin evento terminal; con 2 Gi, ninguna.
+- `--memory 4Gi`, no menos. El consumo lo marca la ventana más ancha, la `annual` de `concesiones_busqueda`, que se lanza tres días al año y stagea unos 20 millones de filas: pico medido de **2,33 GB**. Las dos veces que se ha quedado corto se vieron en real, y las dos con la misma firma, un `exit 137` sin evento terminal en `_sync_runs`: con 1 Gi murieron cuatro ejecuciones semanales seguidas en julio de 2026, y con 2 Gi murió la anual del 1 de septiembre. Subir de 2 a 4 Gi cuesta unos 0,18 $ al mes y no obliga a subir de vCPU.
 - `--task-timeout 6h` deja holgura para las ventanas `monthly` y `annual`; la semanal, que se lanza a diario, tarda unos 20 min.
 - `--max-retries 0`: si una ejecución se cae, la del cron del día siguiente lo arregla, porque el proceso es idempotente; reintentar en caliente solo repite trabajo de descarga.
 
@@ -69,13 +69,13 @@ Notas:
 Con este esquema hay dos servicios de pago en juego, y el gasto esperado son céntimos al mes (el job corre unos 20 min al día con 1 vCPU, los load jobs de BigQuery son gratis y las consultas del diff escanean pocos GB):
 
 - **Presupuestos**: los de Google Cloud **solo avisan, no cortan**. Para poner un tope de gasto de verdad, el único freno nativo es la cuota de BigQuery.
-- **Cuota dura de BigQuery** (esta sí corta): límite diario de bytes escaneados por consultas. Con 500 GiB/día sobra para las ventanas anuales y el peor caso queda acotado a unos 3 € al día:
+- **Cuota dura de BigQuery** (esta sí corta): límite diario de bytes escaneados por consultas. El consumo tiene dos regímenes muy distintos: un día normal son ~0,2 GiB, pero los tres días al año que corre la ventana `annual` de `concesiones_busqueda` el diff escanea entre 40 y 60 GiB, porque correlaciona los 29 millones de filas de la tabla con los ~20 millones del staging varias veces. El tope hay que ponerlo pensando en esos tres días, no en la media. 200.000 MiB (195 GiB) dejan margen y acotan el peor caso a algo más de 1 € al día:
 
   ```bash
   gcloud alpha services quota update --service bigquery.googleapis.com \
     --consumer projects/$PROJECT \
     --metric bigquery.googleapis.com/quota/query/usage \
-    --unit 1/d/{project} --value 512000 --force
+    --unit 1/d/{project} --value 200000 --force
   ```
 
 - **Aviso si falla el job** (Cloud Monitoring): una política sobre la métrica `run.googleapis.com/job/completed_execution_count` con `result=failed` hacia un canal de email. Una ejecución fallida no obliga a hacer nada de inmediato, porque el cron del día siguiente la repara, pero conviene enterarse.

@@ -15,6 +15,15 @@
 # anything is safe: SCD2 is idempotent, an already-synced record is just
 # touched, not duplicated.
 #
+# WARNING: this is a bootstrap for a FRESH target. Re-running it against an
+# already-populated one closes, in one shot, every stored row the API no longer
+# serves -- which after a few years means everything past its publication period
+# (4 calendar years after the concession for concesiones, 10 for ayudasestado and
+# minimis). Those rows are closed with the date the backfill ran, not the date
+# they expired. Nothing breaks, and the cadence never does this because its widest
+# window only reaches 365 days of registration date, but the bulk closure is easy
+# to mistake for a real event. See docs/data-caveats.md.
+#
 # The per-entity start years are floors, not exact firsts: the API only
 # retains a bounded history (measured live, see README "Carga histórica /
 # Historical load"), and querying earlier just returns empty weeks cheaply.

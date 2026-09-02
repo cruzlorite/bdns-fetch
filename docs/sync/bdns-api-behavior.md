@@ -107,8 +107,68 @@ Cada punto sigue el mismo orden: qué hace la API, qué observamos, y qué hace 
 - **`ERR_MANTENIMIENTO_BBDD` en rangos largos.** Los rangos de varios años fallan de forma intermitente, a cualquier profundidad de página. Un rango de 4 años sobre `concesiones_busqueda` (27,4 millones de filas) falló repetidamente, mientras que una ventana semanal sobre esas mismas fechas no falló ni una vez en 6 intentos. `bdns-sync` parte toda consulta en tramos de 7 días; ver [sección 3](#3-troceo-de-ventanas-en-tramos-de-7-días).
 - **Fechas con semántica inconsistente entre endpoints.** `fechaRegFin` es exclusivo y `fechaHasta` es inclusivo, sin que la documentación oficial lo diga. Consultando el mismo día `D`, `fechaRegFin=D` devuelve ~0 filas y `fechaRegFin=D+1` devuelve el día entero, mientras que `fechaHasta=D` sí devuelve el día `D` completo. `bdns-sync` centraliza la conversión en `generic.to_api_upper_bound` y la aplica solo a la familia exclusiva; ver [sección 2](#2-semántica-del-extremo-superior-según-el-endpoint).
 - **`partidospoliticos_busqueda` sin fecha de registro.** Su payload no trae ningún campo de fecha de registro, aunque la documentación oficial afirme que este endpoint funciona igual que `concesiones_busqueda`. Comprobado con más de 70 filas reales en dos rangos de fechas distintos. Sin ese campo no hay forma de detectar bajas, así que `bdns-sync` deja esta entidad fuera de la detección de bajas; ver [sección 5](#5-detección-de-bajas-acotada-por-ventana).
-- **Nombre de beneficiario inestable en `grandesbeneficiarios_busqueda`.** Para un mismo `idPersona`, la API cambia la grafía del nombre de unas horas a otras, con el resto del registro idéntico. Medido el 30 de agosto de 2026: tres descargas consecutivas en cuatro minutos devolvieron los 148.170 nombres idénticos, pero entre la ejecución de las 00:03 y la de las 15:20 cambiaron 79.000 filas, lo que apunta a una caché o una reagregación periódica en el origen y no a azar por petición. Para `idPersona=7818535` se observaron seis variantes de la misma razón social en once días (`M&M, S.L.`, `M M S.L.`, `MM SL`, `M&M S.L.`, `M&M SOCIEDAD LIMITADA`, con y sin punto final), siempre con el mismo importe; el nombre probablemente se compone a partir de los registros de concesión subyacentes, donde cada órgano lo tecleó a su manera. Con ese campo dentro del hash se versionaba entre el 30% y el 60% de la tabla cada día: 3,7 millones de filas de historial para 148.000 registros vigentes, 25 versiones por clave en 53 días. `bdns-sync` excluye el campo del hash (`exclude_from_hash` en el syncer): se sigue guardando entero en el payload, pero deja de contar como cambio. Ninguna otra entidad se comporta así; en `concesiones_busqueda` el versionado alto es real, son importes que se van acumulando.
-- **Arrays anidados en orden que cambia.** `regiones` devuelve el mismo árbol con los `children` en distinto orden entre llamadas, sin que haya cambiado ningún dato. `bdns-sync` ordena de forma recursiva las claves y los elementos de los arrays antes de calcular el hash, para no generar versiones falsas.
+- **Nombre de beneficiario inestable en `grandesbeneficiarios_busqueda`.** Para un mismo `idPersona`, la API cambia la grafía del nombre de unas horas a otras, con el resto del registro idéntico. Medido el 30 de agosto de 2026: tres descargas consecutivas en cuatro minutos devolvieron los 148.170 nombres idénticos, pero entre la ejecución de las 00:03 y la de las 15:20 cambiaron 79.000 filas, lo que apunta a una caché o una reagregación periódica en el origen y no a azar por petición. Para `idPersona=7818535` se observaron seis variantes de la misma razón social en once días (`M&M, S.L.`, `M M S.L.`, `MM SL`, `M&M S.L.`, `M&M SOCIEDAD LIMITADA`, con y sin punto final), siempre con el mismo importe; el nombre probablemente se compone a partir de los registros de concesión subyacentes, donde cada órgano lo tecleó a su manera. Con ese campo dentro del hash se versionaba entre el 30% y el 60% de la tabla cada día: 3,7 millones de filas de historial para 148.000 registros vigentes, 25 versiones por clave en 53 días. `bdns-sync` excluye el campo del hash (`exclude_from_hash` en el syncer): se sigue guardando entero en el payload, pero deja de contar como cambio. No es el único caso ni la única forma que toma: `concesiones_busqueda` sufre lo mismo con su propio campo `beneficiario`, y `minimis_busqueda` y `ayudasestado_busqueda` una variante distinta. El detalle, con la medición por entidad, está en la [sección 9](#9-cambios-espurios-el-mismo-dato-escrito-de-otra-forma).
+- **Arrays anidados en orden que cambia.** `regiones` devuelve el mismo árbol con los `children` en distinto orden entre llamadas, sin que haya cambiado ningún dato. `bdns-sync` ordena de forma recursiva las claves y los elementos de los arrays antes de calcular el hash, para no generar versiones falsas. El mismo desorden aparece dentro de cadenas con separadores, donde la canonicalización no llega; ver [sección 9](#9-cambios-espurios-el-mismo-dato-escrito-de-otra-forma).
 - **Rechazo de ráfagas aunque la media respete el límite.** El servidor responde `429` cuando varias peticiones arrancan a la vez, aunque la media esté por debajo del límite oficial de 10 req/s. Un pool de 10 hilos que solo respetaba la media murió en segundos, mientras que el mismo servidor aceptó 9,8 req/s sostenidas con los arranques espaciados. `bdns-sync` espacia los arranques 105 ms; ver [sección 7](#7-rendimiento-medido).
 - **Retención limitada y distinta en cada endpoint.** Los datos disponibles van de ~4 años (`concesiones_busqueda`) a ~12 (`convocatorias`), según la entidad. `bdns-sync` no codifica esas fechas —consultar más atrás solo devuelve semanas vacías, que son llamadas baratas—, las decide el script del operador con `--since`; ver [sección 6](#6-profundidad-histórica-por-endpoint).
 - **Paginación inestable en fechas que siguen recibiendo altas.** Si el conjunto de resultados cambia mientras se pagina una ventana amplia, porque entran concesiones nuevas, la paginación por offset puede repetir en dos páginas seguidas las filas cercanas al borde. Solo afecta a fechas recientes, nunca a rangos ya cerrados, cuya paginación es estable. `bdns-sync` deduplica al insertar, así que las sincronizaciones normales no dejan duplicados; una carga histórica masiva en una sola pasada sí puede dejar algún par residual. Cómo detectarlo y limpiarlo: [`data-caveats.md`](data-caveats.md).
+
+## 9. Cambios espurios: el mismo dato escrito de otra forma
+
+Un versionado SCD2 crea una versión nueva cada vez que cambia el hash del payload. Si la API devuelve el mismo dato escrito de otra manera entre una llamada y otra, se genera una versión que no aporta nada: ni el registro cambió ni hubo corrección administrativa, solo cambió cómo se compuso la respuesta.
+
+Medido sobre la pasada anual del 1 de septiembre de 2026, comparando cada versión nueva con la que cerró:
+
+| Entidad | Versiones | Espurias | Campo culpable |
+|---|---|---|---|
+| `concesiones_busqueda` | 368.818 | **213.176 (58%)** | `beneficiario` |
+| `minimis_busqueda` | 35.995 | **30.033 (83%)** | `sectorActividad` |
+| `ayudasestado_busqueda` | 6.758 | **5.046 (75%)** | `sectores` |
+| `grandesbeneficiarios_busqueda` | ~65.000 al día | **~100%** | `beneficiario` |
+| `convocatorias` | 2.366 | 0 | — |
+| `convocatorias_busqueda` | 437 | 13 (3%) | — |
+| `partidospoliticos_busqueda` | 21 | 1 | — |
+
+De las 414.395 versiones que produjo la pasada anual, unas 248.000 son ruido: el 60%. Las correcciones reales rondan las 166.000.
+
+### Familia 1: el nombre se reconstruye de forma inestable
+
+Afecta a `concesiones_busqueda` y `grandesbeneficiarios_busqueda`. Para el mismo beneficiario, con el mismo importe y el mismo identificador, el campo de nombre vuelve escrito de otra forma:
+
+```
+GONZALEZ                      →  GONZÁLEZ            (acentos, en ambas direcciones)
+REMEDIOS BENITEZ BASILIO .    →  REMEDIOS BENITEZ BASILIO . .
+MONTSERRAT LOPEZ REYNOSO MECA →  MONTSERRAT LOPEZ-REYNOSO MECA
+LIMMAT M&M, S.L.              →  LIMMAT MM SL        (seis variantes en once días)
+```
+
+En `concesiones_busqueda`, los 230.878 cambios de `beneficiario` conservan **el mismo `idPersona` en el 100% de los casos**, y 213.176 son idénticos tras quitar acentos y puntuación. Nunca es otra persona: es la misma escrita de otra manera. El nombre probablemente se compone a partir de los registros subyacentes, donde cada órgano lo tecleó a su modo.
+
+### Familia 2: listas barajadas dentro de una cadena
+
+Afecta a `minimis_busqueda` y `ayudasestado_busqueda`. El campo trae varios valores concatenados y el orden cambia entre llamadas, con los mismos elementos:
+
+```
+minimis_busqueda      sectorActividad, separador ";"
+  '52.3 - Intermediación del transporte; 52.2 - Auxiliares del transporte'
+  '52.2 - Auxiliares del transporte; 52.3 - Intermediación del transporte'
+
+ayudasestado_busqueda sectores, separador "#"
+```
+
+Es la misma raíz que el orden no determinista de los arrays de `regiones` (ver [sección 8](#8-problemas-conocidos-de-la-api)), pero la canonicalización del hash no puede corregirla: ordena claves de objetos y elementos de arrays JSON, y aquí la lista viaja dentro de un único valor de texto, así que la ve como una cadena cualquiera.
+
+### Lo que no está afectado
+
+`convocatorias` y `convocatorias_busqueda` no tienen ruido apreciable, y conviene decirlo porque comparten origen con el resto. Sus cambios son administrativos de verdad: presupuestos que suben (25.000 → 40.000 €), plazos de solicitud que se amplían, documentos que se añaden, y reorganizaciones de órganos (336 de sus 437 versiones cambian `nivel3`, repartidas entre 80 órganos distintos: una secretaría general que pasa a dirección general arrastra a todas sus convocatorias). Eso es exactamente lo que un histórico debe registrar.
+
+Que la familia de concesiones esté afectada y la de convocatorias no sugiere que el problema no es de la API en general, sino de cómo se compone la respuesta en unos endpoints concretos.
+
+### Cómo se midió
+
+Dos comprobaciones distintas, ambas sobre pares (versión cerrada, versión nueva) de la misma ejecución:
+
+- **Formato**: normalizar ambos payloads a NFD, quitar los diacríticos y todo lo que no sea alfanumérico, y comparar. Si coinciden, el cambio era de escritura.
+- **Reordenamiento**: partir el campo por su separador, ordenar los trozos alfabéticamente, volver a unirlos y comparar. Si coinciden, la lista solo estaba barajada.
+
+La primera no detecta la segunda, porque barajar una lista cambia la secuencia de caracteres. Por eso hicieron falta las dos.

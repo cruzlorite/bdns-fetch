@@ -107,8 +107,68 @@ Every entry follows the same order: what the API does, what we observed, and wha
 - **`ERR_MANTENIMIENTO_BBDD` on long ranges.** Multi-year ranges fail intermittently, at every page depth. A 4-year range over `concesiones_busqueda` (27.4M rows) failed repeatedly, while a weekly window over those same dates did not fail once in 6 attempts. `bdns-sync` splits every query into 7-day chunks; see [section 3](#3-windows-are-chunked-into-7-day-pieces).
 - **Inconsistent date semantics across endpoints.** `fechaRegFin` is exclusive and `fechaHasta` is inclusive, and the official documentation does not say so. Querying the same day `D`, `fechaRegFin=D` returns ~0 rows and `fechaRegFin=D+1` returns the whole day, while `fechaHasta=D` does return day `D` in full. `bdns-sync` centralizes the conversion in `generic.to_api_upper_bound` and applies it only to the exclusive family; see [section 2](#2-upper-bound-semantics-per-endpoint).
 - **`partidospoliticos_busqueda` has no registration date.** Its payload exposes no registration-date field, although the official documentation claims this endpoint works the same as `concesiones_busqueda`. Confirmed with more than 70 real rows across two different date ranges. Without that field deletion detection is impossible, so `bdns-sync` leaves this entity out of it; see [section 5](#5-window-scoped-deletion-detection).
-- **Unstable beneficiary name in `grandesbeneficiarios_busqueda`.** For one `idPersona`, the API changes the spelling of the name from one hour to the next, with the rest of the record identical. Measured on 30 August 2026: three consecutive fetches within four minutes returned all 148,170 names identical, yet 79,000 rows changed between the 00:03 run and the 15:20 one, which points to a cache or a periodic re-aggregation at the source rather than per-request randomness. For `idPersona=7818535`, six variants of the same company name were observed over eleven days (`M&M, S.L.`, `M M S.L.`, `MM SL`, `M&M S.L.`, `M&M SOCIEDAD LIMITADA`, with and without a trailing dot), always with the same amount; the name is probably assembled from the underlying grant records, where each granting body typed it its own way. With that field inside the hash, 30% to 60% of the table was re-versioned every day: 3.7M history rows for 148,000 current records, 25 versions per key in 53 days. `bdns-sync` excludes the field from the hash (`exclude_from_hash` in the syncer): it is still stored whole in the payload, it just stops counting as a change. No other entity behaves this way; in `concesiones_busqueda` the high versioning rate is real, those are amounts accumulating over time.
-- **Nondeterministic order of nested arrays.** `regiones` returns the same tree with `children` in a different order across calls, with no data actually changed. `bdns-sync` sorts object keys and array elements recursively before hashing, so no spurious versions are produced.
+- **Unstable beneficiary name in `grandesbeneficiarios_busqueda`.** For one `idPersona`, the API changes the spelling of the name from one hour to the next, with the rest of the record identical. Measured on 30 August 2026: three consecutive fetches within four minutes returned all 148,170 names identical, yet 79,000 rows changed between the 00:03 run and the 15:20 one, which points to a cache or a periodic re-aggregation at the source rather than per-request randomness. For `idPersona=7818535`, six variants of the same company name were observed over eleven days (`M&M, S.L.`, `M M S.L.`, `MM SL`, `M&M S.L.`, `M&M SOCIEDAD LIMITADA`, with and without a trailing dot), always with the same amount; the name is probably assembled from the underlying grant records, where each granting body typed it its own way. With that field inside the hash, 30% to 60% of the table was re-versioned every day: 3.7M history rows for 148,000 current records, 25 versions per key in 53 days. `bdns-sync` excludes the field from the hash (`exclude_from_hash` in the syncer): it is still stored whole in the payload, it just stops counting as a change. It is neither the only case nor the only shape this takes: `concesiones_busqueda` has the same problem in its own `beneficiario` field, and `minimis_busqueda` and `ayudasestado_busqueda` a different variant. The detail, with per-entity measurements, is in [section 9](#9-spurious-changes-the-same-data-written-differently).
+- **Nondeterministic order of nested arrays.** `regiones` returns the same tree with `children` in a different order across calls, with no data actually changed. `bdns-sync` sorts object keys and array elements recursively before hashing, so no spurious versions are produced. The same disorder shows up inside delimited strings, where canonicalization cannot reach; see [section 9](#9-spurious-changes-the-same-data-written-differently).
 - **Bursts rejected even when the average respects the limit.** The server returns `429` when several requests start at once, even when the average stays under the official 10 req/s. A pool of 10 threads respecting only the average died within seconds, while the same server accepted a sustained 9.8 req/s with spaced starts. `bdns-sync` spaces request starts 105 ms apart; see [section 7](#7-measured-performance).
 - **Limited retention, different per endpoint.** Available data ranges from ~4 years (`concesiones_busqueda`) to ~12 (`convocatorias`), depending on the entity. `bdns-sync` does not hardcode those dates — querying further back only returns empty weeks, which are cheap calls — the operator's script decides them via `--since`; see [section 6](#6-historical-depth-per-endpoint).
 - **Pagination instability against dates still receiving new registrations.** If the result set changes while a wide window is being paginated, because new grants come in, offset-based pagination can repeat rows near a page boundary across two consecutive pages. It only affects recent dates, never ranges already closed, whose pagination is stable. `bdns-sync` deduplicates at insertion time, so normal syncs leave no duplicates; a large historical load in a single pass can leave a residual pair. How to detect and clean it: [`data-caveats.en.md`](data-caveats.en.md).
+
+## 9. Spurious changes: the same data written differently
+
+SCD2 versioning creates a new version whenever the payload hash changes. If the API returns the same data written differently from one call to the next, the result is a version that carries no information: the record did not change and no correction was made, only the way the response was assembled.
+
+Measured over the annual pass of 1 September 2026, comparing every new version against the one it closed:
+
+| Entity | Versions | Spurious | Culprit field |
+|---|---|---|---|
+| `concesiones_busqueda` | 368,818 | **213,176 (58%)** | `beneficiario` |
+| `minimis_busqueda` | 35,995 | **30,033 (83%)** | `sectorActividad` |
+| `ayudasestado_busqueda` | 6,758 | **5,046 (75%)** | `sectores` |
+| `grandesbeneficiarios_busqueda` | ~65,000 per day | **~100%** | `beneficiario` |
+| `convocatorias` | 2,366 | 0 | — |
+| `convocatorias_busqueda` | 437 | 13 (3%) | — |
+| `partidospoliticos_busqueda` | 21 | 1 | — |
+
+Of the 414,395 versions the annual pass produced, around 248,000 are noise: 60%. Real corrections come to about 166,000.
+
+### Family 1: the name is rebuilt inconsistently
+
+Affects `concesiones_busqueda` and `grandesbeneficiarios_busqueda`. For the same beneficiary, with the same amount and the same identifier, the name field comes back written differently:
+
+```
+GONZALEZ                      →  GONZÁLEZ            (accents, in both directions)
+REMEDIOS BENITEZ BASILIO .    →  REMEDIOS BENITEZ BASILIO . .
+MONTSERRAT LOPEZ REYNOSO MECA →  MONTSERRAT LOPEZ-REYNOSO MECA
+LIMMAT M&M, S.L.              →  LIMMAT MM SL        (six variants in eleven days)
+```
+
+In `concesiones_busqueda`, all 230,878 `beneficiario` changes keep **the same `idPersona` in 100% of cases**, and 213,176 are identical once accents and punctuation are stripped. It is never a different person: it is the same one written another way. The name is probably assembled from the underlying records, where each granting body typed it its own way.
+
+### Family 2: shuffled lists inside a string
+
+Affects `minimis_busqueda` and `ayudasestado_busqueda`. The field carries several values concatenated together and their order changes between calls, with the same elements:
+
+```
+minimis_busqueda      sectorActividad, separator ";"
+  '52.3 - Transport intermediation; 52.2 - Auxiliary transport activities'
+  '52.2 - Auxiliary transport activities; 52.3 - Transport intermediation'
+
+ayudasestado_busqueda sectores, separator "#"
+```
+
+This is the same root cause as the nondeterministic array order in `regiones` (see [section 8](#8-known-api-issues)), but the hash canonicalization cannot fix it: it sorts object keys and JSON array elements, and here the list travels inside a single text value, so it is seen as just another string.
+
+### What is not affected
+
+`convocatorias` and `convocatorias_busqueda` show no appreciable noise, which is worth stating because they share a source with the rest. Their changes are genuinely administrative: budgets going up (€25,000 → €40,000), application deadlines extended, documents added, and bodies reorganized (336 of their 437 versions change `nivel3`, spread across 80 distinct bodies: a secretaría general turning into a dirección general drags all of its calls with it). That is exactly what a history should record.
+
+That the concesiones family is affected and the convocatorias family is not suggests the problem is not the API in general, but how the response is assembled in specific endpoints.
+
+### How it was measured
+
+Two separate checks, both over (closed version, new version) pairs from the same run:
+
+- **Formatting**: normalize both payloads to NFD, strip diacritics and everything non-alphanumeric, then compare. If they match, the change was one of spelling.
+- **Reordering**: split the field on its separator, sort the pieces alphabetically, rejoin and compare. If they match, the list was merely shuffled.
+
+The first check does not catch the second, because shuffling a list changes the character sequence. Both were needed.

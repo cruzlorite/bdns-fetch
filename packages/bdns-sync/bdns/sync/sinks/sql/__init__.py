@@ -9,7 +9,7 @@ watermark, error records), `dialects.py` (per-engine adapters, the only
 code allowed to branch on dialect name).
 """
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import date
 from typing import Any, Optional
 
@@ -45,11 +45,12 @@ class SQLSink(Sink):
         key_fields: Sequence[str],
         *,
         exclude_from_hash: Optional[Sequence[str]] = None,
+        delimited_lists: Optional[Mapping[str, str]] = None,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
         def apply_fn(conn, table, staging):
             stats = apply_full_reconciliation(
-                conn, table, staging, rows, key_fields, exclude_from_hash
+                conn, table, staging, rows, key_fields, exclude_from_hash, delimited_lists
             )
             return _attach_skips(stats, skipped)
 
@@ -66,6 +67,7 @@ class SQLSink(Sink):
         run_type: str,
         reg_date_field: Optional[str] = None,
         exclude_from_hash: Optional[Sequence[str]] = None,
+        delimited_lists: Optional[Mapping[str, str]] = None,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
         def apply_fn(conn, table, staging):
@@ -76,6 +78,7 @@ class SQLSink(Sink):
                 rows,
                 key_fields,
                 exclude_from_hash,
+                delimited_lists,
                 reg_date_field=reg_date_field,
                 window_start=window_start,
                 window_end=window_end,

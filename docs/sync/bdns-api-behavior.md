@@ -158,6 +158,38 @@ ayudasestado_busqueda sectores, separador "#"
 
 Es la misma raíz que el orden no determinista de los arrays de `regiones` (ver [sección 8](#8-problemas-conocidos-de-la-api)), pero la canonicalización del hash no puede corregirla: ordena claves de objetos y elementos de arrays JSON, y aquí la lista viaja dentro de un único valor de texto, así que la ve como una cadena cualquiera.
 
+### Familia 3: campos que dejan de venir y vuelven
+
+Un campo que normalmente trae valor vuelve `null` en una llamada y con valor en la siguiente. Medido sobre 3.000 pares de `convocatorias` y otros tantos del resto:
+
+| Entidad | Campo | `null→valor` | `valor→null` | % de pares |
+|---|---|---|---|---|
+| `convocatorias` | `fechaInicioSolicitud` | 209 | 55 | 8,8% |
+| `convocatorias` | `fechaFinSolicitud` | 123 | 61 | 6,1% |
+| `convocatorias` | `textInicio` | 40 | 47 | 2,9% |
+| `convocatorias` | `textFin` | 48 | 32 | 2,7% |
+| `convocatorias_busqueda` | `descripcionLeng` | 18 | 17 | 6,4% |
+| `convocatorias` | `descripcionLeng` | 13 | 14 | 0,9% |
+| `convocatorias` | `sedeElectronica` | 6 | 7 | 0,4% |
+| `minimis_busqueda` | `sectorActividad` | 23 | 40 | 2,1% |
+
+Los repartos simétricos (`textInicio` 40 contra 47, `descripcionLeng` 18 contra 17) delatan que no es información completándose. Los unidireccionales sí lo son: `reglamento` (8 y 0), `urlAyudaEstado` (3 y 0) y `ayudaEstado` (3 y 0) son campos que se rellenan y ya no vuelven atrás.
+
+**Los nulos llegan en bloque, no sueltos.** De los pares de `convocatorias` en los que algún campo pasa a `null`, 81 pierden dos campos a la vez y solo 51 pierden uno. Y los que caen juntos van emparejados:
+
+```
+54 pares:  fechaInicioSolicitud + fechaFinSolicitud
+25 pares:  textInicio + textFin
+```
+
+Es el bloque del plazo de solicitud entero, fechas y textos, desapareciendo y volviendo. Eso apunta a respuestas parciales del backend en el endpoint de detalle, no a campos que parpadeen por su cuenta.
+
+**Esta familia no se arregla con reglas de hash**, a diferencia de las dos anteriores. Un `null` no se puede normalizar: o cuenta como cambio, o se excluye el campo y entonces se pierde la detección de cuándo se fija un plazo de verdad, que es información legítima. Las versiones que genera se aceptan como válidas; el volumen es pequeño, unas 650 sobre las 4.320 versiones cerradas de `convocatorias`.
+
+Lo que sí conviene saber al consumir los datos es que **el registro es veraz pero se presta a una lectura falsa**: parece que a una convocatoria le quitaron el plazo de solicitud un día y se lo devolvieron otro, cuando no hubo ninguna modificación administrativa. Ver [`data-caveats.md`](data-caveats.md).
+
+Y deja una lección para el motor: la API **puede devolver `null` en campos que normalmente vienen rellenos**. Hoy no toca ninguno crítico —`fechaRecepcion`, la fecha de registro de `convocatorias`, no aparece en la lista— pero si algún día el bloque que cae incluye uno, la ejecución se rompe; ver la entrada sobre validación de registros en la [hoja de ruta](roadmap.md).
+
 ### Lo que no está afectado
 
 `convocatorias` y `convocatorias_busqueda` no tienen ruido apreciable, y conviene decirlo porque comparten origen con el resto. Sus cambios son administrativos de verdad: presupuestos que suben (25.000 → 40.000 €), plazos de solicitud que se amplían, documentos que se añaden, y reorganizaciones de órganos (336 de sus 437 versiones cambian `nivel3`, repartidas entre 80 órganos distintos: una secretaría general que pasa a dirección general arrastra a todas sus convocatorias). Eso es exactamente lo que un histórico debe registrar.

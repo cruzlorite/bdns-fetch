@@ -17,7 +17,7 @@ on SQLite, Postgres, MySQL, and BigQuery.
 """
 
 import logging
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import date, datetime, timezone
 from typing import Any, Optional
 
@@ -40,6 +40,7 @@ def apply_full_reconciliation(
     rows: Iterable[dict[str, Any]],
     key_fields: Sequence[str],
     exclude_from_hash: Optional[Iterable[str]] = None,
+    delimited_lists: Optional[Mapping[str, str]] = None,
     chunk_size: int = 5000,
 ) -> dict[str, int]:
     """
@@ -55,7 +56,7 @@ def apply_full_reconciliation(
     diff can.
     """
     return _apply(
-        conn, table, staging, rows, key_fields, exclude_from_hash, chunk_size,
+        conn, table, staging, rows, key_fields, exclude_from_hash, delimited_lists, chunk_size,
         detect_deletions=True,
     )
 
@@ -67,6 +68,7 @@ def apply_incremental(
     rows: Iterable[dict[str, Any]],
     key_fields: Sequence[str],
     exclude_from_hash: Optional[Iterable[str]] = None,
+    delimited_lists: Optional[Mapping[str, str]] = None,
     chunk_size: int = 5000,
     reg_date_field: Optional[str] = None,
     window_start: Optional[date] = None,
@@ -92,7 +94,7 @@ def apply_incremental(
     """
     window = (reg_date_field, window_start, window_end) if reg_date_field else None
     return _apply(
-        conn, table, staging, rows, key_fields, exclude_from_hash, chunk_size,
+        conn, table, staging, rows, key_fields, exclude_from_hash, delimited_lists, chunk_size,
         detect_deletions=False, window=window,
     )
 
@@ -104,6 +106,7 @@ def _apply(
     rows: Iterable[dict[str, Any]],
     key_fields: Sequence[str],
     exclude_from_hash: Optional[Iterable[str]],
+    delimited_lists: Optional[Mapping[str, str]],
     chunk_size: int,
     detect_deletions: bool,
     window: Optional[tuple] = None,
@@ -112,7 +115,9 @@ def _apply(
     reg_date_field = window[0] if window else None
 
     conn.execute(delete(staging).where(true()))
-    fetched = _load_staging(conn, staging, rows, key_fields, exclude_from_hash, chunk_size, reg_date_field)
+    fetched = _load_staging(
+        conn, staging, rows, key_fields, exclude_from_hash, delimited_lists, chunk_size, reg_date_field
+    )
     logger.info("%s: fetch done, %d rows staged, applying diff", table.name, fetched)
     stats = _diff_stats(conn, table, staging, detect_deletions, window)
     stats["fetched"] = fetched
@@ -131,6 +136,7 @@ def _load_staging(
     rows: Iterable[dict[str, Any]],
     key_fields: Sequence[str],
     exclude_from_hash: Optional[Iterable[str]],
+    delimited_lists: Optional[Mapping[str, str]],
     chunk_size: int,
     reg_date_field: Optional[str] = None,
 ) -> int:
@@ -149,7 +155,7 @@ def _load_staging(
     def stage(payload):
         staged = {
             "_natural_key": natural_key(payload, key_fields),
-            "_row_hash": row_hash(payload, exclude_from_hash),
+            "_row_hash": row_hash(payload, exclude_from_hash, delimited_lists),
             "payload": payload,
         }
         if reg_date_field:

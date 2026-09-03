@@ -69,3 +69,19 @@ La cadencia normal apenas las ve. La ventana anual alcanza 365 días de fecha de
 Un **backfill ancho es otra cosa**: su ámbito de comparación es todo el rango pedido, así que cierra de una vez todo lo caducado, con la fecha del día en que se lanzó. Volver a lanzar [`scripts/full_load.sh`](../scripts/full_load.sh) sobre un destino ya poblado produce exactamente eso. En septiembre de 2026, con 1,13 millones de concesiones de 2022 almacenadas y a punto de cumplir plazo, un backfill lanzado en 2027 las cerraría todas juntas.
 
 No es un fallo: el registro ya no está en el origen y la tabla lo refleja. Pero conviene saber que esa fecha de cierre dice cuándo te enteraste, no cuándo caducó.
+
+## Plazos que desaparecen y vuelven
+
+En `convocatorias` verás versiones donde el plazo de solicitud se queda vacío y otra posterior donde reaparece con los mismos valores. No hubo modificación administrativa: la API deja caer el bloque entero —`fechaInicioSolicitud`, `fechaFinSolicitud`, `textInicio`, `textFin`— en algunas llamadas y lo devuelve en la siguiente. Afecta a algo menos del 9% de los pares de versiones (ver [sección 9 de `bdns-api-behavior.md`](bdns-api-behavior.md#9-cambios-espurios-el-mismo-dato-escrito-de-otra-forma)).
+
+El registro es fiel a lo que devolvió el origen, pero si cuentas modificaciones de convocatorias sin filtrar te saldrán de más. Para descartarlas, ignora las versiones en las que un campo pasa de tener valor a `null` y vuelve al valor anterior:
+
+```sql
+SELECT * FROM convocatorias v
+WHERE JSON_VALUE(v.payload,'$.fechaFinSolicitud') IS NULL
+  AND EXISTS (SELECT 1 FROM convocatorias p
+              WHERE p._natural_key = v._natural_key AND p._valid_from < v._valid_from
+                AND JSON_VALUE(p.payload,'$.fechaFinSolicitud') IS NOT NULL);
+```
+
+Lo mismo ocurre, con menos frecuencia, en `descripcionLeng` de `convocatorias_busqueda` y en `sectorActividad` de `minimis_busqueda`.

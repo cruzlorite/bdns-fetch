@@ -4,7 +4,7 @@
 
 import hashlib
 import json
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Optional
 
 
@@ -27,19 +27,49 @@ def _order_independent(value: Any) -> Any:
     return value
 
 
+def sorted_delimited_list(value: str, separator: str) -> str:
+    """Sort the elements of a list that travels inside a single string.
+
+    Some fields carry several values joined by a separator, and the API
+    returns them in a different order between calls with the same elements
+    (`sectorActividad` in minimis uses ";", `sectores` in ayudasestado uses
+    "#"; see section 9 of docs/bdns-api-behavior.md). `_order_independent`
+    cannot help: it sorts JSON arrays, and this list is just text as far as
+    JSON is concerned.
+
+    Elements are stripped and re-joined on the bare separator, so spacing
+    around it stops mattering too. Only the hash sees this; the payload is
+    stored exactly as the API sent it.
+    """
+    return separator.join(sorted(part.strip() for part in value.split(separator)))
+
+
 def canonical_json(
-    payload: dict[str, Any], exclude_fields: Optional[Iterable[str]] = None
+    payload: dict[str, Any],
+    exclude_fields: Optional[Iterable[str]] = None,
+    delimited_lists: Optional[Mapping[str, str]] = None,
 ) -> str:
     if exclude_fields:
         excluded = set(exclude_fields)
         payload = {k: v for k, v in payload.items() if k not in excluded}
+    if delimited_lists:
+        payload = {
+            k: sorted_delimited_list(v, delimited_lists[k])
+            if k in delimited_lists and isinstance(v, str)
+            else v
+            for k, v in payload.items()
+        }
     return json.dumps(
         _order_independent(payload), sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str
     )
 
 
-def row_hash(payload: dict[str, Any], exclude_fields: Optional[Iterable[str]] = None) -> str:
-    digest = canonical_json(payload, exclude_fields).encode("utf-8")
+def row_hash(
+    payload: dict[str, Any],
+    exclude_fields: Optional[Iterable[str]] = None,
+    delimited_lists: Optional[Mapping[str, str]] = None,
+) -> str:
+    digest = canonical_json(payload, exclude_fields, delimited_lists).encode("utf-8")
     return hashlib.sha256(digest).hexdigest()
 
 

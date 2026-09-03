@@ -18,7 +18,7 @@ through this interface.
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import date
 from typing import Any, Optional
 
@@ -68,6 +68,7 @@ class Sink(ABC):
         key_fields: Sequence[str],
         *,
         exclude_from_hash: Optional[Sequence[str]] = None,
+        delimited_lists: Optional[Mapping[str, str]] = None,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
         """Reconcile `endpoint` against `rows` as its COMPLETE current state.
@@ -89,6 +90,13 @@ class Sink(ABC):
                 record, where hashing them would version the row on every
                 run forever (see section 8 of docs/bdns-api-behavior.md).
                 Never list a key field: identity must stay in the hash.
+            delimited_lists: Payload fields that carry a list inside one
+                string, mapped to their separator (e.g.
+                `{"sectorActividad": ";"}`). Their elements are sorted
+                before hashing, so the order the source happened to use
+                stops counting as a change. The payload is still stored
+                exactly as received. Auto-detection would be wrong here:
+                a comma in free text is not a list.
             skipped: Optional list of malformed-record descriptors (dicts
                 with `context` and `content` keys). The caller may keep
                 appending to it while `rows` is being consumed; the sink
@@ -114,6 +122,7 @@ class Sink(ABC):
         run_type: str,
         reg_date_field: Optional[str] = None,
         exclude_from_hash: Optional[Sequence[str]] = None,
+        delimited_lists: Optional[Mapping[str, str]] = None,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
         """Apply `rows` as the slice of `endpoint` registered in a date range.
@@ -137,6 +146,7 @@ class Sink(ABC):
                 ("daily", "weekly", "monthly", "annual") from historical
                 loads ("backfill"). The sink stores it verbatim.
             exclude_from_hash: Same as in `sync_full`.
+            delimited_lists: Same as in `sync_full`.
             reg_date_field: Opt-in for window-scoped deletion detection: the
                 payload field (ISO date string) holding the record's OWN
                 registration date. When given, a stored current version is

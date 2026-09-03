@@ -176,6 +176,11 @@ def sync_concesiones_busqueda(
         end,
         run_type,
         reg_date_field="fechaAlta",
+        # `beneficiario` is left out of the hash: the API rewrites the same
+        # name between calls (accents both ways, trailing dots, hyphens for
+        # spaces) while `idPersona` stays put, so hashing it re-versioned 58%
+        # of the table. See section 9 of docs/bdns-api-behavior.md.
+        exclude_from_hash=("beneficiario",),
     )
 
 
@@ -198,6 +203,9 @@ def sync_ayudasestado_busqueda(
         end,
         run_type,
         reg_date_field="fechaAlta",
+        exclude_from_hash=("beneficiario",),
+        # `sectores` is a list joined with "#" that comes back shuffled.
+        delimited_lists={"sectores": "#"},
     )
 
 
@@ -220,6 +228,9 @@ def sync_minimis_busqueda(
         end,
         run_type,
         reg_date_field="fechaRegistro",
+        exclude_from_hash=("beneficiario",),
+        # `sectorActividad` is a list joined with ";" that comes back shuffled.
+        delimited_lists={"sectorActividad": ";"},
     )
 
 
@@ -245,6 +256,7 @@ def sync_partidospoliticos_busqueda(
         start,
         end,
         run_type,
+        exclude_from_hash=("beneficiario",),
     )
 
 

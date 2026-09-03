@@ -69,3 +69,19 @@ The regular cadence barely sees them. The annual window reaches 365 days of regi
 A **wide backfill is another matter**: its comparison scope is the whole requested range, so it closes everything expired at once, stamped with the day it ran. Re-running [`scripts/full_load.sh`](../scripts/full_load.sh) against an already-populated target does exactly that. As of September 2026, with 1.13 million 2022 concessions stored and about to reach the end of their period, a backfill run in 2027 would close them all together.
 
 This is not a bug: the record is no longer at the source and the table reflects that. But that closing date says when you found out, not when it expired.
+
+## Deadlines that vanish and come back
+
+In `convocatorias` you will see versions where the application period is empty and a later one where it reappears with the same values. No administrative change took place: the API drops the whole block — `fechaInicioSolicitud`, `fechaFinSolicitud`, `textInicio`, `textFin` — on some calls and returns it on the next. It affects a little under 9% of version pairs (see [section 9 of `bdns-api-behavior.en.md`](bdns-api-behavior.en.md#9-spurious-changes-the-same-data-written-differently)).
+
+The record is faithful to what the source returned, but counting amendments to calls without filtering will overcount. To discard them, ignore versions where a field goes from a value to `null` and back to the previous value:
+
+```sql
+SELECT * FROM convocatorias v
+WHERE JSON_VALUE(v.payload,'$.fechaFinSolicitud') IS NULL
+  AND EXISTS (SELECT 1 FROM convocatorias p
+              WHERE p._natural_key = v._natural_key AND p._valid_from < v._valid_from
+                AND JSON_VALUE(p.payload,'$.fechaFinSolicitud') IS NOT NULL);
+```
+
+The same happens, less often, in `descripcionLeng` of `convocatorias_busqueda` and `sectorActividad` of `minimis_busqueda`.

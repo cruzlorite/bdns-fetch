@@ -158,6 +158,38 @@ ayudasestado_busqueda sectores, separator "#"
 
 This is the same root cause as the nondeterministic array order in `regiones` (see [section 8](#8-known-api-issues)), but the hash canonicalization cannot fix it: it sorts object keys and JSON array elements, and here the list travels inside a single text value, so it is seen as just another string.
 
+### Family 3: fields that stop coming back and then return
+
+A field that normally carries a value comes back `null` on one call and populated on the next. Measured over 3,000 `convocatorias` pairs and as many for the rest:
+
+| Entity | Field | `null→value` | `value→null` | % of pairs |
+|---|---|---|---|---|
+| `convocatorias` | `fechaInicioSolicitud` | 209 | 55 | 8.8% |
+| `convocatorias` | `fechaFinSolicitud` | 123 | 61 | 6.1% |
+| `convocatorias` | `textInicio` | 40 | 47 | 2.9% |
+| `convocatorias` | `textFin` | 48 | 32 | 2.7% |
+| `convocatorias_busqueda` | `descripcionLeng` | 18 | 17 | 6.4% |
+| `convocatorias` | `descripcionLeng` | 13 | 14 | 0.9% |
+| `convocatorias` | `sedeElectronica` | 6 | 7 | 0.4% |
+| `minimis_busqueda` | `sectorActividad` | 23 | 40 | 2.1% |
+
+The symmetric splits (`textInicio` 40 against 47, `descripcionLeng` 18 against 17) give away that this is not information being filled in. The one-directional ones are: `reglamento` (8 and 0), `urlAyudaEstado` (3 and 0) and `ayudaEstado` (3 and 0) are fields that get populated and stay that way.
+
+**The nulls arrive in blocks, not one at a time.** Among the `convocatorias` pairs where some field goes `null`, 81 lose two fields at once and only 51 lose one. And the ones that fall together are paired up:
+
+```
+54 pairs:  fechaInicioSolicitud + fechaFinSolicitud
+25 pairs:  textInicio + textFin
+```
+
+That is the whole application-period block, dates and texts, disappearing and coming back. It points to partial responses from the backend on the detail endpoint rather than fields flapping on their own.
+
+**This family cannot be fixed with hashing rules**, unlike the previous two. A `null` cannot be normalized away: either it counts as a change, or the field is excluded and detection of a deadline actually being set is lost, which is legitimate information. The versions it produces are accepted as valid; the volume is small, around 650 of the 4,320 closed versions in `convocatorias`.
+
+What is worth knowing when consuming the data is that **the record is truthful but invites a false reading**: it looks as though a call had its application period removed one day and restored another, when no administrative change took place. See [`data-caveats.en.md`](data-caveats.en.md).
+
+It also leaves a lesson for the engine: the API **can return `null` in fields that normally carry values**. Today none of them is critical — `fechaRecepcion`, the registration date for `convocatorias`, is not on the list — but if the block that drops ever includes one, the run breaks; see the record-validation entry in the [roadmap](roadmap.en.md).
+
 ### What is not affected
 
 `convocatorias` and `convocatorias_busqueda` show no appreciable noise, which is worth stating because they share a source with the rest. Their changes are genuinely administrative: budgets going up (€25,000 → €40,000), application deadlines extended, documents added, and bodies reorganized (336 of their 437 versions change `nivel3`, spread across 80 distinct bodies: a secretaría general turning into a dirección general drags all of its calls with it). That is exactly what a history should record.

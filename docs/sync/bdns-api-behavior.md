@@ -133,7 +133,7 @@ De las 414.395 versiones que produjo la pasada anual, unas 248.000 son ruido: el
 
 ### Familia 1: el nombre se reconstruye de forma inestable
 
-Afecta a `concesiones_busqueda` y `grandesbeneficiarios_busqueda`. Para el mismo beneficiario, con el mismo importe y el mismo identificador, el campo de nombre vuelve escrito de otra forma:
+Se mide en las cinco entidades que traen el campo `beneficiario` —`concesiones_busqueda`, `grandesbeneficiarios_busqueda`, `ayudasestado_busqueda`, `minimis_busqueda` y `partidospoliticos_busqueda`— aunque solo en las dos primeras alcanza volumen y oscilación probada. Para el mismo beneficiario, con el mismo importe y el mismo identificador, el campo de nombre vuelve escrito de otra forma:
 
 ```
 GONZALEZ                      →  GONZÁLEZ            (acentos, en ambas direcciones)
@@ -143,6 +143,30 @@ LIMMAT M&M, S.L.              →  LIMMAT MM SL        (seis variantes en once d
 ```
 
 En `concesiones_busqueda`, los 230.878 cambios de `beneficiario` conservan **el mismo `idPersona` en el 100% de los casos**, y 213.176 son idénticos tras quitar acentos y puntuación. Nunca es otra persona: es la misma escrita de otra manera. El nombre probablemente se compone a partir de los registros subyacentes, donde cada órgano lo tecleó a su modo.
+
+### El criterio para excluir un campo del hash
+
+Un campo sale del hash **solo si su valor oscila**, es decir, si vuelve a valores que ya había tenido. Eso distingue un campo que la API reescribe al azar de uno que recibe correcciones reales, y evita excluir por analogía.
+
+La prueba: para cada clave natural con tres o más versiones, se toma la secuencia de valores del campo, se quitan las repeticiones consecutivas y se mira si algún valor reaparece después de otro distinto.
+
+Medido sobre el histórico:
+
+| Entidad | Campo | Claves que cambian | Oscilan | Veredicto |
+|---|---|---|---|---|
+| `concesiones_busqueda` | `beneficiario` | 177 | **119 (67%)** | aleatorio, fuera del hash |
+| `grandesbeneficiarios_busqueda` | `beneficiario` | — | ciclo de hashes probado | aleatorio, fuera del hash |
+| `ayudasestado_busqueda` | `beneficiario` | 2 | 0 | muestra insuficiente, se mantiene |
+| `minimis_busqueda` | `beneficiario` | 0 | — | muestra insuficiente, se mantiene |
+| `concesiones_busqueda` | `convocatoria` | 1 | 0 | muestra insuficiente, se mantiene |
+
+Un ejemplo de oscilación en `concesiones_busqueda`, con el mismo `idPersona` en las tres versiones:
+
+```
+ASOCIACIÓN INCLUDD  →  ASOCIACION INCLUDD  →  ASOCIACIÓN INCLUDD
+```
+
+En las entidades con muestra insuficiente el campo **se mantiene en el hash**, aunque una parte de sus cambios sea de formato. El volumen es bajo —del orden de centenares de versiones frente a las ~240.000 de `concesiones`— y ante la duda se prefiere registrar el cambio. La muestra es corta porque el histórico solo tiene dos meses y la mayoría de registros aún va por su primera o segunda versión; conviene rehacer esta medición cuando haya más recorrido.
 
 ### Familia 2: listas barajadas dentro de una cadena
 
@@ -157,6 +181,21 @@ ayudasestado_busqueda sectores, separador "#"
 ```
 
 Es la misma raíz que el orden no determinista de los arrays de `regiones` (ver [sección 8](#8-problemas-conocidos-de-la-api)), pero la canonicalización del hash no puede corregirla: ordena claves de objetos y elementos de arrays JSON, y aquí la lista viaja dentro de un único valor de texto, así que la ve como una cadena cualquiera.
+
+### Qué reglas aplica `bdns-sync`
+
+Cuatro, declaradas en el syncer de cada entidad junto a su clave natural:
+
+| Entidad | Regla | Motivo |
+|---|---|---|
+| `concesiones_busqueda` | `exclude_from_hash=("beneficiario",)` | oscilación probada, 67% |
+| `grandesbeneficiarios_busqueda` | `exclude_from_hash=("beneficiario",)` | oscilación probada por ciclo de hashes |
+| `ayudasestado_busqueda` | `delimited_lists={"sectores": "#"}` | 84% de sus cambios eran reordenamiento |
+| `minimis_busqueda` | `delimited_lists={"sectorActividad": ";"}` | 92% de sus cambios eran reordenamiento |
+
+Ninguna otra entidad lleva regla alguna. Las dos familias se tratan distinto a propósito: una lista barajada se puede canonizar sin perder información, así que se ordena antes de hashear y el campo sigue detectando cambios reales de sector. Un nombre reescrito al azar no se puede canonizar sin decidir cuál de las grafías es la buena, así que el campo sale del hash entero.
+
+En los dos casos **solo cambia lo que el hash ve**: el payload se almacena exactamente como lo devolvió la API.
 
 ### Familia 3: campos que dejan de venir y vuelven
 

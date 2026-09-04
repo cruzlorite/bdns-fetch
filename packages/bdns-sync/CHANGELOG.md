@@ -10,9 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `grandesbeneficiarios_busqueda` no longer re-versions half the table on every run: the API returns a different
-  spelling of `beneficiario` for the same `idPersona` on nearly every call, so that field is now excluded from the
-  content hash. It is still stored whole in the payload. The first run after upgrading re-versions the table once,
+  spelling of `beneficiario` for the same `idPersona` from one hour to the next, so that field is now excluded from
+  the content hash. It is still stored whole in the payload. The first run after upgrading re-versions the table once,
   because every hash changes.
+- `concesiones_busqueda` excludes `beneficiario` from the hash for the same reason, measured: of the keys whose name
+  changed more than once, 67% return to a spelling they already had, with `idPersona` unchanged throughout.
+- `sorted_delimited_list` canonicalizes fields that carry a list inside one string, declared per field with its
+  separator: `sectorActividad` on ";" in minimis, `sectores` on "#" in ayudasestado. The API returns those lists
+  shuffled, which accounted for 92% and 84% of each entity's version churn. Never auto-detected: a comma in free text
+  is not a list.
 
 ### Added
 

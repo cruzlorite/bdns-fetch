@@ -133,7 +133,7 @@ Of the 414,395 versions the annual pass produced, around 248,000 are noise: 60%.
 
 ### Family 1: the name is rebuilt inconsistently
 
-Affects `concesiones_busqueda` and `grandesbeneficiarios_busqueda`. For the same beneficiary, with the same amount and the same identifier, the name field comes back written differently:
+It is measurable in all five entities carrying a `beneficiario` field — `concesiones_busqueda`, `grandesbeneficiarios_busqueda`, `ayudasestado_busqueda`, `minimis_busqueda` and `partidospoliticos_busqueda` — though only in the first two does it reach both volume and proven oscillation. For the same beneficiary, with the same amount and the same identifier, the name field comes back written differently:
 
 ```
 GONZALEZ                      →  GONZÁLEZ            (accents, in both directions)
@@ -143,6 +143,30 @@ LIMMAT M&M, S.L.              →  LIMMAT MM SL        (six variants in eleven d
 ```
 
 In `concesiones_busqueda`, all 230,878 `beneficiario` changes keep **the same `idPersona` in 100% of cases**, and 213,176 are identical once accents and punctuation are stripped. It is never a different person: it is the same one written another way. The name is probably assembled from the underlying records, where each granting body typed it its own way.
+
+### The criterion for taking a field out of the hash
+
+A field leaves the hash **only if its value oscillates**, that is, if it returns to values it already had. That is what separates a field the API rewrites at random from one that receives real corrections, and it prevents excluding by analogy.
+
+The test: for every natural key with three or more versions, take the sequence of the field's values, drop consecutive repeats, and check whether any value reappears after a different one.
+
+Measured against the history:
+
+| Entity | Field | Keys that change | Oscillate | Verdict |
+|---|---|---|---|---|
+| `concesiones_busqueda` | `beneficiario` | 177 | **119 (67%)** | random, out of the hash |
+| `grandesbeneficiarios_busqueda` | `beneficiario` | — | hash cycle proven | random, out of the hash |
+| `ayudasestado_busqueda` | `beneficiario` | 2 | 0 | sample too small, kept |
+| `minimis_busqueda` | `beneficiario` | 0 | — | sample too small, kept |
+| `concesiones_busqueda` | `convocatoria` | 1 | 0 | sample too small, kept |
+
+One oscillation from `concesiones_busqueda`, with the same `idPersona` across all three versions:
+
+```
+ASOCIACIÓN INCLUDD  →  ASOCIACION INCLUDD  →  ASOCIACIÓN INCLUDD
+```
+
+In the entities with too small a sample the field **stays in the hash**, even though part of its changes are formatting. The volume is low — hundreds of versions against the ~240,000 in `concesiones` — and when in doubt the change is recorded. The sample is short because the history is only two months old and most records are still on their first or second version; this measurement is worth redoing once there is more of it.
 
 ### Family 2: shuffled lists inside a string
 
@@ -157,6 +181,21 @@ ayudasestado_busqueda sectores, separator "#"
 ```
 
 This is the same root cause as the nondeterministic array order in `regiones` (see [section 8](#8-known-api-issues)), but the hash canonicalization cannot fix it: it sorts object keys and JSON array elements, and here the list travels inside a single text value, so it is seen as just another string.
+
+### What rules `bdns-sync` applies
+
+Four, declared in each entity's syncer next to its natural key:
+
+| Entity | Rule | Reason |
+|---|---|---|
+| `concesiones_busqueda` | `exclude_from_hash=("beneficiario",)` | oscillation proven, 67% |
+| `grandesbeneficiarios_busqueda` | `exclude_from_hash=("beneficiario",)` | oscillation proven via hash cycle |
+| `ayudasestado_busqueda` | `delimited_lists={"sectores": "#"}` | 84% of its changes were reordering |
+| `minimis_busqueda` | `delimited_lists={"sectorActividad": ";"}` | 92% of its changes were reordering |
+
+No other entity carries any rule. The two families are treated differently on purpose: a shuffled list can be canonicalized without losing information, so it is sorted before hashing and the field keeps detecting real sector changes. A name rewritten at random cannot be canonicalized without deciding which spelling is the right one, so the field leaves the hash entirely.
+
+In both cases **only what the hash sees changes**: the payload is stored exactly as the API returned it.
 
 ### Family 3: fields that stop coming back and then return
 

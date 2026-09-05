@@ -229,8 +229,11 @@ def sync_minimis_busqueda(
         end,
         run_type,
         reg_date_field="fechaRegistro",
-        # `sectorActividad` is a list joined with ";" that comes back shuffled.
-        delimited_lists={"sectorActividad": ";"},
+        # `sectorActividad` is a shuffled list, but ";" alone cannot split it:
+        # several CNAE names carry a semicolon ("Administración Pública y
+        # defensa; Seguridad Social obligatoria"). Split before an element
+        # start instead, which leaves those descriptions whole.
+        delimited_lists={"sectorActividad": r";\s*(?=[A-Z0-9][A-Z0-9.]*\s*-\s)"},
     )
 
 

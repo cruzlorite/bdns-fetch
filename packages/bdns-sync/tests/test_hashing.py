@@ -65,6 +65,31 @@ def test_delimited_list_ignores_spacing_around_the_separator():
     assert row_hash(a, None, {"s": ";"}) == row_hash(b, None, {"s": ";"})
 
 
+CNAE = "Administración Pública y defensa; Seguridad Social obligatoria"
+SPLIT_BEFORE_CODE = r";\s*(?=[A-Z0-9][A-Z0-9.]*\s*-\s)"
+
+
+def test_a_separator_inside_an_element_does_not_split_it():
+    """Several CNAE names carry a semicolon of their own, so splitting on
+    every ";" would cut the description in half (see section 9 of
+    docs/bdns-api-behavior.md).
+    """
+    a = {"s": f"84 - {CNAE}; 16 - Madera"}
+    b = {"s": f"16 - Madera; 84 - {CNAE}"}
+    assert row_hash(a, None, {"s": SPLIT_BEFORE_CODE}) == row_hash(b, None, {"s": SPLIT_BEFORE_CODE})
+    assert CNAE in sorted_delimited_list(a["s"], SPLIT_BEFORE_CODE)
+
+
+def test_a_pattern_that_stops_matching_degrades_to_over_versioning():
+    """If the source changes the shape of its codes the value stops being
+    split, so it stops being sorted: reordering versions again, which is the
+    safe direction. It never merges two different lists.
+    """
+    a = {"s": "zzz - uno; aaa - dos"}          # lowercase codes: pattern misses
+    b = {"s": "aaa - dos; zzz - uno"}
+    assert row_hash(a, None, {"s": SPLIT_BEFORE_CODE}) != row_hash(b, None, {"s": SPLIT_BEFORE_CODE})
+
+
 def test_a_real_change_in_a_delimited_list_still_changes_the_hash():
     a = {"s": "52.2 - Auxiliares; 52.3 - Intermediacion"}
     b = {"s": "52.2 - Auxiliares; 52.9 - Otra cosa"}
@@ -81,4 +106,8 @@ def test_only_declared_fields_are_treated_as_lists():
 
 
 def test_sorted_delimited_list_is_deterministic():
-    assert sorted_delimited_list("c;a;b", ";") == sorted_delimited_list("b;c;a", ";") == "a;b;c"
+    """Any order of the same elements gives the same result. The joining
+    character is internal to the hash and deliberately not asserted here.
+    """
+    assert sorted_delimited_list("c;a;b", ";") == sorted_delimited_list("b;c;a", ";")
+    assert sorted_delimited_list("c;a;b", ";").split("\x00") == ["a", "b", "c"]

@@ -173,12 +173,16 @@ En las entidades con muestra insuficiente el campo **se mantiene en el hash**, a
 Afecta a `minimis_busqueda` y `ayudasestado_busqueda`. El campo trae varios valores concatenados y el orden cambia entre llamadas, con los mismos elementos:
 
 ```
-minimis_busqueda      sectorActividad, separador ";"
+minimis_busqueda      sectorActividad
   '52.3 - Intermediación del transporte; 52.2 - Auxiliares del transporte'
   '52.2 - Auxiliares del transporte; 52.3 - Intermediación del transporte'
 
-ayudasestado_busqueda sectores, separador "#"
+ayudasestado_busqueda sectores, separados por "#"
 ```
+
+**El separador no siempre se puede usar para partir.** En `minimis` los elementos van unidos por `;`, pero varias categorías CNAE llevan un punto y coma en su propio nombre —"Administración Pública y defensa; Seguridad Social obligatoria", "Servicios técnicos de arquitectura e ingeniería; ensayos y análisis técnicos"—, así que partir por cada `;` corta 374 de 15.931 elementos por la mitad. La regla que se aplica parte **antes del inicio de un elemento** (un código seguido de guion), lo que deja esas descripciones enteras: cero elementos malformados sobre los mismos datos. En `ayudasestado` el `#` sí es inequívoco y no aparece dentro de ningún elemento.
+
+Un patrón que dejara de reconocer los códigos degrada en la dirección segura: el valor no se parte, luego tampoco se ordena, y el reordenamiento vuelve a producir versiones. Nunca puede fundir dos listas distintas, porque ordenar conserva los elementos.
 
 Es la misma raíz que el orden no determinista de los arrays de `regiones` (ver [sección 8](#8-problemas-conocidos-de-la-api)), pero la canonicalización del hash no puede corregirla: ordena claves de objetos y elementos de arrays JSON, y aquí la lista viaja dentro de un único valor de texto, así que la ve como una cadena cualquiera.
 
@@ -191,7 +195,7 @@ Cuatro, declaradas en el syncer de cada entidad junto a su clave natural:
 | `concesiones_busqueda` | `exclude_from_hash=("beneficiario",)` | oscilación probada, 67% |
 | `grandesbeneficiarios_busqueda` | `exclude_from_hash=("beneficiario",)` | oscilación probada por ciclo de hashes |
 | `ayudasestado_busqueda` | `delimited_lists={"sectores": "#"}` | 84% de sus cambios eran reordenamiento |
-| `minimis_busqueda` | `delimited_lists={"sectorActividad": ";"}` | 92% de sus cambios eran reordenamiento |
+| `minimis_busqueda` | `delimited_lists={"sectorActividad": ...}` (parte antes de cada código) | 92% de sus cambios eran reordenamiento |
 
 Ninguna otra entidad lleva regla alguna. Las dos familias se tratan distinto a propósito: una lista barajada se puede canonizar sin perder información, así que se ordena antes de hashear y el campo sigue detectando cambios reales de sector. Un nombre reescrito al azar no se puede canonizar sin decidir cuál de las grafías es la buena, así que el campo sale del hash entero.
 

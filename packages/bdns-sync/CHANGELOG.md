@@ -15,10 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   because every hash changes.
 - `concesiones_busqueda` excludes `beneficiario` from the hash for the same reason, measured: of the keys whose name
   changed more than once, 67% return to a spelling they already had, with `idPersona` unchanged throughout.
-- `sorted_delimited_list` canonicalizes fields that carry a list inside one string, declared per field with its
-  separator: `sectorActividad` on ";" in minimis, `sectores` on "#" in ayudasestado. The API returns those lists
-  shuffled, which accounted for 92% and 84% of each entity's version churn. Never auto-detected: a comma in free text
-  is not a list.
+- `sorted_delimited_list` canonicalizes fields that carry a list inside one string, declared per field with the
+  pattern that splits it: `sectores` in ayudasestado, `sectorActividad` in minimis. The API returns those lists
+  shuffled, which accounted for 84% and 92% of each entity's version churn. The pattern is a regular expression, not
+  a plain separator, because several CNAE names contain the ";" that joins them; splitting before an element start
+  keeps those descriptions whole. Never auto-detected: a comma in free text is not a list.
 
 ### Added
 

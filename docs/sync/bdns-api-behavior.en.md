@@ -173,12 +173,16 @@ In the entities with too small a sample the field **stays in the hash**, even th
 Affects `minimis_busqueda` and `ayudasestado_busqueda`. The field carries several values concatenated together and their order changes between calls, with the same elements:
 
 ```
-minimis_busqueda      sectorActividad, separator ";"
+minimis_busqueda      sectorActividad
   '52.3 - Transport intermediation; 52.2 - Auxiliary transport activities'
   '52.2 - Auxiliary transport activities; 52.3 - Transport intermediation'
 
-ayudasestado_busqueda sectores, separator "#"
+ayudasestado_busqueda sectores, separated by "#"
 ```
+
+**The separator cannot always be used to split.** In minimis the elements are joined by ";", but several CNAE categories carry a semicolon in their own name — "Administración Pública y defensa; Seguridad Social obligatoria", "Servicios técnicos de arquitectura e ingeniería; ensayos y análisis técnicos" — so splitting on every ";" cuts 374 of 15,931 elements in half. The rule applied splits **before the start of an element** (a code followed by a dash), which leaves those descriptions whole: zero malformed elements over the same data. In ayudasestado the "#" is unambiguous and never appears inside an element.
+
+A pattern that stopped recognizing the codes degrades in the safe direction: the value is not split, so it is not sorted either, and reordering produces versions again. It can never merge two different lists, because sorting preserves the elements.
 
 This is the same root cause as the nondeterministic array order in `regiones` (see [section 8](#8-known-api-issues)), but the hash canonicalization cannot fix it: it sorts object keys and JSON array elements, and here the list travels inside a single text value, so it is seen as just another string.
 
@@ -191,7 +195,7 @@ Four, declared in each entity's syncer next to its natural key:
 | `concesiones_busqueda` | `exclude_from_hash=("beneficiario",)` | oscillation proven, 67% |
 | `grandesbeneficiarios_busqueda` | `exclude_from_hash=("beneficiario",)` | oscillation proven via hash cycle |
 | `ayudasestado_busqueda` | `delimited_lists={"sectores": "#"}` | 84% of its changes were reordering |
-| `minimis_busqueda` | `delimited_lists={"sectorActividad": ";"}` | 92% of its changes were reordering |
+| `minimis_busqueda` | `delimited_lists={"sectorActividad": ...}` (splits before each code) | 92% of its changes were reordering |
 
 No other entity carries any rule. The two families are treated differently on purpose: a shuffled list can be canonicalized without losing information, so it is sorted before hashing and the field keeps detecting real sector changes. A name rewritten at random cannot be canonicalized without deciding which spelling is the right one, so the field leaves the hash entirely.
 

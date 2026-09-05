@@ -4,6 +4,7 @@
 
 import hashlib
 import json
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Optional
 
@@ -27,21 +28,35 @@ def _order_independent(value: Any) -> Any:
     return value
 
 
-def sorted_delimited_list(value: str, separator: str) -> str:
+def sorted_delimited_list(value: str, split_pattern: str) -> str:
     """Sort the elements of a list that travels inside a single string.
 
-    Some fields carry several values joined by a separator, and the API
-    returns them in a different order between calls with the same elements
-    (`sectorActividad` in minimis uses ";", `sectores` in ayudasestado uses
-    "#"; see section 9 of docs/bdns-api-behavior.md). `_order_independent`
-    cannot help: it sorts JSON arrays, and this list is just text as far as
-    JSON is concerned.
+    Some fields carry several values joined together, and the API returns
+    them in a different order between calls with the same elements
+    (`sectorActividad` in minimis, `sectores` in ayudasestado; see section 9
+    of docs/bdns-api-behavior.md). `_order_independent` cannot help: it sorts
+    JSON arrays, and this list is just text as far as JSON is concerned.
 
-    Elements are stripped and re-joined on the bare separator, so spacing
-    around it stops mattering too. Only the hash sees this; the payload is
-    stored exactly as the API sent it.
+    `split_pattern` is a regular expression, not a plain separator, because
+    a plain one is not always safe. In minimis the separator is ";" but
+    several official CNAE names contain a semicolon of their own
+    ("Administración Pública y defensa; Seguridad Social obligatoria"), so
+    splitting on every ";" cuts those descriptions in half. The pattern
+    instead splits before the start of an element, leaving descriptions
+    whole. Where the separator is unambiguous the pattern is just that
+    character, as with "#" in ayudasestado.
+
+    A pattern that stops matching degrades safely: the value is not split,
+    so it is not sorted either, and reordering starts producing versions
+    again. It can never merge two genuinely different lists, because sorting
+    preserves the elements.
+
+    Elements are stripped and joined on NUL, a character the payloads do not
+    contain, so the result is unambiguous. Only the hash sees this; the
+    payload is stored exactly as the API sent it.
     """
-    return separator.join(sorted(part.strip() for part in value.split(separator)))
+    parts = sorted(part.strip() for part in re.split(split_pattern, value))
+    return "\x00".join(parts)
 
 
 def canonical_json(

@@ -11,7 +11,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 COPY pyproject.toml README.md ./
-COPY bdns ./bdns
+COPY src ./src
 RUN pip install --no-cache-dir .[bigquery]
 
 COPY scripts ./scripts

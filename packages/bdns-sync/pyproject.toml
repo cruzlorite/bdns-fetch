@@ -1,5 +1,5 @@
 [tool.poetry]
-packages = [{include = "bdns"}]
+packages = [{ include = "bdns", from = "src" }]
 name = "bdns-sync"
 version = "0.5.0"
 description = "Sync engine that keeps target databases in SCD2 form from the Base de Datos Nacional de Subvenciones (BDNS) API"

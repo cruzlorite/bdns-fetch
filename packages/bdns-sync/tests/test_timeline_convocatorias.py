@@ -9,10 +9,12 @@ detail responses must be skipped rather than crash the run.
 from copy import deepcopy
 from datetime import timedelta
 
+import pytest
 from sqlalchemy import create_engine
 
 from bdns.sync.generic import CHUNK_DAYS
 from bdns.sync.sinks.sql import SQLSink
+from bdns.sync.sinks.sql.scd2 import BatchRejected
 from bdns.sync.syncers import sync_convocatorias
 from tests.fake_client import FakeBDNSClient
 from tests.timeline_helpers import current_rows, last_sync_run, sync_errors_for
@@ -82,23 +84,46 @@ def test_convocatorias_detail_rewrite_produces_new_version():
 
 def test_convocatorias_malformed_detail_is_skipped_not_crashed():
     """Live-confirmed failure mode: BDNS occasionally returns an HTML error
-    page instead of JSON for one specific record. That code's detail must
-    be skipped, not blow up the whole run.
+    page instead of JSON for one specific record. That code is skipped and
+    recorded, while the rest of the batch syncs normally.
     """
     engine = create_engine("sqlite:///:memory:")
     client = FakeBDNSClient()
     client.convocatorias_detail["927266"] = "<html>not json</html>"
 
-    stats = sync_convocatorias(SQLSink(engine), client, "daily")
-    assert stats["fetched"] == 0  # the only discovered code was malformed
-    assert stats["inserted"] == 0
-    assert len(current_rows(engine, "convocatorias")) == 0
+    stats = sync_convocatorias(SQLSink(engine), client, "monthly")
+    assert stats["fetched"] == 2  # 927267 and 927268 survived
+    assert stats["inserted"] == 2
+    assert stats["skipped"] == 1
+    assert len(current_rows(engine, "convocatorias")) == 2
 
     # the skip is durable, not just a transient log line
     assert last_sync_run(engine, "convocatorias")["rows_skipped"] == 1
     [error] = sync_errors_for(engine, "convocatorias")
     assert error["context"] == "convocatorias numConv=927266"
     assert error["content"] == "<html>not json</html>"
+
+
+def test_convocatorias_refuses_a_batch_the_source_rejected_wholesale():
+    """The dangerous shape of the same failure. If every record in a window
+    comes back malformed, staging ends up empty, and an empty staging is
+    indistinguishable from "everything in this window was withdrawn":
+    window-scoped deletion detection would close the lot. The run must fail
+    instead, leaving the stored rows alone for the next attempt.
+    """
+    engine = create_engine("sqlite:///:memory:")
+    client = FakeBDNSClient()
+    sync_convocatorias(SQLSink(engine), client, "monthly")
+    before = current_rows(engine, "convocatorias")
+    assert len(before) == 3
+
+    # the code inside the daily window now answers with an error page
+    client.convocatorias_detail["927266"] = "<html>not json</html>"
+    with pytest.raises(BatchRejected):
+        sync_convocatorias(SQLSink(engine), client, "daily")
+
+    assert current_rows(engine, "convocatorias") == before  # nothing closed
+    assert last_sync_run(engine, "convocatorias")["event"] == "failed"
 
 
 def test_convocatorias_detects_a_real_deletion_within_the_current_window():

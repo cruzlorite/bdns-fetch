@@ -187,7 +187,8 @@ def test_full_catalog_writes_rows_and_run_log():
     client = FakeFullClient([{"id": 1, "v": "a"}, {"id": 2, "v": "b"}])
 
     stats = sync_full_catalog(SQLSink(engine), client, "widgets", "fetch_widgets", ("id",))
-    assert stats == {"fetched": 2, "inserted": 2, "updated": 0, "touched": 0, "soft_deleted": 0}
+    assert stats == {"fetched": 2, "inserted": 2, "updated": 0, "touched": 0,
+                     "soft_deleted": 0, "skipped": 0}
 
     metadata = MetaData()
     sync_state, sync_runs, _ = build_control_tables(metadata)
@@ -324,7 +325,7 @@ def test_search_range_incremental_no_deletion_detection():
     stats = sync_search_range(
         SQLSink(engine), client, "widgets_busqueda", "fetch_widgets_busqueda", ("id",), start, end, "daily"
     )
-    assert stats == {"fetched": 1, "inserted": 0, "updated": 0, "touched": 1}
+    assert stats == {"fetched": 1, "inserted": 0, "updated": 0, "touched": 1, "skipped": 0}
 
     # single-day range, upper bound sent exclusive (start + 1)
     assert client.last_window == (start, end + timedelta(days=1))

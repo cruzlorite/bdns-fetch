@@ -49,11 +49,17 @@ class SQLSink(Sink):
         delimited_lists: Optional[Mapping[str, str]] = None,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
+        # One list for both sources of skips: the caller's own (malformed
+        # detail responses, which know the key they belong to) and the
+        # sink's own rejections.
+        skips = skipped if skipped is not None else []
+
         def apply_fn(conn, table, staging):
             stats = apply_full_reconciliation(
-                conn, table, staging, rows, key_fields, exclude_from_hash, delimited_lists
+                conn, table, staging, rows, key_fields, exclude_from_hash, delimited_lists,
+                skipped=skips,
             )
-            return _attach_skips(stats, skipped)
+            return _attach_skips(stats, skips)
 
         return run_with_bookkeeping(self.engine, endpoint, run_type="full", apply_fn=apply_fn)
 
@@ -71,6 +77,8 @@ class SQLSink(Sink):
         delimited_lists: Optional[Mapping[str, str]] = None,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
+        skips = skipped if skipped is not None else []
+
         def apply_fn(conn, table, staging):
             stats = apply_incremental(
                 conn,
@@ -83,16 +91,21 @@ class SQLSink(Sink):
                 reg_date_field=reg_date_field,
                 window_start=window_start,
                 window_end=window_end,
+                skipped=skips,
             )
-            return _attach_skips(stats, skipped)
+            return _attach_skips(stats, skips)
 
         return run_with_bookkeeping(self.engine, endpoint, run_type=run_type, apply_fn=apply_fn)
 
 
-def _attach_skips(stats: dict[str, int], skipped: Optional[list[dict[str, str]]]) -> dict[str, int]:
-    """Fold the caller's malformed-record list into the stats AFTER the rows
-    generator has been fully consumed (which is what populated it)."""
-    if skipped is not None:
-        stats["skipped"] = len(skipped)
-        stats["_skip_details"] = skipped
+def _attach_skips(stats: dict[str, int], skipped: list[dict[str, str]]) -> dict[str, int]:
+    """Fold the skipped-record list into the stats AFTER the rows generator
+    has been fully consumed, which is what populated it.
+
+    Always present, including as zero: the sink can now reject records on
+    its own, so every run has a skip count whether or not the caller
+    passed a list of its own.
+    """
+    stats["skipped"] = len(skipped)
+    stats["_skip_details"] = skipped
     return stats

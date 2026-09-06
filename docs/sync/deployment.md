@@ -9,7 +9,7 @@ Cómo mantener un destino sincronizado sin tener una máquina propia. `bdns-sync
 Cada release publica una imagen en GitHub Container Registry con el extra de BigQuery y los scripts de orquestación dentro:
 
 ```bash
-docker pull ghcr.io/cruzlorite/bdns-sync:latest    # o :0.1.0
+docker pull ghcr.io/cruzlorite/bdns-sync:latest    # o :0.5.0
 ```
 
 - El comando por defecto es `scripts/delta_load.sh` (la carga diaria; la ventana la decide él solo).

@@ -9,7 +9,7 @@ How to keep a target synced without a machine of your own. `bdns-sync` is a CLI 
 Every release publishes an image to GitHub Container Registry with the BigQuery extra and the orchestration scripts included:
 
 ```bash
-docker pull ghcr.io/cruzlorite/bdns-sync:latest    # or :0.1.0
+docker pull ghcr.io/cruzlorite/bdns-sync:latest    # or :0.5.0
 ```
 
 - The default command is `scripts/delta_load.sh` (the daily delta; it picks the window by itself).

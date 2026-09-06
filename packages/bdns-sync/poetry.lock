@@ -2403,4 +2403,4 @@ bigquery = ["google-cloud-bigquery-storage", "sqlalchemy-bigquery"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.15"
-content-hash = "e7cc51be16ad3fbbc12a862c90a0456ab1a1c0f144ada9b54b268bfee00fcf70"
+content-hash = "9ad2542db64b17ef92f8c5603b1b225aad15b44bd4a7907c9d870dfe5c073b68"

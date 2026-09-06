@@ -10,7 +10,7 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
 install: ## Install project dependencies
-	poetry install --no-dev
+	poetry install --only main
 
 dev-install: ## Install project with development dependencies
 	poetry install

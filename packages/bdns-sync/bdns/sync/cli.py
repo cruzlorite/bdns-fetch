@@ -23,6 +23,13 @@ app = typer.Typer(
     name="bdns-sync",
     help="Sync one BDNS API endpoint into a target database in SCD2 form.",
     add_completion=False,
+    # Typer dumps every frame's local variables into the traceback by
+    # default. This tool runs unattended from cron and its locals hold
+    # payload fragments (beneficiary names, identifiers) and the target
+    # URL, password included for a Postgres target. That would land in
+    # whatever log the job writes to, readable by anyone with access to
+    # it. The traceback itself is kept; only the locals are dropped.
+    pretty_exceptions_show_locals=False,
 )
 
 

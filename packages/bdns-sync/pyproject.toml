@@ -32,7 +32,7 @@ sqlalchemy = "^2.0.0"
 typer = { version = "^0.17.4", extras = ["all"] }
 # BigQuery support is opt-in: `pip install bdns-sync[bigquery]` /
 # `poetry install -E bigquery`. Keeps the google-cloud stack out of
-# SQLite/Postgres/MySQL installs.
+# SQLite/DuckDB/PostgreSQL installs.
 sqlalchemy-bigquery = { version = "^1.17.0", optional = true }
 google-cloud-bigquery-storage = { version = "^2.32.0", optional = true }
 
@@ -44,6 +44,8 @@ pytest = "^8.4.2"
 pytest-cov = "^6.3.0"
 pytest-mock = "^3.15.0"
 ruff = "^0.12.12"
+psycopg2-binary = "^2.9"
+duckdb-engine = "^0.17"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

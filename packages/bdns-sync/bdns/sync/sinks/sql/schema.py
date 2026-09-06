@@ -120,7 +120,7 @@ def build_control_tables(metadata: MetaData) -> tuple[Table, Table, Table]:
         # App-generated (epoch microseconds, see bookkeeping): DB autoincrement
         # isn't portable (BigQuery has none) and this key is read back.
         # BigInteger, not Integer: epoch microseconds (~1.7e15) overflow the
-        # 32-bit INTEGER Postgres/MySQL map Integer to.
+        # 32-bit INTEGER that PostgreSQL maps Integer to.
         Column("run_id", BigInteger, nullable=False, index=True),
         Column("table_name", String, nullable=False, index=True),
         Column("run_type", String, nullable=False),

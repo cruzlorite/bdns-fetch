@@ -1,20 +1,27 @@
 from datetime import date
 
 import pytest
-from sqlalchemy import MetaData, create_engine, select
+from sqlalchemy import select
 
+from bdns.sync.sinks.sql.dialects import get_adapter
 from bdns.sync.sinks.sql.scd2 import apply_full_reconciliation, apply_incremental
 from bdns.sync.sinks.sql.schema import build_staging_table, build_sync_table
 
 
 @pytest.fixture
-def table():
-    engine = create_engine("sqlite:///:memory:")
-    metadata = MetaData()
-    tbl = build_sync_table("things", metadata)
-    staging = build_staging_table("things", metadata)
+def table(engine, metadata, table_name):
+    """Real table pair on whatever engine `BDNS_SYNC_TEST_URL` selects.
+
+    These are the tests where dialect differences actually bite (DDL,
+    the bulk diff statements, staging clears), so they run against every
+    supported engine rather than SQLite only.
+    """
+    tbl = build_sync_table(table_name, metadata)
+    staging = build_staging_table(table_name, metadata)
+    get_adapter(engine).prepare_metadata(metadata)
     metadata.create_all(engine)
-    return engine, tbl, staging
+    yield engine, tbl, staging
+    metadata.drop_all(engine)
 
 
 def current_rows(conn, table):

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """SQL implementation of the Sink interface, covering every target with a
-SQLAlchemy dialect (SQLite, PostgreSQL, MySQL, BigQuery, ...).
+SQLAlchemy dialect. Verified on SQLite and PostgreSQL (test suite)
+and BigQuery (live service).
 
 Module map: `schema.py` (generic SCD2 table shape + control tables),
 `scd2.py` (staging + bulk-diff apply logic), `bookkeeping.py` (run log,

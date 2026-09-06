@@ -13,7 +13,7 @@ statements whether the batch is 20 rows or 2 million.
 
 Only portable SQL is used: correlated EXISTS/NOT EXISTS subqueries, no
 vendor-specific UPDATE...FROM or MERGE. The same code path runs unchanged
-on SQLite, Postgres, MySQL, and BigQuery.
+on SQLite, PostgreSQL, and BigQuery.
 """
 
 import logging
@@ -21,7 +21,20 @@ from collections.abc import Iterable, Mapping, Sequence
 from datetime import date, datetime, timezone
 from typing import Any, Optional
 
-from sqlalchemy import and_, delete, exists, func, insert, literal, or_, select, true, update
+from sqlalchemy import (
+    and_,
+    cast,
+    delete,
+    exists,
+    func,
+    insert,
+    literal,
+    null,
+    or_,
+    select,
+    true,
+    update,
+)
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql.schema import Table
 
@@ -294,7 +307,13 @@ def _insert_new_versions(conn: Connection, table: Table, staging: Table, now: da
             staging.c._natural_key,
             staging.c._row_hash,
             literal(now),
-            literal(None, type_=table.c._valid_to.type),
+            # CAST(NULL AS ...), not a bare NULL: PostgreSQL types an
+            # untyped NULL in a SELECT as `text` and then refuses the
+            # INSERT into a timestamptz column, failing every run with
+            # `column _valid_to is of type timestamp with time zone but
+            # expression is of type text`. The cast is portable, and
+            # BigQuery needs an explicit type on a NULL literal too.
+            cast(null(), table.c._valid_to.type),
             literal(True),
             literal(now),
             staging.c._reg_date,

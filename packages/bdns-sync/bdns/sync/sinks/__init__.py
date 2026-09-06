@@ -12,7 +12,7 @@ would assume an UPDATE-capable SQL engine; the batch contract can also be
 implemented by an append-only target such as a future Parquet sink.
 
 The only implementation today is `sql.SQLSink`, which covers every target
-with a SQLAlchemy dialect (SQLite, PostgreSQL, MySQL, BigQuery). Engine
+with a SQLAlchemy dialect (SQLite, PostgreSQL, BigQuery). Engine
 quirks stay inside that package (see `sql.dialects`) and never leak
 through this interface.
 """

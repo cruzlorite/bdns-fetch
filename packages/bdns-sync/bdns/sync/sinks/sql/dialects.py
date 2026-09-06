@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Per-engine adapters. The rest of the codebase writes portable SQL (see
-scd2.py) that runs unchanged on SQLite, Postgres, MySQL, and BigQuery.
+scd2.py) that runs unchanged on SQLite, PostgreSQL, and BigQuery.
 This module is the only place allowed to know a specific engine's name
 and quirks; nothing outside it should branch on `dialect.name`.
 
 BigQuery is a first-class target and, so far, the only one that needs an
-adapter. SQLite, Postgres, and MySQL are covered by the DialectAdapter
-default.
+adapter, and PostgreSQL needs one only to truncate staging. SQLite is
+covered by the DialectAdapter default.
 
 To handle a new quirk, add a method to DialectAdapter with a portable
 default (usually a no-op), override it in the engine's adapter, and call
@@ -27,14 +27,52 @@ adapter.
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import MetaData, insert
+from sqlalchemy import MetaData, delete, insert, text
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.sql.schema import Table
 
 
+def staging_json_rows(table: Table, rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Turn staged rows into the JSON records a BigQuery load job takes.
+
+    Separate from `BigQueryAdapter.insert_rows` so it can be tested
+    without the google-cloud stack: this is the part that can quietly go
+    wrong, since it bypasses SQLAlchemy's bind processors and hand-builds
+    what lands in the table.
+
+    `payload` is serialized through the staging table's own column type,
+    so this path and the ordinary INSERT path can never drift apart.
+    `_reg_date` is omitted rather than sent as null when the entity has
+    none, and dates go as ISO strings, which is what a load job expects.
+    """
+    payload_type = table.c.payload.type
+    json_rows = []
+    for row in rows:
+        json_row = {
+            "_natural_key": row["_natural_key"],
+            "_row_hash": row["_row_hash"],
+            "payload": payload_type.process_bind_param(row["payload"], None),
+        }
+        if "_reg_date" in row:
+            json_row["_reg_date"] = row["_reg_date"].isoformat()
+        json_rows.append(json_row)
+    return json_rows
+
+
+def _truncate(conn: Connection, table: Table) -> None:
+    """`TRUNCATE TABLE`, for engines where it is a metadata operation.
+
+    The table name goes through the dialect's identifier preparer rather
+    than into an f-string directly, so quoting is the dialect's business
+    and the statement can't be malformed by an unusual name.
+    """
+    name = conn.engine.dialect.identifier_preparer.format_table(table)
+    conn.execute(text(f"TRUNCATE TABLE {name}"))
+
+
 class DialectAdapter:
     """Default adapter: assumes standard SQL support. Used for SQLite,
-    Postgres, MySQL, and anything else without its own adapter below.
+    DuckDB, and anything else without its own adapter below.
     """
 
     def prepare_metadata(self, metadata: MetaData) -> None:
@@ -43,6 +81,17 @@ class DialectAdapter:
     def insert_rows(self, conn: Connection, table: Table, rows: Sequence[dict[str, Any]]) -> None:
         """Bulk-insert one batch of rows (scd2 staging load)."""
         conn.execute(insert(table), rows)
+
+    def clear_table(self, conn: Connection, table: Table) -> None:
+        """Empty the staging table, at the start and end of every run.
+
+        `DELETE` is the portable default and is what SQLite and
+        DuckDB want: a `DELETE` with no `WHERE` already takes SQLite's
+        truncate shortcut, and neither engine bills by the byte. Only
+        engines where `TRUNCATE` is both transactional and materially
+        cheaper override this.
+        """
+        conn.execute(delete(table))
 
     def staging_chunk_size(self, default: int) -> int:
         """How many rows to buffer per `insert_rows` call. The default
@@ -53,10 +102,31 @@ class DialectAdapter:
         return default
 
 
+class PostgresAdapter(DialectAdapter):
+    def clear_table(self, conn: Connection, table: Table) -> None:
+        """`TRUNCATE` instead of `DELETE`: Postgres' `DELETE` leaves one
+        dead tuple per row for VACUUM to reclaim later, which on a
+        staging table holding millions of rows is real work deferred onto
+        the next autovacuum. `TRUNCATE` is transactional here, so it
+        rolls back with the rest of the run if the run fails.
+        """
+        _truncate(conn, table)
+
+
 class BigQueryAdapter(DialectAdapter):
     def prepare_metadata(self, metadata: MetaData) -> None:
         for table in metadata.tables.values():
             table.indexes.clear()
+
+    def clear_table(self, conn: Connection, table: Table) -> None:
+        """`TRUNCATE` instead of `DELETE`: on BigQuery a `DELETE` is DML
+        and scans the table, so emptying staging is billed by the byte.
+        Measured on the annual concesiones_busqueda run of 1 September
+        2026: 17.2 GB scanned per `DELETE`, twice per run, out of 91 GB
+        for the whole diff. `TRUNCATE TABLE` is a metadata operation:
+        no bytes scanned, no cost.
+        """
+        _truncate(conn, table)
 
     def staging_chunk_size(self, default: int) -> int:
         """50,000: a load job costs seconds regardless of row count, so
@@ -89,24 +159,12 @@ class BigQueryAdapter(DialectAdapter):
 
         client = conn.connection.driver_connection._client
         table_ref = bigquery.DatasetReference(client.project, conn.engine.url.database).table(table.name)
-        payload_type = table.c.payload.type
-
-        json_rows = []
-        for row in rows:
-            json_row = {
-                "_natural_key": row["_natural_key"],
-                "_row_hash": row["_row_hash"],
-                "payload": payload_type.process_bind_param(row["payload"], None),
-            }
-            if "_reg_date" in row:
-                json_row["_reg_date"] = row["_reg_date"].isoformat()
-            json_rows.append(json_row)
-
-        client.load_table_from_json(json_rows, table_ref).result()
+        client.load_table_from_json(staging_json_rows(table, rows), table_ref).result()
 
 
 _ADAPTERS: dict[str, type[DialectAdapter]] = {
     "bigquery": BigQueryAdapter,
+    "postgresql": PostgresAdapter,
 }
 
 

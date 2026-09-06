@@ -13,6 +13,26 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
 
+    # The suite runs twice: once on in-memory SQLite (the default, no
+    # service needed) and once against a real PostgreSQL. The SQL-facing
+    # tests pick their engine from BDNS_SYNC_TEST_URL, so the same tests
+    # cover both. Without this, "portable SQL" was an untested claim: a
+    # bare NULL literal in the version INSERT compiled fine on SQLite and
+    # was rejected by PostgreSQL on every single run.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: bdns
+          POSTGRES_DB: bdns
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -30,5 +50,15 @@ jobs:
       - name: Lint
         run: poetry run ruff check .
 
-      - name: Test
+      - name: Test (SQLite)
         run: poetry run pytest
+
+      - name: Test (PostgreSQL)
+        env:
+          BDNS_SYNC_TEST_URL: postgresql+psycopg2://postgres:bdns@localhost:5432/bdns
+        run: poetry run pytest --no-cov
+
+      - name: Test (DuckDB)
+        env:
+          BDNS_SYNC_TEST_URL: duckdb:///${{ runner.temp }}/bdns-test.duckdb
+        run: poetry run pytest --no-cov

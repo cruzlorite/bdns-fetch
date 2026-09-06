@@ -32,33 +32,6 @@ from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.sql.schema import Table
 
 
-def staging_json_rows(table: Table, rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Turn staged rows into the JSON records a BigQuery load job takes.
-
-    Separate from `BigQueryAdapter.insert_rows` so it can be tested
-    without the google-cloud stack: this is the part that can quietly go
-    wrong, since it bypasses SQLAlchemy's bind processors and hand-builds
-    what lands in the table.
-
-    `payload` is serialized through the staging table's own column type,
-    so this path and the ordinary INSERT path can never drift apart.
-    `_reg_date` is omitted rather than sent as null when the entity has
-    none, and dates go as ISO strings, which is what a load job expects.
-    """
-    payload_type = table.c.payload.type
-    json_rows = []
-    for row in rows:
-        json_row = {
-            "_natural_key": row["_natural_key"],
-            "_row_hash": row["_row_hash"],
-            "payload": payload_type.process_bind_param(row["payload"], None),
-        }
-        if "_reg_date" in row:
-            json_row["_reg_date"] = row["_reg_date"].isoformat()
-        json_rows.append(json_row)
-    return json_rows
-
-
 def _truncate(conn: Connection, table: Table) -> None:
     """`TRUNCATE TABLE`, for engines where it is a metadata operation.
 
@@ -159,7 +132,20 @@ class BigQueryAdapter(DialectAdapter):
 
         client = conn.connection.driver_connection._client
         table_ref = bigquery.DatasetReference(client.project, conn.engine.url.database).table(table.name)
-        client.load_table_from_json(staging_json_rows(table, rows), table_ref).result()
+        payload_type = table.c.payload.type
+
+        json_rows = []
+        for row in rows:
+            json_row = {
+                "_natural_key": row["_natural_key"],
+                "_row_hash": row["_row_hash"],
+                "payload": payload_type.process_bind_param(row["payload"], None),
+            }
+            if "_reg_date" in row:
+                json_row["_reg_date"] = row["_reg_date"].isoformat()
+            json_rows.append(json_row)
+
+        client.load_table_from_json(json_rows, table_ref).result()
 
 
 _ADAPTERS: dict[str, type[DialectAdapter]] = {

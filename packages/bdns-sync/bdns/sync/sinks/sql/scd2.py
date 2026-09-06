@@ -24,7 +24,6 @@ from typing import Any, Optional
 from sqlalchemy import (
     and_,
     cast,
-    delete,
     exists,
     func,
     insert,
@@ -32,7 +31,6 @@ from sqlalchemy import (
     null,
     or_,
     select,
-    true,
     update,
 )
 from sqlalchemy.engine import Connection
@@ -40,7 +38,7 @@ from sqlalchemy.sql.schema import Table
 
 from bdns.sync.hashing import natural_key, row_hash
 from bdns.sync.pipeline import chunked, prefetch
-from bdns.sync.sinks.sql.dialects import get_adapter
+from bdns.sync.sinks.sql.dialects import DialectAdapter, get_adapter
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -126,10 +124,12 @@ def _apply(
 ) -> dict[str, int]:
     now = datetime.now(timezone.utc)
     reg_date_field = window[0] if window else None
+    adapter = get_adapter(conn.engine)
 
-    conn.execute(delete(staging).where(true()))
+    adapter.clear_table(conn, staging)
     fetched = _load_staging(
-        conn, staging, rows, key_fields, exclude_from_hash, delimited_lists, chunk_size, reg_date_field
+        conn, staging, rows, key_fields, exclude_from_hash, delimited_lists, chunk_size,
+        reg_date_field, adapter,
     )
     logger.info("%s: fetch done, %d rows staged, applying diff", table.name, fetched)
     stats = _diff_stats(conn, table, staging, detect_deletions, window)
@@ -139,7 +139,7 @@ def _apply(
     _close_stale(conn, table, staging, now, detect_deletions, window)
     _insert_new_versions(conn, table, staging, now)
 
-    conn.execute(delete(staging).where(true()))
+    adapter.clear_table(conn, staging)
     return stats
 
 
@@ -151,7 +151,8 @@ def _load_staging(
     exclude_from_hash: Optional[Iterable[str]],
     delimited_lists: Optional[Mapping[str, str]],
     chunk_size: int,
-    reg_date_field: Optional[str] = None,
+    reg_date_field: Optional[str],
+    adapter: DialectAdapter,
 ) -> int:
     """Write `rows` into the staging table in chunks.
 
@@ -162,7 +163,6 @@ def _load_staging(
     operations at a low fixed rate, and concurrent writes trip a hard 429
     (see `dialects.BigQueryAdapter.insert_rows`).
     """
-    adapter = get_adapter(conn.engine)
     chunk_size = adapter.staging_chunk_size(chunk_size)
 
     def stage(payload):

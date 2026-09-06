@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Core SCD2 apply logic: stage the fetched batch, then diff it against
-the target table with a fixed number of bulk SQL statements, never a
-per-row UPDATE/INSERT loop.
+"""Core SCD2 apply logic.
+
+Stage the fetched batch, then diff it against the target table with a
+fixed number of bulk SQL statements, never a per-row UPDATE/INSERT loop.
 
 Bulk statements are a requirement, not just an optimization. On BigQuery
 every DML statement pays per-statement latency and cost regardless of how
@@ -30,6 +31,8 @@ from bdns.sync.pipeline import chunked, prefetch
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
 from bdns.sync.sinks import DEFAULT_LIMITS, RejectLimits
 from bdns.sync.sinks.sql.dialects import DialectAdapter, get_adapter
+
+__all__ = ["BatchRejected", "apply_full_reconciliation", "apply_incremental"]
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -89,17 +92,39 @@ def apply_full_reconciliation(
     chunk_size: int = 5000,
     skipped: Optional[list[dict[str, str]]] = None,
 ) -> dict[str, int]:
-    """
-    Diff a full batch of currently-fetched rows against the table's current rows.
+    """Diff a complete batch against the table's current rows.
 
-    - Natural key not seen before -> insert new current row.
-    - Natural key seen, hash changed -> close out old version, insert new one.
-    - Natural key seen, hash unchanged -> just touch `_synced_at`.
-    - Natural key was current but absent from `rows` -> close it out.
+    Four cases, one bulk statement each:
 
-    The last case is what detects deletions (grants withdrawn, retired
-    codes). Incremental passes alone can't see removals; only a full-set
-    diff can.
+    - Natural key not seen before: insert a new current row.
+    - Natural key seen, hash changed: close the old version, insert a new
+      current one.
+    - Natural key seen, hash unchanged: touch `_synced_at`.
+    - Natural key was current but absent from `rows`: close it out.
+
+    The last case is what detects deletions, such as grants withdrawn or
+    codes retired. Incremental passes cannot see removals; only a
+    full-set diff can.
+
+    Args:
+        conn: Open connection, inside the run's transaction.
+        table: The endpoint's SCD2 table.
+        staging: Its staging table. Cleared before and after use.
+        rows: The complete current state, as fetched. Consumed once.
+        key_fields: Fields forming the natural key.
+        policy: Rules applied to each record before storing and hashing.
+        limits: How much of the batch may be unusable before the run
+            refuses it.
+        chunk_size: Rows buffered per staging insert, before the
+            dialect adapter gets to raise it.
+        skipped: List that malformed-record descriptors are appended to.
+
+    Returns:
+        The run's counters: `fetched`, `inserted`, `updated`, `touched`,
+        `soft_deleted`.
+
+    Raises:
+        BatchRejected: If the share of unusable records crosses `limits`.
     """
     return _apply(
         conn, table, staging, rows, key_fields, policy, limits, chunk_size,
@@ -121,23 +146,44 @@ def apply_incremental(
     window_end: Optional[date] = None,
     skipped: Optional[list[dict[str, str]]] = None,
 ) -> dict[str, int]:
-    """
-    Apply a partial/windowed batch of fetched rows (one reg-date window pass).
+    """Apply a windowed batch: one reg-date window pass.
 
-    By default this never closes out keys absent from `rows`. A reg-date
-    window is a subset of the table, not the full current state, so absence
-    here says nothing about deletion on its own.
+    Versioning of the keys present works exactly as in
+    `apply_full_reconciliation`. What differs is deletion: by default no
+    key is ever closed, because a reg-date window is a subset of the
+    table rather than its full current state, so absence says nothing.
 
-    Pass `reg_date_field`, along with `window_start` and `window_end` (the
-    same bounds used to fetch `rows`), to opt into window-scoped deletion
-    detection: a current row is closed only if its own stored `_reg_date`
-    falls inside `[window_start, window_end]` and it's missing from `rows`.
-    Scoping the comparison to rows that themselves belong to this window,
-    rather than rows that were simply in the previous run's fetch, avoids
-    the false-positive trap of a plain window-vs-window diff. Every row
-    ages out of a rolling window eventually regardless of deletion, so that
-    kind of comparison can't tell the two apart. This one can, because both
-    sides of the comparison use the same fixed date range.
+    Args:
+        conn: Open connection, inside the run's transaction.
+        table: The endpoint's SCD2 table.
+        staging: Its staging table. Cleared before and after use.
+        rows: Records registered in the window, as fetched. Consumed
+            once.
+        key_fields: Fields forming the natural key.
+        policy: Rules applied to each record before storing and hashing.
+        limits: How much of the batch may be unusable before the run
+            refuses it.
+        chunk_size: Rows buffered per staging insert.
+        reg_date_field: Payload field holding the record's own
+            registration date, as an ISO date string. Opts into
+            window-scoped deletion detection, which closes a current row
+            only when its own stored `_reg_date` falls inside the window
+            and its key is missing from `rows`. Scoping both sides of the
+            comparison to the same fixed range is what makes absence
+            meaningful: every row ages out of a rolling window eventually
+            whether or not it was deleted, so a plain window-vs-window
+            diff cannot tell the two apart. This one can.
+        window_start: First day of the fetched range, inclusive.
+        window_end: Last day of the fetched range, inclusive. Must be the
+            same bounds `rows` was fetched with.
+        skipped: List that malformed-record descriptors are appended to.
+
+    Returns:
+        The run's counters. `soft_deleted` can only be non-zero when
+        `reg_date_field` was given.
+
+    Raises:
+        BatchRejected: If the share of unusable records crosses `limits`.
     """
     window = (reg_date_field, window_start, window_end) if reg_date_field else None
     return _apply(
@@ -260,11 +306,12 @@ def _matches(table: Table, staging: Table):
 
 
 def _missing_in_window(table: Table, staging: Table, window: tuple):
-    """A current row is eligible to close under window-scoped deletion only
-    if its own `_reg_date` says it belongs to this exact window, regardless
-    of whether it was in a previous run's fetch. Both sides of the
-    comparison use the same range, so aging out of a rolling window is
-    never mistaken for deletion.
+    """Build the predicate selecting current rows this window may close.
+
+    A row is eligible only if its own `_reg_date` says it belongs to this
+    exact window, regardless of whether it was in a previous run's fetch.
+    Both sides of the comparison then use the same range, so aging out of
+    a rolling window is never mistaken for deletion.
     """
     _, start, end = window
     return and_(

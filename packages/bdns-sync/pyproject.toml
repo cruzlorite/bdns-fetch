@@ -58,8 +58,16 @@ bdns-sync = "bdns.sync.__main__:app"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+select = ["E", "F", "I", "UP", "B", "D"]
 ignore = [
     "E741",  # ambiguous variable name (O is required by API)
     "E501",  # long lines: docstrings/comments carry verified-live evidence
+    "D105",  # magic methods: covered by the class docstring
+    "D107",  # __init__: documented on the class
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]

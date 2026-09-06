@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""bdns-sync is a pure parameterized tool: one endpoint per invocation, no
+"""The `bdns-sync` command line.
+
+bdns-sync is a pure parameterized tool: one endpoint per invocation, no
 config file, no cadence knowledge. Which endpoints to sync and when is an
 orchestration concern that lives outside this package (see scripts/).
 """
@@ -20,6 +22,8 @@ from bdns.sync.api_contract import check_api_contract
 from bdns.sync.generic import CHUNK_DAYS, WINDOWS, iter_date_chunks, resolve_when
 from bdns.sync.sinks import DEFAULT_LIMITS, RejectLimits, get_sink
 from bdns.sync.syncers import FULL_SYNCERS, SEARCH_SYNCERS, policy_for
+
+__all__ = ["app"]
 
 app = typer.Typer(
     name="bdns-sync",

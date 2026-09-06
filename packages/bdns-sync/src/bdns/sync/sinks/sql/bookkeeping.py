@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Shared plumbing every `sync_*` function runs through: create tables,
-log the run in `_sync_runs`, apply the entity's own fetch and SCD2 logic,
-record the outcome, and bump the `_sync_state` watermark.
+"""Shared plumbing every `sync_*` function runs through.
+
+Create the tables, log the run in `_sync_runs`, apply the entity's own
+fetch and SCD2 logic, record the outcome, and bump the `_sync_state`
+watermark.
 
 Bookkeeping events are committed in their own short transactions, separate
 from the data transaction. Inside the data transaction they would inherit
@@ -35,6 +37,8 @@ from sqlalchemy.engine import Engine
 from bdns.sync.sinks.sql.dialects import get_adapter
 from bdns.sync.sinks.sql.schema import build_control_tables, build_staging_table, build_sync_table
 
+__all__ = ["run_with_bookkeeping"]
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
@@ -46,9 +50,27 @@ def run_with_bookkeeping(
     apply_fn: Callable,
     skipped: Optional[list[dict[str, str]]] = None,
 ) -> dict[str, int]:
-    """`run_type` is a classification label for `_sync_runs`: either "full"
-    (full-catalog/swept/discover-then-detail syncs) or a reg-date window name
-    (daily/weekly/monthly/annual, for the incremental syncs).
+    """Run `apply_fn` inside the tables, transaction and run log it needs.
+
+    Args:
+        engine: Engine for the target database.
+        endpoint_name: Entity being synced, also the table name.
+        run_type: Classification label recorded in `_sync_runs`: "full"
+            for full-catalog, swept and discover-then-detail syncs, or a
+            reg-date window name ("daily", "weekly", "monthly",
+            "annual", "backfill") for the incremental ones.
+        apply_fn: Called as `apply_fn(conn, table, staging)` inside the
+            data transaction. Returns the run's stats.
+        skipped: Malformed-record descriptors to persist to
+            `_sync_errors`, linked to this run. Read after `apply_fn`
+            returns, so the caller may keep appending while it runs.
+
+    Returns:
+        The stats `apply_fn` returned.
+
+    Raises:
+        Exception: Whatever `apply_fn` raised, after the data transaction
+            rolled back and a `failed` event was committed to the log.
     """
     metadata = MetaData()
     table = build_sync_table(endpoint_name, metadata)

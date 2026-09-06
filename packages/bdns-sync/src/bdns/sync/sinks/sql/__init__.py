@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""SQL implementation of the Sink interface, covering every target with a
-SQLAlchemy dialect. Verified on SQLite and PostgreSQL (test suite)
-and BigQuery (live service).
+"""SQL implementation of the Sink interface.
+
+Covers every target with a SQLAlchemy dialect. Verified on SQLite and
+PostgreSQL (test suite) and BigQuery (live service).
 
 Module map: `schema.py` (generic SCD2 table shape + control tables),
 `scd2.py` (staging + bulk-diff apply logic), `bookkeeping.py` (run log,
@@ -21,6 +22,8 @@ from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
 from bdns.sync.sinks import DEFAULT_LIMITS, RejectLimits, Sink
 from bdns.sync.sinks.sql.bookkeeping import run_with_bookkeeping
 from bdns.sync.sinks.sql.scd2 import apply_full_reconciliation, apply_incremental
+
+__all__ = ["SQLSink"]
 
 
 class SQLSink(Sink):
@@ -42,6 +45,17 @@ class SQLSink(Sink):
 
     @classmethod
     def from_url(cls, url: str, limits: RejectLimits = DEFAULT_LIMITS) -> "SQLSink":
+        """Build a sink from a SQLAlchemy URL.
+
+        Args:
+            url: Any SQLAlchemy URL, e.g. `sqlite:///bdns.db`,
+                `postgresql://...`, `bigquery://project/dataset`.
+            limits: How much of a batch may be unusable before a run
+                refuses it.
+
+        Returns:
+            A sink on a new engine for that URL.
+        """
         return cls(create_engine(url), limits)
 
     def sync_full(
@@ -53,6 +67,11 @@ class SQLSink(Sink):
         policy: PayloadPolicy = DEFAULT_POLICY,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
+        """Reconcile `endpoint` against `rows` as its complete current state.
+
+        See `bdns.sync.sinks.Sink.sync_full` for the contract this
+        implements.
+        """
         # One list for both sources of skips: the caller's own (malformed
         # detail responses, which know the key they belong to) and the
         # sink's own rejections.
@@ -81,6 +100,11 @@ class SQLSink(Sink):
         policy: PayloadPolicy = DEFAULT_POLICY,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
+        """Apply `rows` as the slice of `endpoint` registered in a date range.
+
+        See `bdns.sync.sinks.Sink.sync_window` for the contract this
+        implements.
+        """
         skips = skipped if skipped is not None else []
 
         def apply_fn(conn, table, staging):
@@ -105,8 +129,10 @@ class SQLSink(Sink):
 
 
 def _attach_skips(stats: dict[str, int], skipped: list[dict[str, str]]) -> dict[str, int]:
-    """Count the skipped records into the stats AFTER the rows generator has
-    been fully consumed, which is what populated it.
+    """Count the skipped records into `stats`.
+
+    Called only after the rows generator is fully consumed, since that is
+    what populated the list.
 
     Always present, including as zero: the sink can reject records on its
     own, so every run has a skip count whether or not the caller passed a

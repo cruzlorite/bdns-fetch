@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Shared sync shapes reused by several entity modules. Each entity module
-still owns its own name, key fields, and any real one-off logic. Only the
-mechanical "fetch, then apply" plumbing lives here.
+"""Shared sync shapes reused by several entity modules.
+
+Each entity module still owns its own name, key fields, and any real
+one-off logic. Only the mechanical "fetch, then apply" plumbing lives
+here.
 """
 
 import inspect
@@ -15,6 +17,20 @@ from bdns.fetch import BDNSClient
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
 from bdns.sync.sinks import Sink
 
+__all__ = [
+    "CHUNK_DAYS",
+    "WINDOWS",
+    "all_pages",
+    "iter_date_chunks",
+    "resolve_when",
+    "sync_full_catalog",
+    "sync_search_range",
+    "sync_search_range_inclusive",
+    "sync_swept_catalog",
+    "to_api_upper_bound",
+    "window_bounds",
+]
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
@@ -22,12 +38,20 @@ logger.addHandler(logging.NullHandler())
 def all_pages(fetch):
     """Wrap a client fetch method so paginated endpoints return EVERY page.
 
-    bdns-fetch's `num_pages` option defaults to 1, which silently truncates
-    any response bigger than one page (pageSize max 10,000). Caught live:
-    grandesbeneficiarios_busqueda returned 10,000 of 142,260 rows. Passing
-    `num_pages=0` ("all pages") on every call is the fix, but only the
-    paginated methods accept the parameter, so it's added by signature
-    inspection instead of blindly.
+    bdns-fetch's `num_pages` option defaults to 1, which silently
+    truncates any response bigger than one page. Only the paginated
+    methods accept the parameter, so it is added by signature inspection
+    rather than blindly.
+
+    See docs/bdns-api-behavior.md#api-issues for what this cost when it
+    was missing.
+
+    Args:
+        fetch: A bound client fetch method.
+
+    Returns:
+        `fetch` unchanged if it takes no `num_pages`, otherwise a wrapper
+        that defaults it to 0, meaning "all pages".
     """
     params = inspect.signature(fetch).parameters
     if "num_pages" not in params:
@@ -59,9 +83,20 @@ CHUNK_DAYS = 7
 
 
 def iter_date_chunks(start: date, end: date, chunk_days: int = CHUNK_DAYS) -> Iterator[tuple[date, date]]:
-    """Split [start, end] (inclusive) into chunks of at most `chunk_days`,
-    contiguous and non-overlapping. Yields (start, end) is always at least
-    one item even if `start == end`.
+    """Split `[start, end]` into contiguous, non-overlapping chunks.
+
+    Both bounds are inclusive, the project-wide convention. Why the range
+    is chunked at all, and why the result does not depend on the chunk
+    size, is in docs/bdns-api-behavior.md#window-chunking.
+
+    Args:
+        start: First day of the range, inclusive.
+        end: Last day of the range, inclusive.
+        chunk_days: Maximum days per chunk.
+
+    Yields:
+        `(chunk_start, chunk_end)` pairs, both inclusive. Always at least
+        one pair, even when `start == end`.
     """
     current = start
     while current <= end:
@@ -71,28 +106,23 @@ def iter_date_chunks(start: date, end: date, chunk_days: int = CHUNK_DAYS) -> It
 
 
 def to_api_upper_bound(inclusive_end: date) -> date:
-    """Translate an inclusive end date (how windows and chunks are expressed
-    everywhere else in this codebase) into the value the four `fechaRegFin`
-    search endpoints expect.
+    """Convert an inclusive end date to the exclusive `fechaRegFin` bound.
 
-    Those endpoints (concesiones/ayudasestado/minimis/partidospoliticos)
-    treat `fechaRegFin` as EXCLUSIVE: it matches registrations strictly
-    before 00:00 of the given date, so it does NOT include the date's own
-    day. Confirmed live: querying `fechaRegFin=D` returned 0 rows for day D
-    (concesiones leaked a single midnight-exact row), while `fechaRegFin=D+1`
-    returned the whole day (~58,000 for concesiones). Left as a bare
-    `fechaRegFin=end`, `daily` (start == end) fetches almost nothing, and
-    every wider window silently drops its most recent day per chunk.
+    This is the only place that crosses from the codebase's inclusive
+    convention to the API's half-open one. Keep it here rather than
+    inlining a `+ 1` at call sites.
 
-    To include every registration made on `inclusive_end`, ask the API for
-    the day after. This function is the only place that crosses from the
-    codebase's inclusive convention to the API's half-open one. Keep it
-    here, not inlined as a `+ 1` at call sites.
+    It is NOT universal: it applies to the four `fechaRegFin` endpoints
+    only. The `fechaDesde`/`fechaHasta` family is inclusive and must not
+    go through here. Both semantics, and the measurements behind them,
+    are in docs/bdns-api-behavior.md#upper-bound.
 
-    IMPORTANT: this is NOT universal. convocatorias' discovery uses a
-    different parameter, `fechaHasta`, which is INCLUSIVE (also confirmed
-    live: `fechaHasta=D` returns the full day D). That path must NOT call
-    this function; see `syncers.discover_convocatoria_codes`.
+    Args:
+        inclusive_end: Last day the caller wants included.
+
+    Returns:
+        The day after, which is what `fechaRegFin` needs in order to
+        cover `inclusive_end` itself.
     """
     return inclusive_end + timedelta(days=1)
 
@@ -100,7 +130,18 @@ def to_api_upper_bound(inclusive_end: date) -> date:
 def sync_full_catalog(
     sink: Sink, client: BDNSClient, endpoint_name: str, fetch_method_name: str, key_fields: Sequence[str]
 ) -> dict[str, int]:
-    """Fetch everything with one no-arg call, full-reconcile every run."""
+    """Fetch everything with one no-arg call, full-reconcile every run.
+
+    Args:
+        sink: Where the rows are applied.
+        client: The BDNS API client.
+        endpoint_name: Table name for this entity.
+        fetch_method_name: Client method to call, by name.
+        key_fields: Fields forming the natural key.
+
+    Returns:
+        The sink's per-run counters.
+    """
     fetch = all_pages(getattr(client, fetch_method_name))
     return sink.sync_full(endpoint_name, fetch(), key_fields)
 
@@ -114,10 +155,24 @@ def sync_swept_catalog(
     sweep_values: Sequence[str],
     key_fields: Sequence[str],
 ) -> dict[str, int]:
-    """Sweep `sweep_param` across `sweep_values`, merging into one table
-    before reconciling. Reconciling per sweep value would wrongly close out
-    the other values' rows as "missing". The sweep value is tagged onto the
-    payload under `sweep_param` since the API doesn't echo it back.
+    """Sweep one parameter across several values into a single table.
+
+    All values are merged before reconciling. Reconciling per sweep value
+    would wrongly close out the other values' rows as missing.
+
+    Args:
+        sink: Where the rows are applied.
+        client: The BDNS API client.
+        endpoint_name: Table name for this entity.
+        fetch_method_name: Client method to call, by name.
+        sweep_param: Parameter swept across `sweep_values`. Tagged onto
+            each payload under this name, since the API does not echo it
+            back.
+        sweep_values: The values to sweep over.
+        key_fields: Fields forming the natural key.
+
+    Returns:
+        The sink's per-run counters.
     """
     fetch = all_pages(getattr(client, fetch_method_name))
 
@@ -132,8 +187,18 @@ def sync_swept_catalog(
 
 
 def window_bounds(window: str) -> tuple[date, date]:
-    """Map a cascade window name to its inclusive `[start, end]` range. `end`
-    is always yesterday (see `to_api_upper_bound` for why today is excluded).
+    """Map a cascade window name to its inclusive `[start, end]` range.
+
+    Args:
+        window: A key of `WINDOWS`.
+
+    Returns:
+        `(start, end)`, both inclusive. `end` is always yesterday: today
+        is still accruing registrations, so syncing it would leave a
+        partial day behind that nothing revisits.
+
+    Raises:
+        KeyError: If `window` is not a known window name.
     """
     days = WINDOWS[window]
     end = date.today() - timedelta(days=1)
@@ -143,14 +208,24 @@ def window_bounds(window: str) -> tuple[date, date]:
 def resolve_when(
     window: Optional[str], since: Optional[date], until: Optional[date]
 ) -> tuple[date, date, str]:
-    """Turn the two ways of asking for a reg-date range (a named cascade
-    `window`, or an explicit `since`/`until` backfill range) into a single
-    `(start, end, run_type)` triple.
+    """Resolve the two ways of asking for a reg-date range into one triple.
 
-    An explicit `since` wins over `window` and marks the run as "backfill"
-    in `_sync_runs` (`until` defaults to yesterday). This is what lets the
-    tool stay a pure primitive: cadence and history bounds are the caller's
-    business (`scripts/`), the engine just syncs whatever range it's told.
+    Keeping both forms behind one resolver is what lets the tool stay a
+    pure primitive: cadence and history bounds are the caller's business
+    (see `scripts/`), and the engine syncs whatever range it is told.
+
+    Args:
+        window: A named cascade window, or None.
+        since: First day of an explicit backfill range, or None. Wins
+            over `window` when both are given.
+        until: Last day of the backfill range. Defaults to yesterday.
+
+    Returns:
+        `(start, end, run_type)`. `run_type` is the label recorded in
+        `_sync_runs`: the window name, or "backfill".
+
+    Raises:
+        ValueError: If neither `window` nor `since` was given.
     """
     if since is not None:
         end = until if until is not None else date.today() - timedelta(days=1)
@@ -173,20 +248,32 @@ def sync_search_range(
     reg_date_field: Optional[str] = None,
     policy: PayloadPolicy = DEFAULT_POLICY,
 ) -> dict[str, int]:
-    """Fetch the reg-date range `[start, end]` and apply incrementally. Used
-    for both cascade windows (a few days back) and backfills (years back);
-    same machinery, only the range and `run_type` label differ.
+    """Fetch a `fechaRegInicio`/`fechaRegFin` range and apply incrementally.
 
-    By default this never closes out keys, since a range is a subset of the
-    table, not its full current state. `reg_date_field` opts into
-    window-scoped deletion detection (see `scd2.apply_incremental`); only
-    entities that expose their own registration date can use it, confirmed
-    live per entity.
+    Cascade windows and backfills use the same machinery; only the range
+    and the `run_type` label differ. The fetch is chunked into
+    `CHUNK_DAYS`-wide pieces, but the window handed to the sink still
+    spans the whole `[start, end]`: deletion scoping cares about the
+    range asked for, not how it was split to fetch it.
 
-    The fetch is chunked into `CHUNK_DAYS`-wide pieces (see `iter_date_chunks`
-    and `to_api_upper_bound`). `window_start`/`window_end` given to
-    `apply_incremental` still span the whole `[start, end]`, since deletion
-    scoping cares about the full range, not how it was split to fetch it.
+    Args:
+        sink: Where the rows are applied.
+        client: The BDNS API client.
+        endpoint_name: Table name for this entity.
+        fetch_method_name: Client method to call, by name.
+        key_fields: Fields forming the natural key.
+        start: First day of the range, inclusive.
+        end: Last day of the range, inclusive.
+        run_type: Label recorded in `_sync_runs`.
+        reg_date_field: Opts into window-scoped deletion detection. Left
+            None, the run never closes out a key, because a range is a
+            subset of the table rather than its full current state. Only
+            entities that expose their own registration date can set it;
+            see docs/bdns-api-behavior.md#windowed-deletions.
+        policy: Rules applied to each record before storing and hashing.
+
+    Returns:
+        The sink's per-run counters.
     """
     fetch = all_pages(getattr(client, fetch_method_name))
 
@@ -216,12 +303,28 @@ def sync_search_range_inclusive(
     reg_date_field: Optional[str] = None,
     policy: PayloadPolicy = DEFAULT_POLICY,
 ) -> dict[str, int]:
-    """Same shape as `sync_search_range`, for the OTHER date-parameter family:
-    `fechaDesde`/`fechaHasta`, which is INCLUSIVE on the upper bound (unlike
-    `fechaRegFin`; see `to_api_upper_bound` and section 2 of
-    docs/bdns-api-behavior.md).
-    `chunk_end` is passed as-is, with NO `to_api_upper_bound` bridge.
-    Calling it here would over-fetch one extra day past the window.
+    """Fetch a `fechaDesde`/`fechaHasta` range and apply incrementally.
+
+    Same shape as `sync_search_range`, for the other date-parameter
+    family. This one is inclusive on the upper bound, so `chunk_end` is
+    passed as-is with no `to_api_upper_bound` bridge; calling it here
+    would over-fetch one day past the window. Both semantics are in
+    docs/bdns-api-behavior.md#upper-bound.
+
+    Args:
+        sink: Where the rows are applied.
+        client: The BDNS API client.
+        endpoint_name: Table name for this entity.
+        fetch_method_name: Client method to call, by name.
+        key_fields: Fields forming the natural key.
+        start: First day of the range, inclusive.
+        end: Last day of the range, inclusive.
+        run_type: Label recorded in `_sync_runs`.
+        reg_date_field: Opts into window-scoped deletion detection.
+        policy: Rules applied to each record before storing and hashing.
+
+    Returns:
+        The sink's per-run counters.
     """
     fetch = all_pages(getattr(client, fetch_method_name))
 

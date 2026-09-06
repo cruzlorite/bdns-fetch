@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Live verification that the BDNS API still behaves the way this engine
-assumes.
+"""Live verification that the BDNS API still behaves as this engine assumes.
 
 Everything the date handling does rests on behavior measured once against
-the real service and then frozen into tests (section 2 of
-docs/bdns-api-behavior.md). Those tests pin the assumption, not the API:
+the real service and then frozen into tests (see
+docs/bdns-api-behavior.md#upper-bound). Those tests pin the assumption,
+not the API:
 `tests/fake_client.py` models the same semantics, so if the source ever
 changes them, CI stays green forever while production quietly loses a day
 at every chunk boundary.
@@ -23,6 +23,8 @@ from typing import Optional
 
 from bdns.fetch import BDNSClient
 from bdns.sync.generic import all_pages
+
+__all__ = ["check_api_contract"]
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -122,8 +124,10 @@ def _probe_inclusive(client, day, problems):
 
 
 def _check_shape(name, records, key_field, reg_field, day, problems):
-    """The record-level assumptions: the natural key and the registration
-    date are there, usable, and mean what the engine thinks they mean.
+    """Check the record-level assumptions, appending any failures to `problems`.
+
+    Namely that the natural key and the registration date are present,
+    usable, and mean what the engine thinks they mean.
     """
     missing_key = sum(1 for r in records if not isinstance(r, dict) or r.get(key_field) is None)
     if missing_key:
@@ -142,17 +146,23 @@ def _check_shape(name, records, key_field, reg_field, day, problems):
 def check_api_contract(client: BDNSClient, day: Optional[date] = None) -> tuple[str, list[str]]:
     """Ask the live API whether it still behaves the way this engine assumes.
 
-    Returns `(status, messages)`. `status` is:
+    Args:
+        client: The BDNS API client.
+        day: Probe day. Defaults to `API_CHECK_LOOKBACK_DAYS` ago, far
+            enough back that the day is fully registered.
 
-    - "ok": every invariant held.
-    - "inconclusive": the probe days came back empty or the API errored.
-      Deliberately NOT a failure. Transient trouble is normal here
-      (ERR_MANTENIMIENTO_BBDD, error pages), and blocking a whole day's
-      cadence over it would cost far more than it saves. A genuinely
-      unreachable API makes the syncs themselves fail, which is the signal.
-    - "changed": the API returned valid data that contradicts an
-      invariant. That is the one case worth stopping for, because syncing
-      through a changed boundary loses or duplicates data silently.
+    Returns:
+        `(status, messages)`, where `status` is one of:
+
+        - "ok": every invariant held.
+        - "inconclusive": the probe days came back empty or the API
+          errored. Deliberately not a failure. Transient trouble is
+          normal here, and blocking a whole day's cadence over it would
+          cost more than it saves; a genuinely unreachable API makes the
+          syncs themselves fail, which is the real signal.
+        - "changed": the API returned valid data contradicting an
+          invariant. The one case worth stopping for, because syncing
+          through a changed boundary loses or duplicates data silently.
     """
     start = day or (date.today() - timedelta(days=API_CHECK_LOOKBACK_DAYS))
     problems: list[str] = []

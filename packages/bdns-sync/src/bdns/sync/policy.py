@@ -41,14 +41,16 @@ from typing import Any
 
 from bdns.sync.hashing import row_hash
 
+__all__ = ["DEFAULT_POLICY", "PayloadPolicy"]
+
 
 @dataclass(frozen=True)
 class PayloadPolicy:
     """The rules one entity's records go through.
 
-    Defaults are the measured findings for each entity (see section 9 of
-    docs/bdns-api-behavior.md), declared in `bdns.sync.syncers` next to
-    the entity they belong to. The empty policy is the identity function:
+    Defaults are the measured findings for each entity (see
+    docs/bdns-api-behavior.md#spurious-changes), declared in
+    `bdns.sync.syncers` next to the entity they belong to. The empty policy is the identity function:
     store what arrived, hash all of it.
 
     Attributes:

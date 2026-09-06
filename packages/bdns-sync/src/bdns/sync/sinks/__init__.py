@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Storage abstraction. Everything above this package fetches rows; a
-Sink persists them.
+"""The storage abstraction: everything above this package fetches rows, a sink persists them.
 
 The interface is batch-oriented on purpose. A sink receives the complete
 batch of rows one sync run fetched, plus the context needed to version
@@ -24,6 +23,8 @@ from datetime import date
 from typing import Any, Optional
 
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
+
+__all__ = ["DEFAULT_LIMITS", "RejectLimits", "Sink", "get_sink"]
 
 
 @dataclass(frozen=True)
@@ -61,7 +62,17 @@ class RejectLimits:
     min_to_enforce_ratio: int = 5
 
     def rejection(self, fetched: int, rejected: int) -> Optional[str]:
-        """Why this batch must not be applied, or None if it may be."""
+        """Return why this batch must not be applied, or None if it may be.
+
+        Args:
+            fetched: Records that were versioned successfully.
+            rejected: Records that could not be versioned.
+
+        Returns:
+            A sentence naming the count, the share and the limit that was
+            crossed, suitable for the run log. None when the batch is
+            within tolerance, including when nothing was rejected.
+        """
         if not rejected:
             return None
         total = fetched + rejected
@@ -76,6 +87,11 @@ class RejectLimits:
         return None
 
     def describe(self) -> str:
+        """Return one canonical line naming the limits in force.
+
+        Recorded per run, so a run that was refused can be read back
+        against the tolerances that refused it.
+        """
         cap = "none" if self.max_count is None else str(self.max_count)
         return (
             f"max_ratio={self.max_ratio:.0%} max_count={cap} "

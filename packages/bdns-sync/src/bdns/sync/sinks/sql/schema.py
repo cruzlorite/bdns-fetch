@@ -19,36 +19,49 @@ from sqlalchemy import (
 )
 from sqlalchemy.types import TypeDecorator
 
+__all__ = ["PortableJSON", "build_control_tables", "build_staging_table", "build_sync_table"]
+
 
 class PortableJSON(TypeDecorator):
-    """Stores JSON as text and (de)serializes in Python instead of relying
-    on a dialect's native JSON type. `sqlalchemy.JSON` hits real gaps on
-    BigQuery (no bind-parameter type for JSON, missing serializer wiring);
-    plain text is uniformly supported everywhere, and `payload` is never
-    queried in SQL by this codebase, only read back as a dict in Python.
+    """JSON stored as text, serialized in Python rather than by the dialect.
+
+    `sqlalchemy.JSON` hits real gaps on BigQuery: no bind-parameter type
+    for JSON, and missing serializer wiring. Plain text is uniformly
+    supported everywhere, and `payload` is never queried in SQL by this
+    codebase, only read back as a dict in Python.
     """
 
     impl = Text
     cache_ok = True
 
     def process_bind_param(self, value: Optional[Any], dialect) -> Optional[str]:
+        """Serialize a Python value to the JSON text stored in the column."""
         if value is None:
             return None
         return json.dumps(value, default=str, ensure_ascii=False)
 
     def process_result_value(self, value: Optional[str], dialect) -> Optional[Any]:
+        """Deserialize the stored JSON text back into a Python value."""
         if value is None:
             return None
         return json.loads(value)
 
 
 def build_sync_table(name: str, metadata: MetaData) -> Table:
-    """Build the fixed generic SCD2 table for one synced endpoint. No per-field schema.
+    """Build the fixed generic SCD2 table for one synced endpoint.
 
-    `_reg_date` is generic too, not a per-endpoint field: it's only populated
-    for entities that opt into window-scoped deletion detection (see
-    `scd2.apply_incremental`'s `reg_date_field` param); everything else
-    leaves it `NULL` forever.
+    There is no per-field schema: the record is stored whole in
+    `payload`, and every other column is versioning metadata. `_reg_date`
+    is generic too, populated only for entities that opt into
+    window-scoped deletion detection; everything else leaves it NULL
+    forever.
+
+    Args:
+        name: Table name, which is also the endpoint name.
+        metadata: MetaData the table is attached to.
+
+    Returns:
+        The table. Not created here; the caller emits the DDL.
     """
     return Table(
         name,
@@ -75,8 +88,17 @@ def build_sync_table(name: str, metadata: MetaData) -> Table:
 
 
 def build_staging_table(name: str, metadata: MetaData) -> Table:
-    """Scratch table for one sync run's fetched batch. Cleared before use,
-    diffed against the real table via bulk SQL instead of per-row loops.
+    """Build the scratch table holding one run's fetched batch.
+
+    Cleared before use, then diffed against the real table with bulk SQL
+    rather than per-row loops.
+
+    Args:
+        name: Endpoint name. The table is `_staging_<name>`.
+        metadata: MetaData the table is attached to.
+
+    Returns:
+        The staging table. Not created here; the caller emits the DDL.
     """
     return Table(
         f"_staging_{name}",
@@ -91,20 +113,28 @@ def build_staging_table(name: str, metadata: MetaData) -> Table:
 
 
 def build_control_tables(metadata: MetaData) -> tuple[Table, Table, Table]:
-    """`_sync_state` (per-table watermark), `_sync_runs` (append-only event
-    log), and `_sync_errors` (one row per skipped malformed record).
+    """Build the three tables that record what the engine did.
 
-    `_sync_runs` is an EVENT log, never updated in place: one `started` row
-    when a run begins (committed immediately, outside the data transaction)
-    and one terminal `success`/`failed` row when it ends. A run's state is
-    its latest event; a `started` with no terminal event means the process
-    died mid-run (crash, kill). A mutable status column could never record
-    that state, since a dead process can't update its own row. Row counters travel on the terminal event.
+    `_sync_runs` is an event log, never updated in place: one `started`
+    row when a run begins, committed immediately and outside the data
+    transaction, and one terminal `success`/`failed` row when it ends. A
+    run's state is its latest event, so a `started` with no terminal
+    event means the process died mid-run. A mutable status column could
+    never record that, since a dead process cannot update its own row.
+    Row counters travel on the terminal event.
 
     `_sync_errors` is separate from the synced tables on purpose: a
-    malformed record has no natural key and no real payload, so it can't be
-    versioned the way a normal row is. Keeping it in its own table means the
-    synced tables stay free of anything that isn't real business data.
+    malformed record has no natural key and no real payload, so it cannot
+    be versioned the way a normal row is. Its own table keeps the synced
+    tables free of anything that is not real business data.
+
+    Args:
+        metadata: MetaData the tables are attached to.
+
+    Returns:
+        `(_sync_state, _sync_runs, _sync_errors)`: the per-table
+        watermark, the append-only run log, and one row per skipped
+        malformed record.
     """
     sync_state = Table(
         "_sync_state",

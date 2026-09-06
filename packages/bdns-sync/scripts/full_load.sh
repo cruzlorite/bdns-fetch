@@ -43,7 +43,6 @@ run bdns-sync sync finalidades
 run bdns-sync sync beneficiarios
 run bdns-sync sync instrumentos
 run bdns-sync sync objetivos
-run bdns-sync sync convocatorias_ultimas
 run bdns-sync sync organos
 run bdns-sync sync organos_agrupacion
 run bdns-sync sync regiones

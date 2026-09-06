@@ -130,12 +130,6 @@ def sync_objetivos(sink: Sink, client: BDNSClient) -> dict[str, int]:
     return sync_full_catalog(sink, client, "objetivos", "fetch_objetivos", ("id",))
 
 
-def sync_convocatorias_ultimas(sink: Sink, client: BDNSClient) -> dict[str, int]:
-    return sync_full_catalog(
-        sink, client, "convocatorias_ultimas", "fetch_convocatorias_ultimas", ("id",)
-    )
-
-
 def sync_regiones(sink: Sink, client: BDNSClient) -> dict[str, int]:
     # Tree-shaped, but still a single call. Unlike organos*, there's no idAdmon sweep here.
     return sync_full_catalog(sink, client, "regiones", "fetch_regiones", ("id",))
@@ -570,7 +564,6 @@ FULL_SYNCERS = {
     "beneficiarios": sync_beneficiarios,
     "instrumentos": sync_instrumentos,
     "objetivos": sync_objetivos,
-    "convocatorias_ultimas": sync_convocatorias_ultimas,
     "regiones": sync_regiones,
     "sanciones_busqueda": sync_sanciones_busqueda,
     "organos": sync_organos,

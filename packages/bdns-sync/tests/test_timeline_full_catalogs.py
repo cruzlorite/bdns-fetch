@@ -1,6 +1,6 @@
 """Multi-day scenarios for every full-replace-every-run entity (the "Simple"
 row of the README endpoint table): sectores, actividades, finalidades,
-beneficiarios, instrumentos, objetivos, convocatorias_ultimas, regiones,
+beneficiarios, instrumentos, objetivos, regiones,
 sanciones_busqueda. Real anonymized payloads, real key fields, one shared
 day-by-day script covering insert / touch / rewrite / deletion / new-arrival.
 
@@ -19,7 +19,6 @@ from bdns.sync.sinks.sql import SQLSink
 from bdns.sync.syncers import (
     sync_actividades,
     sync_beneficiarios,
-    sync_convocatorias_ultimas,
     sync_finalidades,
     sync_grandesbeneficiarios_anios,
     sync_instrumentos,
@@ -42,7 +41,6 @@ FULL_CATALOG_CASES = [
     (sync_beneficiarios, "beneficiarios", "beneficiarios", ("id",), "descripcion"),
     (sync_instrumentos, "instrumentos", "instrumentos", ("id",), "descripcion"),
     (sync_objetivos, "objetivos", "objetivos", ("id",), "descripcion"),
-    (sync_convocatorias_ultimas, "convocatorias_ultimas", "convocatorias_ultimas", ("id",), "descripcion"),
     (sync_regiones, "regiones", "regiones", ("id",), "descripcion"),
     (
         sync_grandesbeneficiarios_anios,

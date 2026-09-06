@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- `convocatorias_ultimas` is no longer synced. It is a rolling feed of the most recently received calls, not a
+  catalog, so reconciling it against the full current state closed about 30 rows a day that were not withdrawals,
+  just calls dropping out of the latest N. Its 2,000 rows were almost all closed versions recording that churn.
+  Everything it held is in `convocatorias_busqueda`, with a registration date and without the noise. Existing
+  targets can drop the table and its rows in `_sync_state` and `_sync_runs`; nothing else refers to them.
+
 ### Added
 
 - `--dry-run` on `sync`: resolves the invocation and prints what it would do, touching neither the API nor the

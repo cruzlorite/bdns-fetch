@@ -189,7 +189,7 @@ Small catalogs, where fetching the complete set on every run is affordable.
 
 | Shape | Reason | Entities |
 |---|---|---|
-| Simple | A single call, no parameters | `sectores`, `actividades`, `finalidades`, `beneficiarios`, `instrumentos`, `objetivos`, `convocatorias_ultimas`, `regiones` |
+| Simple | A single call, no parameters | `sectores`, `actividades`, `finalidades`, `beneficiarios`, `instrumentos`, `objetivos`, `regiones` |
 | Swept | The API does not return the union when the parameter is omitted; each value must be queried and the results merged into one table | `organos`/`organos_agrupacion` (sweep `idAdmon`), `reglamentos` (sweeps `ambito`), `sanciones_busqueda` |
 | Discover-then-detail | The listing does not include every field | `planesestrategicos_busqueda`/`planesestrategicos`/`planesestrategicos_vigencia`, `grandesbeneficiarios_anios`/`grandesbeneficiarios_busqueda` |
 
@@ -257,6 +257,7 @@ The design follows the official ["Buenas prácticas API SNPSAP"](https://www.inf
 The source API's problematic behaviors (malformed records, `ERR_MANTENIMIENTO_BBDD`, inconsistent date semantics, and so on) are consolidated in [known API issues](docs/bdns-api-behavior.en.md#8-known-api-issues). Limitations of the tool itself:
 
 - `organos_codigo` and `organos_codigoadmin` are not implemented (group H); see the [roadmap](docs/roadmap.en.md).
+- `convocatorias_ultimas` is not synced. It is a rolling feed of the most recently received calls, not a catalog: versioning it under SCD2 closed about 30 rows a day that were not withdrawals, just calls dropping out of the latest N. Everything it holds is in `convocatorias_busqueda`, with its registration date and without that noise.
 - `partidospoliticos_busqueda` has no deletion detection: its payload exposes no registration-date field (see [known API issues](docs/bdns-api-behavior.en.md#8-known-api-issues)).
 - Records that cannot be versioned are discarded and recorded in `_sync_errors`, with the reason and the content truncated to 200 characters, linked by `run_id`. Rejected: anything that is not a JSON object, a missing or null natural key, and a registration date that is missing, null, or not an ISO date. They never reach the synced tables: without a valid natural key there is nothing to version.
 - If rejections leave the batch empty, or exceed 10% with at least five of them, the run fails instead of applying. An empty staging is indistinguishable from "everything in this window was withdrawn", and window-scoped deletion detection would close the lot. The `rows_skipped` counter in `_sync_runs` is worth watching alongside the job-failure alert.

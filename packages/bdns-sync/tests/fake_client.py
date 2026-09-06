@@ -80,7 +80,6 @@ class FakeBDNSClient:
         self.beneficiarios = load_fixture("beneficiarios")
         self.instrumentos = load_fixture("instrumentos")
         self.objetivos = load_fixture("objetivos")
-        self.convocatorias_ultimas = load_fixture("convocatorias_ultimas")
         self.regiones = load_fixture("regiones")
         self.sanciones_busqueda = load_fixture("sanciones_busqueda")
 
@@ -145,9 +144,6 @@ class FakeBDNSClient:
 
     def fetch_objetivos(self):
         yield from self.objetivos
-
-    def fetch_convocatorias_ultimas(self):
-        yield from self.convocatorias_ultimas
 
     def fetch_regiones(self):
         yield from self.regiones

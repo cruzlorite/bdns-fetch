@@ -7,7 +7,7 @@ from bdns.sync.syncers import FULL_SYNCERS, SEARCH_SYNCERS
 
 
 def test_full_syncers_cover_every_expected_table():
-    assert len(FULL_SYNCERS) == 17
+    assert len(FULL_SYNCERS) == 16
     for name, fn in FULL_SYNCERS.items():
         assert isinstance(name, str) and name
         assert callable(fn)

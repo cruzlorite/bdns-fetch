@@ -187,7 +187,7 @@ Catálogos pequeños, donde traer el conjunto entero en cada ejecución sale bar
 
 | Forma | Motivo | Entidades |
 |---|---|---|
-| Simple | Una sola llamada, sin parámetros | `sectores`, `actividades`, `finalidades`, `beneficiarios`, `instrumentos`, `objetivos`, `convocatorias_ultimas`, `regiones` |
+| Simple | Una sola llamada, sin parámetros | `sectores`, `actividades`, `finalidades`, `beneficiarios`, `instrumentos`, `objetivos`, `regiones` |
 | Barrido | La API no devuelve la unión si se omite el parámetro: hay que consultar valor por valor y juntar los resultados en una tabla | `organos`/`organos_agrupacion` (barren `idAdmon`), `reglamentos` (barre `ambito`), `sanciones_busqueda` |
 | Descubrimiento y detalle | El listado no trae todos los campos | `planesestrategicos_busqueda`/`planesestrategicos`/`planesestrategicos_vigencia`, `grandesbeneficiarios_anios`/`grandesbeneficiarios_busqueda` |
 
@@ -255,6 +255,7 @@ El diseño sigue el documento oficial ["Buenas prácticas API SNPSAP"](https://w
 Los comportamientos problemáticos de la API de origen (registros malformados, `ERR_MANTENIMIENTO_BBDD`, fechas con semántica inconsistente, etc.) están recogidos en los [problemas conocidos de la API](docs/bdns-api-behavior.md#8-problemas-conocidos-de-la-api). Las limitaciones de la propia herramienta son estas:
 
 - `organos_codigo` y `organos_codigoadmin` no están implementados (grupo H); ver la [hoja de ruta](docs/roadmap.md).
+- `convocatorias_ultimas` no se sincroniza. Es un feed rodante de las últimas convocatorias recibidas, no un catálogo: versionarlo con SCD2 cerraba unas 30 filas al día que no eran bajas, sino convocatorias que dejaban de estar entre las últimas. Todo lo que contiene está en `convocatorias_busqueda`, con su fecha de registro y sin ese ruido.
 - `partidospoliticos_busqueda` no tiene detección de bajas: su payload no trae ningún campo de fecha de registro (ver [problemas conocidos de la API](docs/bdns-api-behavior.md#8-problemas-conocidos-de-la-api)).
 - Los registros que no se pueden versionar se descartan y quedan anotados en `_sync_errors`, con el motivo y el contenido cortado a 200 caracteres, enlazados por `run_id`. Se rechaza lo que no es un objeto JSON, la clave natural ausente o nula, y la fecha de registro ausente, nula o que no sea una fecha ISO. Nunca llegan a las tablas sincronizadas: sin clave natural válida no hay nada que versionar.
 - Si los descartes dejan el lote vacío, o pasan del 10% habiendo al menos cinco, la ejecución falla en lugar de aplicarse. Un staging vacío es indistinguible de «todo lo de esta ventana se ha dado de baja», y la detección de bajas por ventana lo cerraría entero. El contador `rows_skipped` de `_sync_runs` conviene vigilarlo además de la alerta de fallo del job.

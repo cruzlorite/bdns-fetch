@@ -19,7 +19,7 @@
 # widen to monthly, and three days a year (Jan/May/Sep 1st) to annual, for
 # progressively deeper reconciliation.
 #
-# One failing entity must not cancel the other 22. They are independent
+# One failing entity must not cancel the other 21. They are independent
 # syncs sharing nothing but the target, so aborting the whole day over one
 # of them just widens the outage: seen live on 2 September 2026, when
 # `sectores` (a 24-row catalog) hit the BigQuery daily quota and took the
@@ -89,7 +89,6 @@ run bdns-sync sync finalidades
 run bdns-sync sync beneficiarios
 run bdns-sync sync instrumentos
 run bdns-sync sync objetivos
-run bdns-sync sync convocatorias_ultimas
 run bdns-sync sync organos
 run bdns-sync sync organos_agrupacion
 run bdns-sync sync regiones

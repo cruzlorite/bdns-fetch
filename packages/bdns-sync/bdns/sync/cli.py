@@ -11,14 +11,15 @@ from datetime import date
 from typing import Optional
 
 import typer
+from sqlalchemy.engine import make_url
 
 import bdns.fetch.client as _bdns_fetch_client
 from bdns.fetch import BDNSClient
 from bdns.sync import __version__
 from bdns.sync.api_contract import check_api_contract
-from bdns.sync.generic import WINDOWS
+from bdns.sync.generic import CHUNK_DAYS, WINDOWS, iter_date_chunks, resolve_when
 from bdns.sync.sinks import get_sink
-from bdns.sync.syncers import FULL_SYNCERS, SEARCH_SYNCERS
+from bdns.sync.syncers import FULL_SYNCERS, SEARCH_SYNCERS, policy_for
 
 app = typer.Typer(
     name="bdns-sync",
@@ -91,6 +92,56 @@ def _parse_iso_date(value: Optional[str], flag: str) -> Optional[date]:
         raise typer.BadParameter(f"{flag} must be an ISO date (YYYY-MM-DD), got {value!r}") from None
 
 
+def _resolve_plan(
+    endpoint: str, window: Optional[str], since: Optional[date], until: Optional[date]
+) -> tuple[Optional[date], Optional[date], str]:
+    """Validate the invocation and work out what it would do.
+
+    Shared by the real run and `--dry-run`, so a preview cannot disagree
+    with the run it previews: the same rejections happen, in the same
+    order, before either path goes anywhere.
+    """
+    if endpoint in SEARCH_SYNCERS:
+        if since is not None:
+            if window is not None:
+                raise typer.BadParameter("use either --window or --since, not both")
+            if until is not None and until < since:
+                raise typer.BadParameter("--until must not be before --since")
+        elif window is not None:
+            if window not in WINDOWS:
+                raise typer.BadParameter(f"window must be one of {', '.join(WINDOWS)}")
+        else:
+            raise typer.BadParameter(f"{endpoint} requires --window or --since")
+        return resolve_when(window, since, until)
+    if endpoint in FULL_SYNCERS:
+        return None, None, "full"
+    raise typer.BadParameter(f"unknown endpoint: {endpoint}")
+
+
+def _echo_plan(
+    endpoint: str, target_url: str, start: Optional[date], end: Optional[date], run_type: str
+) -> None:
+    """Print the resolved invocation without touching anything.
+
+    The URL is rendered with its password hidden: this output goes to a
+    terminal and, from a script, to a log.
+    """
+    safe_url = make_url(target_url).render_as_string(hide_password=True)
+    typer.echo(f"target      {safe_url}  ->  table {endpoint}")
+    if start is None:
+        typer.echo(f"run type    {run_type}  (complete replace, no date range)")
+    else:
+        chunks = sum(1 for _ in iter_date_chunks(start, end))
+        days = (end - start).days + 1
+        typer.echo(f"run type    {run_type}")
+        typer.echo(
+            f"range       {start} .. {end}  "
+            f"({days} day(s), {chunks} chunk(s) of at most {CHUNK_DAYS})"
+        )
+    typer.echo(f"policy      {policy_for(endpoint).describe()}")
+    typer.echo("dry run     nothing fetched, nothing written")
+
+
 @app.command()
 def sync(
     endpoint: str = typer.Argument(..., help="Endpoint/entity name to sync."),
@@ -111,6 +162,12 @@ def sync(
         "--until",
         help="Backfill end date (YYYY-MM-DD). Defaults to yesterday. Only with --since.",
     ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Resolve and print what this invocation would do, then stop. "
+        "Touches neither the API nor the target.",
+    ),
 ) -> None:
     """Sync one endpoint.
 
@@ -119,6 +176,14 @@ def sync(
     or an explicit `--since [--until]` backfill range. Full-replace endpoints
     ignore all of these.
     """
+    since_date = _parse_iso_date(since, "--since")
+    until_date = _parse_iso_date(until, "--until")
+    start, end, run_type = _resolve_plan(endpoint, window, since_date, until_date)
+
+    if dry_run:
+        _echo_plan(endpoint, target_url, start, end, run_type)
+        return
+
     sink = get_sink(target_url)
     # Defaults (3 retries, 2s fixed wait) give up after ~1 minute of server
     # trouble; a real multi-hour backfill died live to one request timing
@@ -126,29 +191,16 @@ def sync(
     # the only cost is extra delay before a genuinely permanent failure.
     client = BDNSClient(max_retries=8, wait_time=15)
 
-    since_date = _parse_iso_date(since, "--since")
-    until_date = _parse_iso_date(until, "--until")
-
     # Outcome (row counts, duration) is logged by bookkeeping.run_with_bookkeeping;
     # no separate echo here to avoid printing the same summary twice.
     if endpoint in SEARCH_SYNCERS:
         sync_fn = SEARCH_SYNCERS[endpoint]
         if since_date is not None:
-            if window is not None:
-                raise typer.BadParameter("use either --window or --since, not both")
-            if until_date is not None and until_date < since_date:
-                raise typer.BadParameter("--until must not be before --since")
             sync_fn(sink, client, since=since_date, until=until_date)
-        elif window is not None:
-            if window not in WINDOWS:
-                raise typer.BadParameter(f"window must be one of {', '.join(WINDOWS)}")
-            sync_fn(sink, client, window)
         else:
-            raise typer.BadParameter(f"{endpoint} requires --window or --since")
-    elif endpoint in FULL_SYNCERS:
-        FULL_SYNCERS[endpoint](sink, client)
+            sync_fn(sink, client, window)
     else:
-        raise typer.BadParameter(f"unknown endpoint: {endpoint}")
+        FULL_SYNCERS[endpoint](sink, client)
 
 
 @app.command(name="list")

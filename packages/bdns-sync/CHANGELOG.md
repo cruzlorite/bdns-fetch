@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `--dry-run` on `sync`: resolves the invocation and prints what it would do, touching neither the API nor the
+  target. Shows the target (password hidden), the resolved date range with its chunk count, and the payload policy
+  that would apply. It runs the same validation as a real run, so a preview cannot accept what the run would reject.
+- The per-entity policies become a registry the syncers read through `policy_for`, so the rules a dry run prints and
+  the rules a sync applies cannot drift apart. A test pins that every key in it is a real entity: a typo there would
+  not fail, it would silently fall back to the default and start re-versioning on noise the entity used to ignore.
+
 ### Changed
 
 - The per-record rules (`exclude_from_hash`, `delimited_lists`, and array canonicalization) move into a

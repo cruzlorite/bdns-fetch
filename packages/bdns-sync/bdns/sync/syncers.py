@@ -29,7 +29,7 @@ from bdns.sync.generic import (
     sync_swept_catalog,
 )
 from bdns.sync.pipeline import rate_limited_map
-from bdns.sync.policy import PayloadPolicy
+from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
 from bdns.sync.sinks import Sink
 
 logger = logging.getLogger(__name__)
@@ -44,32 +44,41 @@ REGLAMENTOS_AMBITOS: tuple[str, ...] = tuple(Ambito)
 
 # --- per-entity payload policies -----------------------------------------
 #
-# The measured rules for each entity, in one place instead of spread across
-# call sites. Every one of them is a finding, not a preference; the evidence
-# is in section 9 of docs/bdns-api-behavior.md. Entities not named here take
-# the default: store what arrived, hash all of it.
+# The measured rules for each entity, in one place. Every one is a finding,
+# not a preference; the evidence is in section 9 of
+# docs/bdns-api-behavior.md. Entities absent from this map take the
+# default: store what arrived, hash all of it.
+#
+# This map is the definition, and the syncers read it through `policy_for`
+# rather than naming a constant of their own. That is what keeps the policy
+# a `--dry-run` prints identical to the one the sync applies.
 
-# `beneficiario` oscillates: of the keys whose name changed more than once,
-# 67% return to a spelling they already had (ASOCIACIÓN -> ASOCIACION ->
-# ASOCIACIÓN), with `idPersona` unchanged throughout. Hashing it re-versioned
-# 58% of the table.
-CONCESIONES_POLICY = PayloadPolicy(hash_exclude=("beneficiario",))
+POLICIES: dict[str, PayloadPolicy] = {
+    # `beneficiario` oscillates: of the keys whose name changed more than
+    # once, 67% return to a spelling they already had (ASOCIACIÓN ->
+    # ASOCIACION -> ASOCIACIÓN), with `idPersona` unchanged throughout.
+    # Hashing it re-versioned 58% of the table.
+    "concesiones_busqueda": PayloadPolicy(hash_exclude=("beneficiario",)),
+    # Same field, worse: the API returns a different spelling from one hour
+    # to the next, six variants for one idPersona in eleven days, same
+    # amount each time.
+    "grandesbeneficiarios_busqueda": PayloadPolicy(hash_exclude=("beneficiario",)),
+    # `sectores` is a list joined with "#" that comes back shuffled. The
+    # separator is unambiguous here, so the pattern is just that character.
+    "ayudasestado_busqueda": PayloadPolicy(delimited_lists={"sectores": "#"}),
+    # `sectorActividad` is shuffled too, but ";" alone cannot split it:
+    # several CNAE names carry a semicolon of their own ("Administración
+    # Pública y defensa; Seguridad Social obligatoria"). The pattern splits
+    # before the start of an element instead, leaving those whole.
+    "minimis_busqueda": PayloadPolicy(
+        delimited_lists={"sectorActividad": r";\s*(?=[A-Z0-9][A-Z0-9.]*\s*-\s)"}
+    ),
+}
 
-# The API returns a different spelling of the same name from one hour to the
-# next; six variants for one idPersona in eleven days, same amount each time.
-GRANDESBENEFICIARIOS_POLICY = PayloadPolicy(hash_exclude=("beneficiario",))
 
-# `sectores` is a list joined with "#" that comes back shuffled. The
-# separator is unambiguous here, so the pattern is just that character.
-AYUDASESTADO_POLICY = PayloadPolicy(delimited_lists={"sectores": "#"})
-
-# `sectorActividad` is shuffled too, but ";" alone cannot split it: several
-# CNAE names carry a semicolon of their own ("Administración Pública y
-# defensa; Seguridad Social obligatoria"). The pattern splits before the
-# start of an element instead, which leaves those descriptions whole.
-MINIMIS_POLICY = PayloadPolicy(
-    delimited_lists={"sectorActividad": r";\s*(?=[A-Z0-9][A-Z0-9.]*\s*-\s)"}
-)
+def policy_for(endpoint: str) -> PayloadPolicy:
+    """The rules that apply to one entity's records."""
+    return POLICIES.get(endpoint, DEFAULT_POLICY)
 
 
 def _skip_malformed(
@@ -207,7 +216,7 @@ def sync_concesiones_busqueda(
         end,
         run_type,
         reg_date_field="fechaAlta",
-        policy=CONCESIONES_POLICY,
+        policy=policy_for("concesiones_busqueda"),
     )
 
 
@@ -230,7 +239,7 @@ def sync_ayudasestado_busqueda(
         end,
         run_type,
         reg_date_field="fechaAlta",
-        policy=AYUDASESTADO_POLICY,
+        policy=policy_for("ayudasestado_busqueda"),
     )
 
 
@@ -253,7 +262,7 @@ def sync_minimis_busqueda(
         end,
         run_type,
         reg_date_field="fechaRegistro",
-        policy=MINIMIS_POLICY,
+        policy=policy_for("minimis_busqueda"),
     )
 
 
@@ -467,7 +476,7 @@ def sync_grandesbeneficiarios_busqueda(sink: Sink, client: BDNSClient) -> dict[s
         "grandesbeneficiarios_busqueda",
         all_pages(client.fetch_grandesbeneficiarios_busqueda)(anios=anios),
         ("idPersona", "ejercicio"),
-        policy=GRANDESBENEFICIARIOS_POLICY,
+        policy=policy_for("grandesbeneficiarios_busqueda"),
     )
 
 

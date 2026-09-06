@@ -107,3 +107,76 @@ def test_sync_rejects_unknown_window():
         ],
     )
     assert result.exit_code != 0
+
+
+# --- dry run ---------------------------------------------------------------
+#
+# Its whole value is that it previews the invocation you are about to run,
+# so it resolves through the same validation and the same date arithmetic
+# and then stops before touching the API or the target.
+
+
+def test_dry_run_resolves_a_window_to_concrete_dates_and_chunks():
+    result = runner.invoke(
+        app,
+        ["sync", "concesiones_busqueda", "--window", "monthly",
+         "--target-url", "sqlite:///:memory:", "--dry-run"],
+    )
+    assert result.exit_code == 0
+    output = plain(result)
+    assert "run type monthly" in output
+    assert "30 day(s), 5 chunk(s) of at most 7" in output
+
+
+def test_dry_run_shows_the_policy_that_would_apply():
+    result = runner.invoke(
+        app,
+        ["sync", "concesiones_busqueda", "--window", "daily",
+         "--target-url", "sqlite:///:memory:", "--dry-run"],
+    )
+    assert "hash_exclude=['beneficiario']" in plain(result)
+
+
+def test_dry_run_of_a_full_catalog_reports_no_date_range():
+    result = runner.invoke(
+        app, ["sync", "sectores", "--target-url", "sqlite:///:memory:", "--dry-run"]
+    )
+    assert result.exit_code == 0
+    assert "complete replace, no date range" in plain(result)
+
+
+def test_dry_run_hides_the_target_password():
+    """This output goes to a terminal and, from a script, into a log."""
+    result = runner.invoke(
+        app,
+        ["sync", "sectores", "--target-url", "postgresql://user:hunter2@host/db", "--dry-run"],
+    )
+    assert "hunter2" not in plain(result)
+    assert "***" in plain(result)
+
+
+def test_dry_run_touches_neither_the_api_nor_the_target(tmp_path):
+    db = tmp_path / "should-not-exist.db"
+    result = runner.invoke(
+        app, ["sync", "sectores", "--target-url", f"sqlite:///{db}", "--dry-run"]
+    )
+    assert result.exit_code == 0
+    assert not db.exists()
+
+
+def test_dry_run_still_rejects_an_invalid_invocation():
+    """A preview that accepted what the real run rejects would be worse than
+    no preview at all.
+    """
+    result = runner.invoke(
+        app, ["sync", "concesiones_busqueda", "--target-url", "sqlite:///:memory:", "--dry-run"]
+    )
+    assert result.exit_code != 0
+    assert "requires --window or --since" in plain(result)
+
+
+def test_dry_run_rejects_an_unknown_endpoint():
+    result = runner.invoke(
+        app, ["sync", "not_a_real_endpoint", "--target-url", "sqlite:///:memory:", "--dry-run"]
+    )
+    assert result.exit_code != 0

@@ -50,6 +50,9 @@ jobs:
       - name: Lint
         run: poetry run ruff check .
 
+      - name: Check doc references
+        run: poetry run python scripts/check_doc_refs.py
+
       - name: Test (SQLite)
         run: poetry run pytest
 

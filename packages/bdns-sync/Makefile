@@ -1,6 +1,6 @@
 # Makefile for BDNS Sync project
 
-.PHONY: help install dev-install test lint format clean all
+.PHONY: help install dev-install test lint format check-docs clean all
 
 .DEFAULT_GOAL := help
 
@@ -24,6 +24,9 @@ lint: ## Run code linting with ruff
 format: ## Format code with ruff formatter
 	poetry run ruff format .
 
+check-docs: ## Verify every docs/ reference in the code resolves
+	poetry run python scripts/check_doc_refs.py
+
 clean: ## Remove build artifacts and cache files
 	rm -rf dist/
 	rm -rf build/
@@ -35,4 +38,4 @@ clean: ## Remove build artifacts and cache files
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 
-all: dev-install lint format test ## Install, lint, format, and test everything
+all: dev-install lint format check-docs test ## Install, lint, format, check docs, and test everything

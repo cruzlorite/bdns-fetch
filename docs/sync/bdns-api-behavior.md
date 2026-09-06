@@ -6,10 +6,12 @@ Este documento recoge cómo se comporta de verdad la API de la BDNS con los par�
 
 Cada afirmación indica la comprobación empírica en la que se apoya.
 
+<a id="inclusive-range"></a>
 ## 1. Convención interna: rango de días inclusivo
 
 En `bdns-sync`, una ventana es un rango de días **cerrado por los dos extremos**: la ventana `daily` sobre el día `X` significa «los registros del día `X`». El extremo superior de cualquier ventana es *ayer* (`date.today() - 1`), porque los datos del día en curso no están cerrados hasta la mañana siguiente.
 
+<a id="upper-bound"></a>
 ## 2. Semántica del extremo superior según el endpoint
 
 La API tiene dos familias de parámetros de fecha, y el extremo superior se comporta justo **al revés** en cada una:
@@ -32,6 +34,7 @@ Qué pasa si esto se maneja mal, medido contra el servicio real:
 - Sin la conversión, la ventana `daily` de los cuatro endpoints `fechaReg` no devolvería prácticamente nada, y cualquier ventana más ancha perdería su día más reciente.
 - Con el troceo (ver sección 3) el error se multiplica: se pierde un día por cada frontera de tramo. Un rango de 28 días partido en días devolvió 8 filas en lugar de ~1,2 millones.
 
+<a id="window-chunking"></a>
 ## 3. Troceo de ventanas en tramos de 7 días
 
 Toda ventana se parte en tramos de 7 días como máximo antes de consultarse (`generic.iter_date_chunks`). Las ventanas `daily` y `weekly` caben en un solo tramo y no se ven afectadas; `monthly` y `annual` sí se parten. Los dos motivos están comprobados contra `concesiones_busqueda`:
@@ -45,6 +48,7 @@ Como la conversión de fechas se aplica a cada tramo, el resultado no varía con
 
 Los 7 días tampoco son críticos para la velocidad: sobre un rango fijo de 14 días de `concesiones_busqueda` (~530.000 filas), los tamaños de 1, 3, 7 y 14 días tardaron 51, 41, 47 y 57 s, diferencias que caben dentro del ruido de carga del servicio y sin errores en ningún caso. Se mantienen los 7 días por equilibrio: es rápido, es fiable y coincide con la ventana semanal.
 
+<a id="boundary-check"></a>
 ## 4. Verificación de los límites de ventana
 
 Para descartar tanto un solapamiento (traer un día de más) como un hueco (perder un día), se comprobó contra el servicio real, en las 5 entidades incrementales, que dos días consecutivos `X` y `X+1` consultados por la ruta real de producción, con la conversión que toca en cada familia, cumplen dos propiedades:
@@ -54,6 +58,7 @@ Para descartar tanto un solapamiento (traer un día de más) como un hueco (perd
 
 Las cuentas cuadran fila a fila: en `concesiones`, 115.862 + 68.457 = 184.319 filas, sin solapamiento. Un `+1` de más en la familia exclusiva, o un límite mal aplicado en la inclusiva, habría duplicado el día de la frontera; un día perdido habría roto la unión. El invariante queda fijado como test permanente en `tests/test_generic.py`.
 
+<a id="windowed-deletions"></a>
 ## 5. Detección de bajas acotada por ventana
 
 Las entidades `concesiones_busqueda`, `ayudasestado_busqueda`, `minimis_busqueda`, `convocatorias_busqueda` y `convocatorias` detectan bajas reales comparando, dentro de la misma ejecución, lo que devuelve la API con las filas de la tabla cuya fecha de registro (`fechaAlta`, `fechaRegistro` o `fechaRecepcion`, según la entidad) cae en ese mismo rango.
@@ -62,6 +67,7 @@ La comparación nunca se hace contra la ejecución anterior: daría falsos posit
 
 `partidospoliticos_busqueda` se queda fuera de la detección de bajas: se comprobó contra el servicio real, con más de 70 filas reales en dos rangos de fechas distintos, que su payload no trae ningún campo de fecha de registro. El documento oficial dice que este endpoint «funciona igual, con los mismos filtros y resultados» que `concesiones_busqueda`; en la práctica no es así. Es una limitación permanente mientras la API no cambie.
 
+<a id="history-depth"></a>
 ## 6. Profundidad histórica por endpoint
 
 Hasta dónde llega una carga histórica completa lo marca la retención de datos de la API en cada endpoint, medida contra el servicio real:
@@ -77,6 +83,7 @@ Hasta dónde llega una carga histórica completa lo marca la retención de datos
 
 Estas fechas no están escritas en `bdns-sync`: la herramienta es una pieza básica y no sabe hasta dónde llega cada endpoint. Igual que `scripts/delta_load.sh` se encarga de la cadencia, `scripts/full_load.sh` se encarga de las fechas de inicio y las pasa con `--since`. Consultar fechas anteriores a la retención solo devuelve semanas vacías, con una llamada barata cada una, así que las fechas del script son suelos conservadores, no los primeros registros exactos.
 
+<a id="performance"></a>
 ## 7. Rendimiento medido
 
 Cifras medidas contra el servicio real que justifican decisiones de diseño. Los detalles de funcionamiento están junto al código (`bdns/sync/sinks/sql/dialects.py`, `bdns/sync/pipeline.py`); esto es el registro de las pruebas.
@@ -99,6 +106,7 @@ Un rango de 7 días contra `concesiones_busqueda` trajo 147.856 filas sin errore
 
 Los valores por defecto de `bdns-fetch` (3 reintentos, espera fija de 2 s) se rinden al minuto escaso de problemas del servidor: una carga histórica real de varias horas se cayó por una sola petición que agotó sus 3 intentos. Con 8 reintentos y 15 s de espera se aguanta un bache de unos 2 minutos; lo único que cuesta es tardar más en darse por vencido ante un fallo realmente permanente.
 
+<a id="api-issues"></a>
 ## 8. Problemas conocidos de la API
 
 Cada punto sigue el mismo orden: qué hace la API, qué observamos, y qué hace `bdns-sync` al respecto. El resto del proyecto (README, comentarios del código) enlaza aquí en vez de repetir la explicación.
@@ -113,6 +121,7 @@ Cada punto sigue el mismo orden: qué hace la API, qué observamos, y qué hace 
 - **Retención limitada y distinta en cada endpoint.** Los datos disponibles van de ~4 años (`concesiones_busqueda`) a ~12 (`convocatorias`), según la entidad. `bdns-sync` no codifica esas fechas —consultar más atrás solo devuelve semanas vacías, que son llamadas baratas—, las decide el script del operador con `--since`; ver [sección 6](#6-profundidad-histórica-por-endpoint).
 - **Paginación inestable en fechas que siguen recibiendo altas.** Si el conjunto de resultados cambia mientras se pagina una ventana amplia, porque entran concesiones nuevas, la paginación por offset puede repetir en dos páginas seguidas las filas cercanas al borde. Solo afecta a fechas recientes, nunca a rangos ya cerrados, cuya paginación es estable. `bdns-sync` deduplica al insertar, así que las sincronizaciones normales no dejan duplicados; una carga histórica masiva en una sola pasada sí puede dejar algún par residual. Cómo detectarlo y limpiarlo: [`data-caveats.md`](data-caveats.md).
 
+<a id="spurious-changes"></a>
 ## 9. Cambios espurios: el mismo dato escrito de otra forma
 
 Un versionado SCD2 crea una versión nueva cada vez que cambia el hash del payload. Si la API devuelve el mismo dato escrito de otra manera entre una llamada y otra, se genera una versión que no aporta nada: ni el registro cambió ni hubo corrección administrativa, solo cambió cómo se compuso la respuesta.
@@ -144,6 +153,7 @@ LIMMAT M&M, S.L.              →  LIMMAT MM SL        (seis variantes en once d
 
 En `concesiones_busqueda`, los 230.878 cambios de `beneficiario` conservan **el mismo `idPersona` en el 100% de los casos**, y 213.176 son idénticos tras quitar acentos y puntuación. Nunca es otra persona: es la misma escrita de otra manera. El nombre probablemente se compone a partir de los registros subyacentes, donde cada órgano lo tecleó a su modo.
 
+<a id="hash-exclusion-criterion"></a>
 ### El criterio para excluir un campo del hash
 
 Un campo sale del hash **solo si su valor oscila**, es decir, si vuelve a valores que ya había tenido. Eso distingue un campo que la API reescribe al azar de uno que recibe correcciones reales, y evita excluir por analogía.
@@ -168,6 +178,7 @@ ASOCIACIÓN INCLUDD  →  ASOCIACION INCLUDD  →  ASOCIACIÓN INCLUDD
 
 En las entidades con muestra insuficiente el campo **se mantiene en el hash**, aunque una parte de sus cambios sea de formato. El volumen es bajo —del orden de centenares de versiones frente a las ~240.000 de `concesiones`— y ante la duda se prefiere registrar el cambio. La muestra es corta porque el histórico solo tiene dos meses y la mayoría de registros aún va por su primera o segunda versión; conviene rehacer esta medición cuando haya más recorrido.
 
+<a id="shuffled-lists"></a>
 ### Familia 2: listas barajadas dentro de una cadena
 
 Afecta a `minimis_busqueda` y `ayudasestado_busqueda`. El campo trae varios valores concatenados y el orden cambia entre llamadas, con los mismos elementos:
@@ -201,6 +212,7 @@ Ninguna otra entidad lleva regla alguna. Las dos familias se tratan distinto a p
 
 En los dos casos **solo cambia lo que el hash ve**: el payload se almacena exactamente como lo devolvió la API.
 
+<a id="intermittent-fields"></a>
 ### Familia 3: campos que dejan de venir y vuelven
 
 Un campo que normalmente trae valor vuelve `null` en una llamada y con valor en la siguiente. Medido sobre 3.000 pares de `convocatorias` y otros tantos del resto:

@@ -18,11 +18,56 @@
 # removals that a 1-day window would miss until the next wide pass. Mondays
 # widen to monthly, and three days a year (Jan/May/Sep 1st) to annual, for
 # progressively deeper reconciliation.
-set -euo pipefail
+#
+# One failing entity must not cancel the other 22. They are independent
+# syncs sharing nothing but the target, so aborting the whole day over one
+# of them just widens the outage: seen live on 2 September 2026, when
+# `sectores` (a 24-row catalog) hit the BigQuery daily quota and took the
+# other 22 entities down with it, leaving 1 run that day instead of 23.
+# So: no `set -e`. Failures are collected and reported at the end, and the
+# script still exits non-zero so the job is marked failed and the alert
+# fires. `-u` and `pipefail` stay; they catch bugs in this script itself.
+set -uo pipefail
 
 : "${BDNS_SYNC_TARGET_URL:?set BDNS_SYNC_TARGET_URL to the target DB URL}"
 
-run() { echo ">>> $*"; "$@"; }
+failed=()
+
+run() {
+  echo ">>> $*"
+  if ! "$@"; then
+    echo "!!! FAILED: $*" >&2
+    failed+=("$*")
+  fi
+}
+
+report_and_exit() {
+  # Captured first: this must preserve the status we were exiting with,
+  # or a run killed at the task timeout would report success just because
+  # no individual entity had failed yet.
+  local status=$?
+  if [ ${#failed[@]} -gt 0 ]; then
+    echo "=== ${#failed[@]} sync(s) failed ===" >&2
+    printf '  %s\n' "${failed[@]}" >&2
+    [ "$status" -eq 0 ] && status=1
+  elif [ "$status" -eq 0 ]; then
+    echo "=== all syncs succeeded ==="
+  else
+    echo "=== run terminated before finishing (status $status) ===" >&2
+  fi
+  exit "$status"
+}
+
+# Summarize on the way out however we leave, including a graceful kill:
+# Cloud Run sends SIGTERM at the task timeout before SIGKILL, so the
+# summary still gets written. An OOM kill is SIGKILL and cannot be
+# trapped by anything, so that case prints nothing; the missing summary
+# is itself the signal that the run was killed rather than finished.
+# TERM/INT exit with the conventional status and let the EXIT trap do the
+# reporting, so the summary is printed exactly once.
+trap report_and_exit EXIT
+trap 'exit 143' TERM
+trap 'exit 130' INT
 
 # groups A/B/C/F/G -- full replace every run, no window concept
 echo "=== full-replace catalogs ==="

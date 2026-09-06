@@ -18,9 +18,11 @@ through this interface.
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Sequence
 from datetime import date
 from typing import Any, Optional
+
+from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
 
 
 class Sink(ABC):
@@ -67,8 +69,7 @@ class Sink(ABC):
         rows: Iterable[dict[str, Any]],
         key_fields: Sequence[str],
         *,
-        exclude_from_hash: Optional[Sequence[str]] = None,
-        delimited_lists: Optional[Mapping[str, str]] = None,
+        policy: PayloadPolicy = DEFAULT_POLICY,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
         """Reconcile `endpoint` against `rows` as its COMPLETE current state.
@@ -82,21 +83,14 @@ class Sink(ABC):
                 payload fields beyond extracting `key_fields`.
             key_fields: Payload field names whose values form the natural
                 key. Order matters; it is part of the serialized key.
-            exclude_from_hash: Payload field names left out of the content
-                hash. The field is still STORED whole in the payload; it
-                just stops counting as a change, so a record whose only
-                difference is that field is touched instead of versioned.
-                For fields the source returns inconsistently for the same
-                record, where hashing them would version the row on every
-                run forever (see section 8 of docs/bdns-api-behavior.md).
-                Never list a key field: identity must stay in the hash.
-            delimited_lists: Payload fields that carry a list inside one
-                string, mapped to their separator (e.g.
-                `{"sectorActividad": ";"}`). Their elements are sorted
-                before hashing, so the order the source happened to use
-                stops counting as a change. The payload is still stored
-                exactly as received. Auto-detection would be wrong here:
-                a comma in free text is not a list.
+            policy: What to do to each record before storing and
+                versioning it: which fields to drop from the stored
+                payload, and which differences stop counting as changes
+                (see `bdns.sync.policy`). The sink applies it through
+                `PayloadPolicy.prepare`, which returns the payload and
+                its hash together, so what is hashed is always what is
+                stored. A policy may not drop a key field or the
+                registration-date field; the sink rejects one that tries.
             skipped: Optional list of malformed-record descriptors (dicts
                 with `context` and `content` keys). The caller may keep
                 appending to it while `rows` is being consumed; the sink
@@ -121,8 +115,7 @@ class Sink(ABC):
         window_end: date,
         run_type: str,
         reg_date_field: Optional[str] = None,
-        exclude_from_hash: Optional[Sequence[str]] = None,
-        delimited_lists: Optional[Mapping[str, str]] = None,
+        policy: PayloadPolicy = DEFAULT_POLICY,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
         """Apply `rows` as the slice of `endpoint` registered in a date range.
@@ -145,8 +138,7 @@ class Sink(ABC):
             run_type: Label for the run log distinguishing cadence runs
                 ("daily", "weekly", "monthly", "annual") from historical
                 loads ("backfill"). The sink stores it verbatim.
-            exclude_from_hash: Same as in `sync_full`.
-            delimited_lists: Same as in `sync_full`.
+            policy: Same as in `sync_full`.
             reg_date_field: Opt-in for window-scoped deletion detection: the
                 payload field (ISO date string) holding the record's OWN
                 registration date. When given, a stored current version is

@@ -63,6 +63,7 @@ def canonical_json(
     payload: dict[str, Any],
     exclude_fields: Optional[Iterable[str]] = None,
     delimited_lists: Optional[Mapping[str, str]] = None,
+    canonical_arrays: bool = True,
 ) -> str:
     if exclude_fields:
         excluded = set(exclude_fields)
@@ -74,8 +75,13 @@ def canonical_json(
             else v
             for k, v in payload.items()
         }
+    # Array ordering is normalized by default; see `_order_independent`.
+    # Turning it off is offered because it is a judgement about the source,
+    # not a law, but it re-versions every record with a reordered nested
+    # array on every run.
+    normalized = _order_independent(payload) if canonical_arrays else payload
     return json.dumps(
-        _order_independent(payload), sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str
+        normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str
     )
 
 
@@ -83,8 +89,9 @@ def row_hash(
     payload: dict[str, Any],
     exclude_fields: Optional[Iterable[str]] = None,
     delimited_lists: Optional[Mapping[str, str]] = None,
+    canonical_arrays: bool = True,
 ) -> str:
-    digest = canonical_json(payload, exclude_fields, delimited_lists).encode("utf-8")
+    digest = canonical_json(payload, exclude_fields, delimited_lists, canonical_arrays).encode("utf-8")
     return hashlib.sha256(digest).hexdigest()
 
 

@@ -17,7 +17,7 @@ on SQLite, PostgreSQL, and BigQuery.
 """
 
 import logging
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Sequence
 from datetime import date, datetime, timezone
 from typing import Any, Optional
 
@@ -25,8 +25,9 @@ from sqlalchemy import and_, cast, exists, func, insert, literal, null, or_, sel
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql.schema import Table
 
-from bdns.sync.hashing import natural_key, row_hash
+from bdns.sync.hashing import natural_key
 from bdns.sync.pipeline import chunked, prefetch
+from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
 from bdns.sync.sinks.sql.dialects import DialectAdapter, get_adapter
 
 logger = logging.getLogger(__name__)
@@ -99,8 +100,7 @@ def apply_full_reconciliation(
     staging: Table,
     rows: Iterable[dict[str, Any]],
     key_fields: Sequence[str],
-    exclude_from_hash: Optional[Iterable[str]] = None,
-    delimited_lists: Optional[Mapping[str, str]] = None,
+    policy: PayloadPolicy = DEFAULT_POLICY,
     chunk_size: int = 5000,
     skipped: Optional[list[dict[str, str]]] = None,
 ) -> dict[str, int]:
@@ -117,7 +117,7 @@ def apply_full_reconciliation(
     diff can.
     """
     return _apply(
-        conn, table, staging, rows, key_fields, exclude_from_hash, delimited_lists, chunk_size,
+        conn, table, staging, rows, key_fields, policy, chunk_size,
         detect_deletions=True, skipped=skipped,
     )
 
@@ -128,8 +128,7 @@ def apply_incremental(
     staging: Table,
     rows: Iterable[dict[str, Any]],
     key_fields: Sequence[str],
-    exclude_from_hash: Optional[Iterable[str]] = None,
-    delimited_lists: Optional[Mapping[str, str]] = None,
+    policy: PayloadPolicy = DEFAULT_POLICY,
     chunk_size: int = 5000,
     reg_date_field: Optional[str] = None,
     window_start: Optional[date] = None,
@@ -156,7 +155,7 @@ def apply_incremental(
     """
     window = (reg_date_field, window_start, window_end) if reg_date_field else None
     return _apply(
-        conn, table, staging, rows, key_fields, exclude_from_hash, delimited_lists, chunk_size,
+        conn, table, staging, rows, key_fields, policy, chunk_size,
         detect_deletions=False, window=window, skipped=skipped,
     )
 
@@ -167,8 +166,7 @@ def _apply(
     staging: Table,
     rows: Iterable[dict[str, Any]],
     key_fields: Sequence[str],
-    exclude_from_hash: Optional[Iterable[str]],
-    delimited_lists: Optional[Mapping[str, str]],
+    policy: PayloadPolicy,
     chunk_size: int,
     detect_deletions: bool,
     window: Optional[tuple] = None,
@@ -176,13 +174,13 @@ def _apply(
 ) -> dict[str, int]:
     now = datetime.now(timezone.utc)
     reg_date_field = window[0] if window else None
+    policy.check_identity(key_fields, reg_date_field)
     adapter = get_adapter(conn.engine)
     rejected = skipped if skipped is not None else []
 
     adapter.clear_table(conn, staging)
     fetched = _load_staging(
-        conn, staging, rows, key_fields, exclude_from_hash, delimited_lists, chunk_size,
-        reg_date_field, adapter, rejected,
+        conn, staging, rows, key_fields, policy, chunk_size, reg_date_field, adapter, rejected,
     )
     _check_reject_ratio(table.name, fetched, len(rejected))
     logger.info("%s: fetch done, %d rows staged, applying diff", table.name, fetched)
@@ -202,8 +200,7 @@ def _load_staging(
     staging: Table,
     rows: Iterable[dict[str, Any]],
     key_fields: Sequence[str],
-    exclude_from_hash: Optional[Iterable[str]],
-    delimited_lists: Optional[Mapping[str, str]],
+    policy: PayloadPolicy,
     chunk_size: int,
     reg_date_field: Optional[str],
     adapter: DialectAdapter,
@@ -233,13 +230,15 @@ def _load_staging(
             logger.warning("%s: rejecting record (%s): %.200r", staging.name, reason, payload)
             rejected.append({"context": reason, "content": str(payload)[:200]})
             return None
+        # One call for both, so what is hashed is always what is stored.
+        stored, digest = policy.prepare(payload)
         staged = {
-            "_natural_key": natural_key(payload, key_fields),
-            "_row_hash": row_hash(payload, exclude_from_hash, delimited_lists),
-            "payload": payload,
+            "_natural_key": natural_key(stored, key_fields),
+            "_row_hash": digest,
+            "payload": stored,
         }
         if reg_date_field:
-            staged["_reg_date"] = datetime.strptime(payload[reg_date_field], "%Y-%m-%d").date()
+            staged["_reg_date"] = datetime.strptime(stored[reg_date_field], "%Y-%m-%d").date()
         return staged
 
     staged_rows = (row for row in map(stage, rows) if row is not None)

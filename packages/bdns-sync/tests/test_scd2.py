@@ -3,6 +3,7 @@ from datetime import date
 import pytest
 from sqlalchemy import select
 
+from bdns.sync.policy import PayloadPolicy
 from bdns.sync.sinks.sql.dialects import get_adapter
 from bdns.sync.sinks.sql.scd2 import apply_full_reconciliation, apply_incremental
 from bdns.sync.sinks.sql.schema import build_staging_table, build_sync_table
@@ -99,8 +100,9 @@ def test_excluded_field_changing_does_not_version_the_row(table):
     first = [{"id": 1, "beneficiario": "M&M, S.L.", "importe": 100}]
     second = [{"id": 1, "beneficiario": "MM SL", "importe": 100}]
     with engine.begin() as conn:
-        apply_full_reconciliation(conn, tbl, staging, first, ("id",), ("beneficiario",))
-        stats = apply_full_reconciliation(conn, tbl, staging, second, ("id",), ("beneficiario",))
+        policy = PayloadPolicy(hash_exclude=("beneficiario",))
+        apply_full_reconciliation(conn, tbl, staging, first, ("id",), policy)
+        stats = apply_full_reconciliation(conn, tbl, staging, second, ("id",), policy)
         assert stats["inserted"] == 0
         assert stats["updated"] == 0
         assert stats["touched"] == 1
@@ -115,8 +117,9 @@ def test_a_real_change_still_versions_a_row_with_exclusions(table):
     first = [{"id": 1, "beneficiario": "M&M, S.L.", "importe": 100}]
     second = [{"id": 1, "beneficiario": "MM SL", "importe": 250}]
     with engine.begin() as conn:
-        apply_full_reconciliation(conn, tbl, staging, first, ("id",), ("beneficiario",))
-        stats = apply_full_reconciliation(conn, tbl, staging, second, ("id",), ("beneficiario",))
+        policy = PayloadPolicy(hash_exclude=("beneficiario",))
+        apply_full_reconciliation(conn, tbl, staging, first, ("id",), policy)
+        stats = apply_full_reconciliation(conn, tbl, staging, second, ("id",), policy)
         assert stats["updated"] == 1
         assert current_rows(conn, tbl)[0]["payload"]["importe"] == 250
 

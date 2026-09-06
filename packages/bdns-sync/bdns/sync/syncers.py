@@ -29,6 +29,7 @@ from bdns.sync.generic import (
     sync_swept_catalog,
 )
 from bdns.sync.pipeline import rate_limited_map
+from bdns.sync.policy import PayloadPolicy
 from bdns.sync.sinks import Sink
 
 logger = logging.getLogger(__name__)
@@ -39,6 +40,36 @@ logger.addHandler(logging.NullHandler())
 # up automatically instead of silently missing from the sweep.
 ADMIN_TYPES: tuple[str, ...] = tuple(TipoAdministracion)
 REGLAMENTOS_AMBITOS: tuple[str, ...] = tuple(Ambito)
+
+
+# --- per-entity payload policies -----------------------------------------
+#
+# The measured rules for each entity, in one place instead of spread across
+# call sites. Every one of them is a finding, not a preference; the evidence
+# is in section 9 of docs/bdns-api-behavior.md. Entities not named here take
+# the default: store what arrived, hash all of it.
+
+# `beneficiario` oscillates: of the keys whose name changed more than once,
+# 67% return to a spelling they already had (ASOCIACIÓN -> ASOCIACION ->
+# ASOCIACIÓN), with `idPersona` unchanged throughout. Hashing it re-versioned
+# 58% of the table.
+CONCESIONES_POLICY = PayloadPolicy(hash_exclude=("beneficiario",))
+
+# The API returns a different spelling of the same name from one hour to the
+# next; six variants for one idPersona in eleven days, same amount each time.
+GRANDESBENEFICIARIOS_POLICY = PayloadPolicy(hash_exclude=("beneficiario",))
+
+# `sectores` is a list joined with "#" that comes back shuffled. The
+# separator is unambiguous here, so the pattern is just that character.
+AYUDASESTADO_POLICY = PayloadPolicy(delimited_lists={"sectores": "#"})
+
+# `sectorActividad` is shuffled too, but ";" alone cannot split it: several
+# CNAE names carry a semicolon of their own ("Administración Pública y
+# defensa; Seguridad Social obligatoria"). The pattern splits before the
+# start of an element instead, which leaves those descriptions whole.
+MINIMIS_POLICY = PayloadPolicy(
+    delimited_lists={"sectorActividad": r";\s*(?=[A-Z0-9][A-Z0-9.]*\s*-\s)"}
+)
 
 
 def _skip_malformed(
@@ -176,13 +207,7 @@ def sync_concesiones_busqueda(
         end,
         run_type,
         reg_date_field="fechaAlta",
-        # `beneficiario` is left out of the hash because its value oscillates:
-        # of the keys whose name changed more than once, 67% return to a
-        # spelling they already had (ASOCIACIÓN -> ASOCIACION -> ASOCIACIÓN),
-        # with `idPersona` unchanged throughout. Hashing it re-versioned 58% of
-        # the table. Only entities where that oscillation is measured get this
-        # treatment; see section 9 of docs/bdns-api-behavior.md.
-        exclude_from_hash=("beneficiario",),
+        policy=CONCESIONES_POLICY,
     )
 
 
@@ -205,8 +230,7 @@ def sync_ayudasestado_busqueda(
         end,
         run_type,
         reg_date_field="fechaAlta",
-        # `sectores` is a list joined with "#" that comes back shuffled.
-        delimited_lists={"sectores": "#"},
+        policy=AYUDASESTADO_POLICY,
     )
 
 
@@ -229,11 +253,7 @@ def sync_minimis_busqueda(
         end,
         run_type,
         reg_date_field="fechaRegistro",
-        # `sectorActividad` is a shuffled list, but ";" alone cannot split it:
-        # several CNAE names carry a semicolon ("Administración Pública y
-        # defensa; Seguridad Social obligatoria"). Split before an element
-        # start instead, which leaves those descriptions whole.
-        delimited_lists={"sectorActividad": r";\s*(?=[A-Z0-9][A-Z0-9.]*\s*-\s)"},
+        policy=MINIMIS_POLICY,
     )
 
 
@@ -447,7 +467,7 @@ def sync_grandesbeneficiarios_busqueda(sink: Sink, client: BDNSClient) -> dict[s
         "grandesbeneficiarios_busqueda",
         all_pages(client.fetch_grandesbeneficiarios_busqueda)(anios=anios),
         ("idPersona", "ejercicio"),
-        exclude_from_hash=("beneficiario",),
+        policy=GRANDESBENEFICIARIOS_POLICY,
     )
 
 

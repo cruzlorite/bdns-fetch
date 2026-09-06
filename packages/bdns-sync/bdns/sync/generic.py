@@ -7,11 +7,12 @@ mechanical "fetch, then apply" plumbing lives here.
 
 import inspect
 import logging
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Sequence
 from datetime import date, timedelta
 from typing import Optional
 
 from bdns.fetch import BDNSClient
+from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
 from bdns.sync.sinks import Sink
 
 logger = logging.getLogger(__name__)
@@ -170,8 +171,7 @@ def sync_search_range(
     end: date,
     run_type: str,
     reg_date_field: Optional[str] = None,
-    exclude_from_hash: Optional[Sequence[str]] = None,
-    delimited_lists: Optional[Mapping[str, str]] = None,
+    policy: PayloadPolicy = DEFAULT_POLICY,
 ) -> dict[str, int]:
     """Fetch the reg-date range `[start, end]` and apply incrementally. Used
     for both cascade windows (a few days back) and backfills (years back);
@@ -200,7 +200,7 @@ def sync_search_range(
     return sink.sync_window(
         endpoint_name, rows(), key_fields,
         window_start=start, window_end=end, run_type=run_type, reg_date_field=reg_date_field,
-        exclude_from_hash=exclude_from_hash, delimited_lists=delimited_lists,
+        policy=policy,
     )
 
 
@@ -214,8 +214,7 @@ def sync_search_range_inclusive(
     end: date,
     run_type: str,
     reg_date_field: Optional[str] = None,
-    exclude_from_hash: Optional[Sequence[str]] = None,
-    delimited_lists: Optional[Mapping[str, str]] = None,
+    policy: PayloadPolicy = DEFAULT_POLICY,
 ) -> dict[str, int]:
     """Same shape as `sync_search_range`, for the OTHER date-parameter family:
     `fechaDesde`/`fechaHasta`, which is INCLUSIVE on the upper bound (unlike
@@ -234,6 +233,6 @@ def sync_search_range_inclusive(
     return sink.sync_window(
         endpoint_name, rows(), key_fields,
         window_start=start, window_end=end, run_type=run_type, reg_date_field=reg_date_field,
-        exclude_from_hash=exclude_from_hash, delimited_lists=delimited_lists,
+        policy=policy,
     )
 

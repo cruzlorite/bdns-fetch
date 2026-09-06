@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The per-record rules (`exclude_from_hash`, `delimited_lists`, and array canonicalization) move into a
+  `PayloadPolicy` object declared once per entity, instead of travelling as separate keyword arguments through four
+  layers. `apply_incremental` drops from twelve parameters to nine, and the rules now sit next to the measurement
+  that justifies each of them.
+- The policy exposes a single `prepare()` returning the payload to store and its hash together. Hashing something
+  other than what is stored is the one combination that produces unreadable history, so it is no longer expressible:
+  a version pair whose stored payloads are byte-identical can never occur.
+- Array canonicalization becomes a policy setting rather than an unconditional step. It stays on by default; turning
+  it off re-versions every record with a reordered nested array on every run.
+- A policy that would drop a natural-key field or the registration-date field is refused. Changing a hash rule costs
+  storage and noise; changing identity severs a record's past from its future.
+- No hash changes. Verified against the fixtures and, more to the point, against 24 rows read back from the live
+  BigQuery target: the new policy reproduces every stored `_row_hash` exactly.
+
 ### Fixed
 
 - PostgreSQL never worked. The version INSERT wrote `_valid_to` as a bare `NULL`, which PostgreSQL types as `text`

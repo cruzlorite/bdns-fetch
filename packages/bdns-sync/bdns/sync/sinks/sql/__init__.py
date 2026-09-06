@@ -10,13 +10,14 @@ watermark, error records), `dialects.py` (per-engine adapters, the only
 code allowed to branch on dialect name).
 """
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Sequence
 from datetime import date
 from typing import Any, Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
+from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
 from bdns.sync.sinks import Sink
 from bdns.sync.sinks.sql.bookkeeping import run_with_bookkeeping
 from bdns.sync.sinks.sql.scd2 import apply_full_reconciliation, apply_incremental
@@ -45,8 +46,7 @@ class SQLSink(Sink):
         rows: Iterable[dict[str, Any]],
         key_fields: Sequence[str],
         *,
-        exclude_from_hash: Optional[Sequence[str]] = None,
-        delimited_lists: Optional[Mapping[str, str]] = None,
+        policy: PayloadPolicy = DEFAULT_POLICY,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
         # One list for both sources of skips: the caller's own (malformed
@@ -56,8 +56,7 @@ class SQLSink(Sink):
 
         def apply_fn(conn, table, staging):
             stats = apply_full_reconciliation(
-                conn, table, staging, rows, key_fields, exclude_from_hash, delimited_lists,
-                skipped=skips,
+                conn, table, staging, rows, key_fields, policy, skipped=skips
             )
             return _attach_skips(stats, skips)
 
@@ -73,8 +72,7 @@ class SQLSink(Sink):
         window_end: date,
         run_type: str,
         reg_date_field: Optional[str] = None,
-        exclude_from_hash: Optional[Sequence[str]] = None,
-        delimited_lists: Optional[Mapping[str, str]] = None,
+        policy: PayloadPolicy = DEFAULT_POLICY,
         skipped: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, int]:
         skips = skipped if skipped is not None else []
@@ -86,8 +84,7 @@ class SQLSink(Sink):
                 staging,
                 rows,
                 key_fields,
-                exclude_from_hash,
-                delimited_lists,
+                policy,
                 reg_date_field=reg_date_field,
                 window_start=window_start,
                 window_end=window_end,

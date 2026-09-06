@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Rejected records reach `_sync_errors` on a failed run too. They were only written on the success path, so a run
+  that failed *because* too much of the batch was rejected told the operator to go and read a table that had nothing
+  in it, which is exactly the case where the reasons matter.
+
+### Added
+
+- Documented that a rejected record on a full-replace entity closes its stored version as a withdrawal. A record with
+  no usable natural key cannot be matched to the row it belongs to, so "returned malformed" and "no longer served"
+  are indistinguishable. The reject ceiling is what bounds how many rows this can close.
+
 ## [0.5.0] - 2026-09-06
 
 ### Removed

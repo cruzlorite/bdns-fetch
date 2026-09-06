@@ -177,3 +177,59 @@ def test_a_low_share_of_rejects_in_a_large_batch_does_not_fail_the_run(
     assert stats["inserted"] == 200
     assert stats["skipped"] == 11
     assert len(errors(engine, metadata, table_name)) == 11
+
+
+def test_a_rejected_batch_still_records_why(engine, metadata, table_name):
+    """The run that fails because too much was rejected is exactly the one
+    whose reasons matter most. They used to be lost: `_sync_errors` was
+    only written on the success path, while the error message told the
+    operator to go and read it.
+    """
+    rows = [{"id": i} for i in range(20)] + [{"v": "bad"} for _ in range(20)]
+    with pytest.raises(BatchRejected):
+        SQLSink(engine).sync_full(table_name, rows, ("id",))
+
+    recorded = errors(engine, metadata, table_name)
+    assert len(recorded) == 20
+    assert {err["context"] for err in recorded} == {"missing key field id"}
+
+
+def test_a_rejected_batch_records_the_failure_too(engine, metadata, table_name):
+    from bdns.sync.sinks.sql.schema import build_control_tables
+
+    with pytest.raises(BatchRejected):
+        SQLSink(engine).sync_full(table_name, [{"v": "bad"}], ("id",))
+
+    _, sync_runs, _ = build_control_tables(metadata)
+    with engine.begin() as conn:
+        events = conn.execute(
+            select(sync_runs.c.event, sync_runs.c.error)
+            .where(sync_runs.c.table_name == table_name)
+            .order_by(sync_runs.c.occurred_at, sync_runs.c.event)
+        ).all()
+    assert [e.event for e in events] == ["started", "failed"]
+    assert "could not be versioned" in events[1].error
+
+
+def test_a_rejected_record_closes_its_stored_version_on_a_full_catalog(
+    engine, metadata, table_name
+):
+    """The limitation documented in the README, pinned so it stays a known
+    trade rather than a surprise. A record with no usable key cannot be
+    matched to the row it belongs to, so the sink cannot tell "the source
+    sent this back malformed" from "the source no longer has it". On a
+    full-replace entity the stored version is closed as a withdrawal.
+
+    What bounds it is the ceiling: past a handful, the run fails instead.
+    """
+    good = [{"id": i, "v": "x"} for i in range(10)]
+    sink = SQLSink(engine)
+    sink.sync_full(table_name, good, ("id",))
+
+    broken = [row for row in good if row["id"] != 3] + [{"v": "no key"}]
+    stats = sink.sync_full(table_name, broken, ("id",))
+
+    assert stats["skipped"] == 1
+    assert stats["soft_deleted"] == 1
+    keys = {row["_natural_key"] for row in current(engine, metadata, table_name)}
+    assert "[3]" not in keys

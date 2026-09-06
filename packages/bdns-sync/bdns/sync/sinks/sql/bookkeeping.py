@@ -27,7 +27,7 @@ rule is the same: no `success` event => re-run.
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Callable
+from typing import Callable, Optional
 
 from sqlalchemy import MetaData, insert, update
 from sqlalchemy.engine import Engine
@@ -40,7 +40,11 @@ logger.addHandler(logging.NullHandler())
 
 
 def run_with_bookkeeping(
-    engine: Engine, endpoint_name: str, run_type: str, apply_fn: Callable
+    engine: Engine,
+    endpoint_name: str,
+    run_type: str,
+    apply_fn: Callable,
+    skipped: Optional[list[dict[str, str]]] = None,
 ) -> dict[str, int]:
     """`run_type` is a classification label for `_sync_runs`: either "full"
     (full-catalog/swept/discover-then-detail syncs) or a reg-date window name
@@ -74,31 +78,19 @@ def run_with_bookkeeping(
                 )
             )
 
-    record_event("started")
+    def record_skips() -> None:
+        """Persist the rejected records, in their own transaction.
 
-    try:
-        with engine.begin() as conn:
-            stats = apply_fn(conn, table, staging)
-    except Exception as exc:
-        logger.error("%s: run %s failed after %.1fs: %s", endpoint_name, run_id,
-                     (datetime.now(timezone.utc) - started_at).total_seconds(), exc)
-        record_event("failed", error=str(exc))
-        raise
-
-    # Terminal bookkeeping runs AFTER the data transaction committed, so a
-    # `success` event can never describe rolled-back data.
-    finished_at = datetime.now(timezone.utc)
-    skip_details = stats.pop("_skip_details", [])
-    record_event(
-        "success",
-        rows_fetched=stats["fetched"],
-        rows_inserted=stats["inserted"] + stats["updated"],
-        rows_soft_deleted=stats.get("soft_deleted", 0),
-        rows_skipped=stats.get("skipped", 0),
-    )
-    with engine.begin() as conn:
-        if skip_details:
-            conn.execute(
+        Written on both outcomes. A run that fails BECAUSE too much of the
+        batch was rejected is exactly the one whose reasons matter most,
+        and they are already known by then: staging populates the list
+        before the ceiling is checked.
+        """
+        if not skipped:
+            return
+        occurred_at = datetime.now(timezone.utc)
+        with engine.begin() as skip_conn:
+            skip_conn.execute(
                 insert(sync_errors),
                 [
                     {
@@ -107,11 +99,36 @@ def run_with_bookkeeping(
                         "table_name": endpoint_name,
                         "context": detail["context"],
                         "content": detail["content"],
-                        "occurred_at": finished_at,
+                        "occurred_at": occurred_at,
                     }
-                    for i, detail in enumerate(skip_details)
+                    for i, detail in enumerate(skipped)
                 ],
             )
+
+    record_event("started")
+
+    try:
+        with engine.begin() as conn:
+            stats = apply_fn(conn, table, staging)
+    except Exception as exc:
+        logger.error("%s: run %s failed after %.1fs: %s", endpoint_name, run_id,
+                     (datetime.now(timezone.utc) - started_at).total_seconds(), exc)
+        record_skips()
+        record_event("failed", error=str(exc))
+        raise
+
+    # Terminal bookkeeping runs AFTER the data transaction committed, so a
+    # `success` event can never describe rolled-back data.
+    finished_at = datetime.now(timezone.utc)
+    record_skips()
+    record_event(
+        "success",
+        rows_fetched=stats["fetched"],
+        rows_inserted=stats["inserted"] + stats["updated"],
+        rows_soft_deleted=stats.get("soft_deleted", 0),
+        rows_skipped=stats.get("skipped", 0),
+    )
+    with engine.begin() as conn:
         _upsert_sync_state(conn, sync_state, endpoint_name, finished_at, run_id)
 
     logger.info(

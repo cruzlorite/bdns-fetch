@@ -60,7 +60,9 @@ class SQLSink(Sink):
             )
             return _attach_skips(stats, skips)
 
-        return run_with_bookkeeping(self.engine, endpoint, run_type="full", apply_fn=apply_fn)
+        return run_with_bookkeeping(
+            self.engine, endpoint, run_type="full", apply_fn=apply_fn, skipped=skips
+        )
 
     def sync_window(
         self,
@@ -92,17 +94,19 @@ class SQLSink(Sink):
             )
             return _attach_skips(stats, skips)
 
-        return run_with_bookkeeping(self.engine, endpoint, run_type=run_type, apply_fn=apply_fn)
+        return run_with_bookkeeping(
+            self.engine, endpoint, run_type=run_type, apply_fn=apply_fn, skipped=skips
+        )
 
 
 def _attach_skips(stats: dict[str, int], skipped: list[dict[str, str]]) -> dict[str, int]:
-    """Fold the skipped-record list into the stats AFTER the rows generator
-    has been fully consumed, which is what populated it.
+    """Count the skipped records into the stats AFTER the rows generator has
+    been fully consumed, which is what populated it.
 
-    Always present, including as zero: the sink can now reject records on
-    its own, so every run has a skip count whether or not the caller
-    passed a list of its own.
+    Always present, including as zero: the sink can reject records on its
+    own, so every run has a skip count whether or not the caller passed a
+    list. The records themselves go to `_sync_errors`, written by the
+    bookkeeping, which holds the same list.
     """
     stats["skipped"] = len(skipped)
-    stats["_skip_details"] = skipped
     return stats

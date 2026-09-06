@@ -15,6 +15,7 @@ import typer
 import bdns.fetch.client as _bdns_fetch_client
 from bdns.fetch import BDNSClient
 from bdns.sync import __version__
+from bdns.sync.api_contract import check_api_contract
 from bdns.sync.generic import WINDOWS
 from bdns.sync.sinks import get_sink
 from bdns.sync.syncers import FULL_SYNCERS, SEARCH_SYNCERS
@@ -163,3 +164,37 @@ def list_endpoints(
             typer.echo(name)
     else:
         raise typer.BadParameter("kind must be one of: full, search")
+
+
+@app.command(name="check-api")
+def check_api(
+    day: str = typer.Option(
+        None, "--day", help="Probe this day (YYYY-MM-DD) instead of one 30 days back."
+    ),
+) -> None:
+    """Check that the live API still behaves the way this engine assumes.
+
+    The date-window semantics this tool relies on were measured once and
+    frozen into tests, but the tests pin the assumption, not the API: the
+    fake client models the same semantics, so a change upstream would leave
+    CI green while production silently lost a day per chunk boundary. This
+    is the one command that asks the real service.
+
+    Exits non-zero ONLY when the API returned valid data contradicting an
+    invariant, which is the case worth stopping a sync for. Transient
+    trouble (an error page, a maintenance window, an empty probe day) is
+    reported and exits zero: blocking a whole day's cadence over a blip
+    would cost far more than it saves, and a genuinely unreachable API
+    makes the syncs themselves fail anyway.
+    """
+    client = BDNSClient(max_retries=8, wait_time=15)
+    status, messages = check_api_contract(client, day=_parse_iso_date(day, "--day"))
+    for message in messages:
+        typer.echo(message)
+    if status == "changed":
+        typer.echo(
+            "The API no longer behaves as this engine assumes. Syncing through a changed "
+            "date boundary loses or duplicates records silently, so nothing was synced.",
+            err=True,
+        )
+        raise typer.Exit(code=1)

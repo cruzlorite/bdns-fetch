@@ -69,6 +69,18 @@ trap report_and_exit EXIT
 trap 'exit 143' TERM
 trap 'exit 130' INT
 
+# The engine's date handling rests on behavior measured against the live
+# service, and the tests can only pin our model of it, not the service. Ask
+# the real API once a day, before syncing anything. This aborts only when
+# the API returns valid data contradicting an invariant; a blip or an empty
+# probe day exits zero and the cadence proceeds.
+echo "=== API contract check ==="
+if ! bdns-sync check-api; then
+  echo "!!! API contract check failed; syncing nothing today" >&2
+  failed+=("bdns-sync check-api")
+  exit 1
+fi
+
 # groups A/B/C/F/G -- full replace every run, no window concept
 echo "=== full-replace catalogs ==="
 run bdns-sync sync sectores

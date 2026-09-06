@@ -17,6 +17,7 @@ from datetime import date
 import pytest
 from sqlalchemy import select
 
+from bdns.sync.sinks import RejectLimits
 from bdns.sync.sinks.sql import SQLSink
 from bdns.sync.sinks.sql.scd2 import BatchRejected
 from bdns.sync.sinks.sql.schema import build_control_tables, build_sync_table
@@ -233,3 +234,51 @@ def test_a_rejected_record_closes_its_stored_version_on_a_full_catalog(
     assert stats["soft_deleted"] == 1
     keys = {row["_natural_key"] for row in current(engine, metadata, table_name)}
     assert "[3]" not in keys
+
+
+# --- reject limits ---------------------------------------------------------
+#
+# Operational tolerances rather than statements about the data, so unlike
+# the payload policy they carry no per-entity defaults and are set per run.
+
+
+def test_the_ratio_can_be_raised_to_tolerate_a_bad_day(engine, table_name):
+    rows = [{"id": i} for i in range(20)] + [{"v": "bad"} for _ in range(20)]
+    with pytest.raises(BatchRejected):
+        SQLSink(engine).sync_full(table_name, rows, ("id",))
+
+    tolerant = SQLSink(engine, RejectLimits(max_ratio=0.60))
+    stats = tolerant.sync_full(table_name, rows, ("id",))
+    assert stats["inserted"] == 20
+    assert stats["skipped"] == 20
+
+
+def test_the_ratio_can_be_lowered_to_be_told_sooner(engine, table_name):
+    rows = [{"id": i} for i in range(95)] + [{"v": "bad"} for _ in range(5)]
+    assert SQLSink(engine).sync_full(table_name, rows, ("id",))["inserted"] == 95
+
+    strict = SQLSink(engine, RejectLimits(max_ratio=0.01))
+    with pytest.raises(BatchRejected, match="over the limit of 1%"):
+        strict.sync_full(f"{table_name}_strict", rows, ("id",))
+
+
+def test_an_absolute_cap_catches_what_the_ratio_hides(engine, table_name):
+    """The case a ratio cannot see: a big enough batch dilutes any number
+    of rejects below any sane share, while the count still says something
+    broke.
+    """
+    rows = [{"id": i} for i in range(2000)] + [{"v": "bad"} for _ in range(20)]
+    assert SQLSink(engine).sync_full(table_name, rows, ("id",))["skipped"] == 20  # 1%, passes
+
+    capped = SQLSink(engine, RejectLimits(max_count=10))
+    with pytest.raises(BatchRejected, match="over the limit of 10"):
+        capped.sync_full(f"{table_name}_capped", rows, ("id",))
+
+
+def test_an_empty_batch_fails_however_the_limits_are_set(engine, table_name):
+    """No tolerance makes an all-rejected batch safe to apply: staging ends
+    up empty, and to deletion detection that reads as a full withdrawal.
+    """
+    reckless = SQLSink(engine, RejectLimits(max_ratio=1.0, max_count=10_000))
+    with pytest.raises(BatchRejected, match="leaving nothing to apply"):
+        reckless.sync_full(table_name, [{"v": "bad"}], ("id",))

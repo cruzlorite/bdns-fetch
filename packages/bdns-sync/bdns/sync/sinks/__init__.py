@@ -19,10 +19,71 @@ through this interface.
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 from datetime import date
 from typing import Any, Optional
 
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
+
+
+@dataclass(frozen=True)
+class RejectLimits:
+    """How much of a batch may be unusable before the run refuses it.
+
+    Dropping the odd broken record is right: they are a documented,
+    permanent trait of this source, and losing a multi-hour backfill to
+    one of them helps nobody. Dropping most of a batch is not the same
+    event at all. It means the shape of what the source returns changed,
+    and applying what survived is actively destructive: staging ends up
+    near empty, and to a full reconciliation, or to window-scoped
+    deletion detection, an empty batch is indistinguishable from
+    "everything here was withdrawn".
+
+    These are operational tolerances, not statements about the data, so
+    unlike the payload policy they carry no per-entity defaults and can be
+    set per run.
+
+    Attributes:
+        max_ratio: Share of the batch that may be rejected. Above it the
+            run fails.
+        max_count: Optional absolute cap. Above this many rejects the run
+            fails whatever the share, which is what catches a shape change
+            in a batch large enough to hide it: 200,000 bad records out of
+            20 million is 1%, well under any sane ratio, and still means
+            something broke.
+        min_to_enforce_ratio: Below this many rejects the ratio never
+            fires. A narrow window can hold three records, where one bad
+            one is already a third of the batch.
+    """
+
+    max_ratio: float = 0.10
+    max_count: Optional[int] = None
+    min_to_enforce_ratio: int = 5
+
+    def rejection(self, fetched: int, rejected: int) -> Optional[str]:
+        """Why this batch must not be applied, or None if it may be."""
+        if not rejected:
+            return None
+        total = fetched + rejected
+        share = rejected / total
+        preamble = f"{rejected} of {total} records could not be versioned ({share:.0%})"
+        if fetched == 0:
+            return f"{preamble}, leaving nothing to apply"
+        if self.max_count is not None and rejected > self.max_count:
+            return f"{preamble}, over the limit of {self.max_count}"
+        if share > self.max_ratio and rejected >= self.min_to_enforce_ratio:
+            return f"{preamble}, over the limit of {self.max_ratio:.0%}"
+        return None
+
+    def describe(self) -> str:
+        cap = "none" if self.max_count is None else str(self.max_count)
+        return (
+            f"max_ratio={self.max_ratio:.0%} max_count={cap} "
+            f"min_to_enforce_ratio={self.min_to_enforce_ratio}"
+        )
+
+
+DEFAULT_LIMITS = RejectLimits()
 
 
 class Sink(ABC):
@@ -156,7 +217,7 @@ class Sink(ABC):
         """
 
 
-def get_sink(url: str) -> Sink:
+def get_sink(url: str, limits: RejectLimits = DEFAULT_LIMITS) -> Sink:
     """Build the sink for a target URL.
 
     The URL scheme picks the implementation. Today every scheme is a
@@ -166,4 +227,4 @@ def get_sink(url: str) -> Sink:
     """
     from bdns.sync.sinks.sql import SQLSink
 
-    return SQLSink.from_url(url)
+    return SQLSink.from_url(url, limits)

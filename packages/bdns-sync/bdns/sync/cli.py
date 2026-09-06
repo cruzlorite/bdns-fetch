@@ -18,7 +18,7 @@ from bdns.fetch import BDNSClient
 from bdns.sync import __version__
 from bdns.sync.api_contract import check_api_contract
 from bdns.sync.generic import CHUNK_DAYS, WINDOWS, iter_date_chunks, resolve_when
-from bdns.sync.sinks import get_sink
+from bdns.sync.sinks import DEFAULT_LIMITS, RejectLimits, get_sink
 from bdns.sync.syncers import FULL_SYNCERS, SEARCH_SYNCERS, policy_for
 
 app = typer.Typer(
@@ -119,7 +119,12 @@ def _resolve_plan(
 
 
 def _echo_plan(
-    endpoint: str, target_url: str, start: Optional[date], end: Optional[date], run_type: str
+    endpoint: str,
+    target_url: str,
+    start: Optional[date],
+    end: Optional[date],
+    run_type: str,
+    limits: RejectLimits,
 ) -> None:
     """Print the resolved invocation without touching anything.
 
@@ -139,6 +144,7 @@ def _echo_plan(
             f"({days} day(s), {chunks} chunk(s) of at most {CHUNK_DAYS})"
         )
     typer.echo(f"policy      {policy_for(endpoint).describe()}")
+    typer.echo(f"limits      {limits.describe()}")
     typer.echo("dry run     nothing fetched, nothing written")
 
 
@@ -162,6 +168,21 @@ def sync(
         "--until",
         help="Backfill end date (YYYY-MM-DD). Defaults to yesterday. Only with --since.",
     ),
+    max_reject_ratio: float = typer.Option(
+        DEFAULT_LIMITS.max_ratio,
+        "--max-reject-ratio",
+        min=0.0,
+        max=1.0,
+        help="Share of the batch that may be unusable before the run refuses it "
+        "(0.10 = 10%). Raise it for a source having a bad day; lower it to be told sooner.",
+    ),
+    max_rejects: int = typer.Option(
+        None,
+        "--max-rejects",
+        min=0,
+        help="Absolute cap on unusable records, whatever the share. Catches a shape "
+        "change in a batch large enough to hide it under the ratio. Unset by default.",
+    ),
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
@@ -179,12 +200,13 @@ def sync(
     since_date = _parse_iso_date(since, "--since")
     until_date = _parse_iso_date(until, "--until")
     start, end, run_type = _resolve_plan(endpoint, window, since_date, until_date)
+    limits = RejectLimits(max_ratio=max_reject_ratio, max_count=max_rejects)
 
     if dry_run:
-        _echo_plan(endpoint, target_url, start, end, run_type)
+        _echo_plan(endpoint, target_url, start, end, run_type, limits)
         return
 
-    sink = get_sink(target_url)
+    sink = get_sink(target_url, limits)
     # Defaults (3 retries, 2s fixed wait) give up after ~1 minute of server
     # trouble; a real multi-hour backfill died live to one request timing
     # out 3 times in a row. 8 x 15s rides out a ~2-minute server rough patch;

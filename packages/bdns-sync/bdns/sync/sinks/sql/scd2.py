@@ -28,27 +28,11 @@ from sqlalchemy.sql.schema import Table
 from bdns.sync.hashing import natural_key
 from bdns.sync.pipeline import chunked, prefetch
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
+from bdns.sync.sinks import DEFAULT_LIMITS, RejectLimits
 from bdns.sync.sinks.sql.dialects import DialectAdapter, get_adapter
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
-
-
-# A batch where most records were rejected is not a batch with a few bad
-# records in it, it is a batch whose shape the source changed. Applying it
-# would be destructive rather than merely wrong: staging would be near
-# empty, and on an entity with window-scoped deletion detection that closes
-# the whole window as withdrawals. Above this share the run fails instead,
-# leaving the table untouched and the reasons in `_sync_errors`.
-MAX_REJECT_RATIO = 0.10
-
-# ...but individual broken records are a documented, permanent trait of this
-# source (see section 8 of docs/bdns-api-behavior.md), and a narrow window
-# can legitimately hold only a handful of records, where one bad one is
-# already a large share. So the ratio only bites once there are at least
-# this many rejects. A batch left completely empty by rejects always fails,
-# whatever the count: there is nothing to apply and plenty to destroy.
-MIN_REJECTS_TO_ENFORCE_RATIO = 5
 
 
 class BatchRejected(RuntimeError):
@@ -101,6 +85,7 @@ def apply_full_reconciliation(
     rows: Iterable[dict[str, Any]],
     key_fields: Sequence[str],
     policy: PayloadPolicy = DEFAULT_POLICY,
+    limits: RejectLimits = DEFAULT_LIMITS,
     chunk_size: int = 5000,
     skipped: Optional[list[dict[str, str]]] = None,
 ) -> dict[str, int]:
@@ -117,7 +102,7 @@ def apply_full_reconciliation(
     diff can.
     """
     return _apply(
-        conn, table, staging, rows, key_fields, policy, chunk_size,
+        conn, table, staging, rows, key_fields, policy, limits, chunk_size,
         detect_deletions=True, skipped=skipped,
     )
 
@@ -129,6 +114,7 @@ def apply_incremental(
     rows: Iterable[dict[str, Any]],
     key_fields: Sequence[str],
     policy: PayloadPolicy = DEFAULT_POLICY,
+    limits: RejectLimits = DEFAULT_LIMITS,
     chunk_size: int = 5000,
     reg_date_field: Optional[str] = None,
     window_start: Optional[date] = None,
@@ -155,7 +141,7 @@ def apply_incremental(
     """
     window = (reg_date_field, window_start, window_end) if reg_date_field else None
     return _apply(
-        conn, table, staging, rows, key_fields, policy, chunk_size,
+        conn, table, staging, rows, key_fields, policy, limits, chunk_size,
         detect_deletions=False, window=window, skipped=skipped,
     )
 
@@ -167,6 +153,7 @@ def _apply(
     rows: Iterable[dict[str, Any]],
     key_fields: Sequence[str],
     policy: PayloadPolicy,
+    limits: RejectLimits,
     chunk_size: int,
     detect_deletions: bool,
     window: Optional[tuple] = None,
@@ -182,7 +169,7 @@ def _apply(
     fetched = _load_staging(
         conn, staging, rows, key_fields, policy, chunk_size, reg_date_field, adapter, rejected,
     )
-    _check_reject_ratio(table.name, fetched, len(rejected))
+    _check_rejects(table.name, fetched, len(rejected), limits)
     logger.info("%s: fetch done, %d rows staged, applying diff", table.name, fetched)
     stats = _diff_stats(conn, table, staging, detect_deletions, window)
     stats["fetched"] = fetched
@@ -254,16 +241,17 @@ def _load_staging(
     return fetched
 
 
-def _check_reject_ratio(table_name: str, fetched: int, rejected: int) -> None:
+def _check_rejects(table_name: str, fetched: int, rejected: int, limits: RejectLimits) -> None:
     if not rejected:
         return
-    share = rejected / (fetched + rejected)
-    logger.warning("%s: %d record(s) rejected, %.1f%% of the batch", table_name, rejected, share * 100)
-    too_many = share > MAX_REJECT_RATIO and rejected >= MIN_REJECTS_TO_ENFORCE_RATIO
-    if fetched == 0 or too_many:
+    logger.warning(
+        "%s: %d record(s) rejected of %d fetched", table_name, rejected, fetched
+    )
+    reason = limits.rejection(fetched, rejected)
+    if reason:
         raise BatchRejected(
-            f"{table_name}: {rejected} of {fetched + rejected} records could not be versioned "
-            f"({share:.0%}); refusing to apply the batch. See _sync_errors for the reasons."
+            f"{table_name}: {reason}; refusing to apply the batch. "
+            f"See _sync_errors for the reasons."
         )
 
 

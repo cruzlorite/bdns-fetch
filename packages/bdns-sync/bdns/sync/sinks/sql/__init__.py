@@ -18,7 +18,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
-from bdns.sync.sinks import Sink
+from bdns.sync.sinks import DEFAULT_LIMITS, RejectLimits, Sink
 from bdns.sync.sinks.sql.bookkeeping import run_with_bookkeeping
 from bdns.sync.sinks.sql.scd2 import apply_full_reconciliation, apply_incremental
 
@@ -33,12 +33,16 @@ class SQLSink(Sink):
     `_sync_state` / `_sync_errors` tables next to the synced data.
     """
 
-    def __init__(self, engine: Engine):
+    def __init__(self, engine: Engine, limits: RejectLimits = DEFAULT_LIMITS):
         self.engine = engine
+        # How much of a batch may be unusable before this run refuses it.
+        # An operational tolerance, so it belongs to the run rather than to
+        # the entity, unlike the payload policy.
+        self.limits = limits
 
     @classmethod
-    def from_url(cls, url: str) -> "SQLSink":
-        return cls(create_engine(url))
+    def from_url(cls, url: str, limits: RejectLimits = DEFAULT_LIMITS) -> "SQLSink":
+        return cls(create_engine(url), limits)
 
     def sync_full(
         self,
@@ -56,7 +60,7 @@ class SQLSink(Sink):
 
         def apply_fn(conn, table, staging):
             stats = apply_full_reconciliation(
-                conn, table, staging, rows, key_fields, policy, skipped=skips
+                conn, table, staging, rows, key_fields, policy, self.limits, skipped=skips
             )
             return _attach_skips(stats, skips)
 
@@ -87,6 +91,7 @@ class SQLSink(Sink):
                 rows,
                 key_fields,
                 policy,
+                self.limits,
                 reg_date_field=reg_date_field,
                 window_start=window_start,
                 window_end=window_end,

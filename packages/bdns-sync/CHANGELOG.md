@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `--max-reject-ratio` and `--max-rejects` set how much of a batch may be unusable before the run refuses it. The
+  first was a constant; the second is new, and covers what a share cannot see: 20,000 broken records out of 20
+  million is 0.1%, below any sane ratio, and still means the shape of what the source returns changed. Both are
+  operational tolerances rather than statements about the data, so they are per run and carry no per-entity
+  defaults. `--dry-run` prints them alongside the payload policy.
+
 ### Fixed
 
 - Rejected records reach `_sync_errors` on a failed run too. They were only written on the success path, so a run

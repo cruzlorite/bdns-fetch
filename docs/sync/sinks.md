@@ -5,8 +5,9 @@ Toda la lógica de sincronización se escribe en SQL portable (subconsultas `EXI
 | Destino | Estado | Notas |
 |---|---|---|
 | SQLite | Comprobado (suite de tests completa) | Sin configuración adicional |
+| DuckDB | Comprobado (suite de tests completa) | Requiere `duckdb-engine`. Destino local sin servidor, mejor que SQLite para volumen analítico |
 | BigQuery | Comprobado contra el servicio real (ciclo SCD2 completo) | Requiere el extra `bigquery`; ver más abajo |
-| PostgreSQL / MySQL | Compatibles por diseño (SQL portable) | Hay que instalar su driver (`psycopg2`, `pymysql`, ...) |
+| PostgreSQL | Comprobado (la suite de tests completa corre también contra un servidor real, en CI) | Requiere `psycopg2` |
 
 ## Arquitectura
 

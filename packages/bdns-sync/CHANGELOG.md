@@ -5,6 +5,60 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- PostgreSQL never worked. The version INSERT wrote `_valid_to` as a bare `NULL`, which PostgreSQL types as `text`
+  and then refuses against a `timestamptz` column, so every run failed on the first insert. It is now an explicit
+  `CAST(NULL AS ...)`. The full test suite runs against a real PostgreSQL in CI, alongside SQLite, so the "portable
+  SQL" claim is now tested rather than asserted.
+- `bdns-sync --version` reported 0.1.0 regardless of the release. The version now comes from the installed package
+  metadata, so there is one source of truth and the publish workflow's tag check covers it.
+- `delta_load.sh` no longer aborts the whole day when one entity fails. Failures are collected, the remaining
+  entities still run, and the script exits non-zero with a summary. Seen live on 2 September 2026: `sectores` hit the
+  BigQuery daily quota and took the other 22 entities down with it, leaving 1 run that day instead of 23. A run
+  terminated by SIGTERM at the task timeout now exits 143 instead of reporting success.
+
+### Changed
+
+- Records the source sends in an unusable shape are now dropped and recorded instead of taking the run down, for
+  every entity rather than only the three on the two-step detail path. A record is rejected when it is not a JSON
+  object, when a natural-key field is missing or null, or when the registration date is missing, null, or not an
+  ISO date. Each rejection lands in `_sync_errors` with its reason. Runs that used to fail on these now finish with
+  `rows_skipped > 0`, so that counter is worth watching alongside the job-failure alert.
+- A run whose batch is left empty by rejections, or where rejections exceed 10% with at least five of them, now
+  fails instead of applying. An empty staging is indistinguishable from "everything in this window was withdrawn",
+  so window-scoped deletion detection would close the lot.
+- Staging is emptied with `TRUNCATE TABLE` on BigQuery and PostgreSQL, through a new `clear_table` adapter method.
+  On BigQuery a `DELETE` is DML and is billed by the byte: 17.2 GB scanned per clear, twice per run, out of 91 GB for
+  the whole annual `concesiones_busqueda` diff. `TRUNCATE` is a metadata operation and scans nothing. SQLite and
+  DuckDB keep the `DELETE`, which costs them nothing.
+- Typer no longer dumps frame locals into tracebacks. They held payload fragments and the target URL, password
+  included for a PostgreSQL target, and landed in whatever log an unattended run writes to.
+
+### Added
+
+- `bdns-sync check-api`, run once by `delta_load.sh` before the cadence, asks the live service whether it still
+  behaves the way the engine assumes: `fechaRegFin` exclusive, `fechaHasta` inclusive, adjacent days disjoint and
+  summing to their range, records carrying their natural key and registration date. The test suite can only pin our
+  model of the API, so a change upstream would otherwise leave CI green while production lost a day per chunk
+  boundary. It fails open on a transient error or an empty probe day and aborts only on valid data that contradicts
+  an invariant.
+- DuckDB is a verified target. It needed no code change: the full suite passes against it as-is, and it runs in CI
+  alongside SQLite and PostgreSQL. It is the serverless local target that suits this data better than SQLite.
+- Tests for the run bookkeeping failure path and the staging lifecycle, including the guarantee that a crashed run's
+  leftover staging rows cannot leak into the next run's diff.
+- Direct tests for the concurrency helpers, which had none. Their failure mode is silent: a dropped row would not
+  raise, it would shorten the batch, and on an entity with window-scoped deletion detection the missing rows would
+  then be closed as real withdrawals under a `success` event.
+- Idempotency asserted as a property: repeating a sync leaves the stored history byte-identical, with only
+  `_synced_at` moving. Covers full syncs, syncs after a real edit, syncs after a deletion, and a wider cascade window
+  re-running over ground a narrower one already covered.
+- Tests for the BigQuery load-job payload, which bypasses SQLAlchemy and hand-builds what lands in the table. The row
+  building moved to `staging_json_rows` so it can be tested without the google-cloud stack, and a fake client pins
+  the blocking `.result()` call that paces submissions under BigQuery's hard rate limit.
+
 ## [0.4.0] - 2026-09-06
 
 ### Added

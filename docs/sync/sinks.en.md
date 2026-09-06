@@ -5,8 +5,9 @@ All sync logic uses portable SQL (correlated `EXISTS`/`NOT EXISTS` subqueries, n
 | Target | Status | Notes |
 |---|---|---|
 | SQLite | Verified (full test suite) | No extra setup |
+| DuckDB | Verified (full test suite) | Needs `duckdb-engine`. Local, serverless target, a better fit than SQLite for analytical volume |
 | BigQuery | Verified (live, full SCD2 cycle) | Requires the `bigquery` extra; see below |
-| PostgreSQL / MySQL | Compatible by design (portable SQL) | Install the driver (`psycopg2`, `pymysql`, ...) |
+| PostgreSQL | Verified (the full test suite also runs against a real server, in CI) | Needs `psycopg2` |
 
 ## Architecture
 

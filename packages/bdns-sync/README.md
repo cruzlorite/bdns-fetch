@@ -39,7 +39,7 @@ La herramienta hace una sola cosa: cada invocación sincroniza un endpoint y no 
 ```bash
 git clone https://github.com/cruzlorite/bdns-sync.git
 cd bdns-sync
-poetry install                 # SQLite/PostgreSQL/MySQL
+poetry install                 # SQLite (otros motores: instala su driver)
 poetry install -E bigquery     # añade el driver de BigQuery
 ```
 
@@ -71,8 +71,9 @@ Toda la lógica de sincronización se escribe en SQL portable (subconsultas `EXI
 | Destino | Estado | Notas |
 |---|---|---|
 | SQLite | Comprobado (suite de tests completa) | Sin configuración adicional |
+| DuckDB | Comprobado (suite de tests completa) | Requiere `duckdb-engine`. Destino local sin servidor, mejor que SQLite para volumen analítico |
 | BigQuery | Comprobado contra el servicio real (ciclo SCD2 completo) | Requiere el extra `bigquery`; ver [docs/sinks.md](docs/sinks.md) |
-| PostgreSQL / MySQL | Compatibles por diseño (SQL portable) | Hay que instalar su driver (`psycopg2`, `pymysql`, ...) |
+| PostgreSQL | Comprobado (la suite de tests completa corre también contra un servidor real) | Requiere `psycopg2` |
 
 Los detalles de arquitectura (interfaz `Sink`, adaptadores por dialecto, pipeline de carga) y la configuración propia de BigQuery (autenticación, permisos, load jobs, clustering) están en [docs/sinks.md](docs/sinks.md).
 
@@ -255,7 +256,8 @@ Los comportamientos problemáticos de la API de origen (registros malformados, `
 
 - `organos_codigo` y `organos_codigoadmin` no están implementados (grupo H); ver la [hoja de ruta](docs/roadmap.md).
 - `partidospoliticos_busqueda` no tiene detección de bajas: su payload no trae ningún campo de fecha de registro (ver [problemas conocidos de la API](docs/bdns-api-behavior.md#8-problemas-conocidos-de-la-api)).
-- Los registros malformados se descartan y quedan anotados en `_sync_errors` (con el contexto y el contenido cortado a 200 caracteres, enlazados por `run_id`); nunca llegan a las tablas sincronizadas, porque sin una clave natural válida no se pueden versionar.
+- Los registros que no se pueden versionar se descartan y quedan anotados en `_sync_errors`, con el motivo y el contenido cortado a 200 caracteres, enlazados por `run_id`. Se rechaza lo que no es un objeto JSON, la clave natural ausente o nula, y la fecha de registro ausente, nula o que no sea una fecha ISO. Nunca llegan a las tablas sincronizadas: sin clave natural válida no hay nada que versionar.
+- Si los descartes dejan el lote vacío, o pasan del 10% habiendo al menos cinco, la ejecución falla en lugar de aplicarse. Un staging vacío es indistinguible de «todo lo de esta ventana se ha dado de baja», y la detección de bajas por ventana lo cerraría entero. El contador `rows_skipped` de `_sync_runs` conviene vigilarlo además de la alerta de fallo del job.
 
 ## Desarrollo
 

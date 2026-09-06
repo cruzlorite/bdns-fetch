@@ -41,7 +41,7 @@ It is a single-purpose tool: each invocation syncs one endpoint, with no configu
 ```bash
 git clone https://github.com/cruzlorite/bdns-sync.git
 cd bdns-sync
-poetry install                 # SQLite/PostgreSQL/MySQL
+poetry install                 # SQLite (other engines: install their driver)
 poetry install -E bigquery     # adds the BigQuery driver
 ```
 
@@ -73,8 +73,9 @@ All sync logic uses portable SQL (correlated `EXISTS`/`NOT EXISTS` subqueries, n
 | Target | Status | Notes |
 |---|---|---|
 | SQLite | Verified (full test suite) | No extra setup |
+| DuckDB | Verified (full test suite) | Needs `duckdb-engine`. Local, serverless target, a better fit than SQLite for analytical volume |
 | BigQuery | Verified (live, full SCD2 cycle) | Requires the `bigquery` extra; see [docs/sinks.en.md](docs/sinks.en.md) |
-| PostgreSQL / MySQL | Compatible by design (portable SQL) | Install the driver (`psycopg2`, `pymysql`, ...) |
+| PostgreSQL | Verified (the full test suite also runs against a real server) | Needs `psycopg2` |
 
 Architecture details (the `Sink` interface, per-dialect adapters, the staging load pipeline) and BigQuery-specific setup (authentication, permissions, load jobs, clustering) are in [docs/sinks.en.md](docs/sinks.en.md).
 
@@ -257,7 +258,8 @@ The source API's problematic behaviors (malformed records, `ERR_MANTENIMIENTO_BB
 
 - `organos_codigo` and `organos_codigoadmin` are not implemented (group H); see the [roadmap](docs/roadmap.en.md).
 - `partidospoliticos_busqueda` has no deletion detection: its payload exposes no registration-date field (see [known API issues](docs/bdns-api-behavior.en.md#8-known-api-issues)).
-- Malformed records are discarded and recorded in `_sync_errors` (context plus content truncated to 200 characters, linked by `run_id`); they are never stored in the synced tables, because without a valid natural key they cannot be versioned.
+- Records that cannot be versioned are discarded and recorded in `_sync_errors`, with the reason and the content truncated to 200 characters, linked by `run_id`. Rejected: anything that is not a JSON object, a missing or null natural key, and a registration date that is missing, null, or not an ISO date. They never reach the synced tables: without a valid natural key there is nothing to version.
+- If rejections leave the batch empty, or exceed 10% with at least five of them, the run fails instead of applying. An empty staging is indistinguishable from "everything in this window was withdrawn", and window-scoped deletion detection would close the lot. The `rows_skipped` counter in `_sync_runs` is worth watching alongside the job-failure alert.
 
 ## Development
 

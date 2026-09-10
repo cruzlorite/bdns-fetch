@@ -19,7 +19,8 @@ def _order_independent(value: Any) -> Any:
     sorting on each element's own canonical JSON string.
 
     Evidence that the order varies between calls, and what it cost before
-    this existed, is in docs/explanation/bdns-api-behavior.md#spurious-changes.
+    this existed, is in [the spurious-changes
+    measurements](../../explanation/bdns-api-behavior.md#spurious-changes).
 
     Args:
         value: Any JSON-compatible value.
@@ -38,7 +39,7 @@ def _order_independent(value: Any) -> Any:
 def sorted_delimited_list(value: str, split_pattern: str) -> str:
     """Sort the elements of a list that travels inside a single string.
 
-    `_order_independent` cannot help with these: it sorts JSON arrays,
+    [`_order_independent`][] cannot help with these: it sorts JSON arrays,
     and this list is just text as far as JSON is concerned.
 
     `split_pattern` is a regular expression rather than a plain
@@ -56,7 +57,8 @@ def sorted_delimited_list(value: str, split_pattern: str) -> str:
     because sorting preserves the elements.
 
     Which fields carry these lists, and the evidence that their order
-    varies between calls, is in docs/explanation/bdns-api-behavior.md#shuffled-lists.
+    varies between calls, is in
+    [the shuffled-lists evidence](../../explanation/bdns-api-behavior.md#shuffled-lists).
 
     Args:
         value: The raw field value, elements joined by a separator.
@@ -89,7 +91,7 @@ def canonical_json(
             rendering, so a change confined to them is not a change.
         delimited_lists: Fields carrying a list inside a single string,
             mapped to the pattern that splits them. Sorted with
-            `sorted_delimited_list`.
+            [`sorted_delimited_list`][].
         canonical_arrays: Sort JSON array elements recursively. On by
             default; turning it off is offered because it is a
             judgement about the source rather than a law, but it
@@ -126,7 +128,7 @@ def row_hash(
 
     This is the content hash SCD2 versioning compares: a different hash
     means a different stored payload. Arguments are those of
-    `canonical_json`, which does the normalizing.
+    [`canonical_json`][], which does the normalizing.
 
     Args:
         payload: The record to hash.

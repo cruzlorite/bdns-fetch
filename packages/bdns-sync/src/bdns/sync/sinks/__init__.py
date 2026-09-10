@@ -10,9 +10,9 @@ deletion detection, run logging, error records. A per-row CRUD interface
 would assume an UPDATE-capable SQL engine; the batch contract can also be
 implemented by an append-only target such as a future Parquet sink.
 
-The only implementation today is `sql.SQLSink`, which covers every target
+The only implementation today is [`sql.SQLSink`][], which covers every target
 with a SQLAlchemy dialect (SQLite, PostgreSQL, BigQuery). Engine
-quirks stay inside that package (see `sql.dialects`) and never leak
+quirks stay inside that package (see [`sql.dialects`][]) and never leak
 through this interface.
 """
 
@@ -114,12 +114,12 @@ class Sink(ABC):
       refreshes its last-seen timestamp. Closed versions are never deleted:
       history is append-only.
     - **Deletion detection scoped to what the batch can prove.** A
-      full-catalog batch (`sync_full`) is the complete current state, so a
+      full-catalog batch ([`sync_full`][]) is the complete current state, so a
       key missing from it is a real deletion and its version is closed. A
-      windowed batch (`sync_window`) is only a slice, so absence proves
+      windowed batch ([`sync_window`][]) is only a slice, so absence proves
       nothing by default; if `reg_date_field` is given, a stored row is
       closed only when its own registration date falls inside the window
-      and it is absent from the batch (see `sync_window`).
+      and it is absent from the batch (see [`sync_window`][]).
     - **Atomicity per run.** Either the whole batch is applied and the run
       is recorded as successful, or the target's synced data is left
       untouched and the run is recorded as failed. No partially-applied
@@ -163,8 +163,8 @@ class Sink(ABC):
             policy: What to do to each record before storing and
                 versioning it: which fields to drop from the stored
                 payload, and which differences stop counting as changes
-                (see `bdns.sync.policy`). The sink applies it through
-                `PayloadPolicy.prepare`, which returns the payload and
+                (see [`bdns.sync.policy`][]). The sink applies it through
+                [`PayloadPolicy.prepare`][], which returns the payload and
                 its hash together, so what is hashed is always what is
                 stored. A policy may not drop a key field or the
                 registration-date field; the sink rejects one that tries.
@@ -197,17 +197,17 @@ class Sink(ABC):
     ) -> dict[str, int]:
         """Apply `rows` as the slice of `endpoint` registered in a date range.
 
-        Unlike `sync_full`, absence from `rows` proves nothing on its own:
+        Unlike [`sync_full`][], absence from `rows` proves nothing on its own:
         the batch is a window over the entity, not its full state, so by
         default no version is ever closed. Versioning of the keys that ARE
-        present works exactly as in `sync_full`.
+        present works exactly as in [`sync_full`][].
 
         Args:
-            endpoint: Same as in `sync_full`.
+            endpoint: Same as in [`sync_full`][].
             rows: Every record whose registration date falls in
                 `[window_start, window_end]` (both inclusive), as fetched
                 from the API. May be a lazy generator; consumed once.
-            key_fields: Same as in `sync_full`.
+            key_fields: Same as in [`sync_full`][].
             window_start: First day of the fetched range, inclusive.
             window_end: Last day of the fetched range, inclusive. Both bounds
                 are recorded so windowed deletion detection can compare like
@@ -215,7 +215,7 @@ class Sink(ABC):
             run_type: Label for the run log distinguishing cadence runs
                 ("daily", "weekly", "monthly", "annual") from historical
                 loads ("backfill"). The sink stores it verbatim.
-            policy: Same as in `sync_full`.
+            policy: Same as in [`sync_full`][].
             reg_date_field: Opt-in for window-scoped deletion detection: the
                 payload field (ISO date string) holding the record's OWN
                 registration date. When given, a stored current version is
@@ -225,7 +225,7 @@ class Sink(ABC):
                 fixed range, which is what makes absence meaningful. Entities
                 whose payload exposes no such field must leave this None and
                 get no deletion detection on windowed runs.
-            skipped: Same contract as in `sync_full`.
+            skipped: Same contract as in [`sync_full`][].
 
         Returns:
             Stats dict (see class docstring). `soft_deleted` can only be
@@ -237,7 +237,7 @@ def get_sink(url: str, limits: RejectLimits = DEFAULT_LIMITS) -> Sink:
     """Build the sink for a target URL.
 
     The URL scheme picks the implementation. Today every scheme is a
-    SQLAlchemy dialect and maps to `sql.SQLSink` (`sqlite:///...`,
+    SQLAlchemy dialect and maps to [`sql.SQLSink`][] (`sqlite:///...`,
     `postgresql://...`, `bigquery://project/dataset`). A future file-based
     sink would claim its own scheme here, e.g. `parquet:///path`.
     """

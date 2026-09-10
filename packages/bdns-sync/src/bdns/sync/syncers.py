@@ -3,7 +3,7 @@
 """One named `sync_*` function per synced entity.
 
 Most are a one-liner delegating to the shared runners in
-`bdns.sync.generic`. convocatorias, grandesbeneficiarios and
+[`bdns.sync.generic`][]. convocatorias, grandesbeneficiarios and
 planesestrategicos have real multi-step logic, discovery plus per-code
 detail calls, so they are longer, but they are still just functions in
 this same file. None of them needs its own module.
@@ -12,7 +12,8 @@ Every `sync_*` function returns the sink's per-run counters: `fetched`,
 `inserted`, `updated`, `touched`, `soft_deleted` and `skipped`.
 
 Verified API behavior (date-parameter families, per-field registration
-dates, retention depths) is documented once in docs/explanation/bdns-api-behavior.md.
+dates, retention depths) is documented once in
+[the API behaviour notes](../../explanation/bdns-api-behavior.md).
 Comments here only state which behavior applies, never the evidence.
 """
 
@@ -132,7 +133,8 @@ def _skip_malformed(
     """Yield only the well-formed records, logging and recording the rest.
 
     The backend sometimes returns an HTML error page instead of JSON for
-    one specific record (see docs/explanation/bdns-api-behavior.md#api-issues).
+    one specific record (see
+    [the known API issues](../../explanation/bdns-api-behavior.md#api-issues)).
     Skipping beats crashing a whole batch over one bad record.
 
     Args:
@@ -224,7 +226,7 @@ def sync_organos(sink: Sink, client: BDNSClient) -> dict[str, int]:
 
 
 def sync_organos_agrupacion(sink: Sink, client: BDNSClient) -> dict[str, int]:
-    """Sync `organos_agrupacion`, sweeping `idAdmon` as `sync_organos` does."""
+    """Sync `organos_agrupacion`, sweeping `idAdmon` as [`sync_organos`][] does."""
     return sync_swept_catalog(
         sink,
         client,
@@ -313,7 +315,7 @@ def sync_ayudasestado_busqueda(
 
     `sectores` is a "#"-joined list that comes back shuffled and is
     sorted before hashing; see `POLICIES`. Arguments are those of
-    `sync_concesiones_busqueda`.
+    [`sync_concesiones_busqueda`][].
     """
     start, end, run_type = resolve_when(window, since, until)
     return sync_search_range(
@@ -342,7 +344,7 @@ def sync_minimis_busqueda(
 
     `sectorActividad` is a ";"-joined list that comes back shuffled and
     is sorted before hashing; see `POLICIES`. Arguments are those of
-    `sync_concesiones_busqueda`.
+    [`sync_concesiones_busqueda`][].
     """
     start, end, run_type = resolve_when(window, since, until)
     return sync_search_range(
@@ -371,9 +373,9 @@ def sync_partidospoliticos_busqueda(
 
     No `reg_date_field`: this payload carries no registration-date field,
     confirmed live and unlike what the official documentation implies, so
-    windowed deletion detection is not possible here. See
-    docs/explanation/bdns-api-behavior.md#windowed-deletions. Arguments are those of
-    `sync_concesiones_busqueda`.
+    windowed deletion detection is not possible here. See [window-scoped
+    deletion detection](../../explanation/bdns-api-behavior.md#windowed-deletions).
+    Arguments are those of [`sync_concesiones_busqueda`][].
     """
     start, end, run_type = resolve_when(window, since, until)
     return sync_search_range(
@@ -420,7 +422,7 @@ def sync_convocatorias_busqueda(
     it carries only 10 of the ~30 detail fields, and its hash changing,
     or not changing, says nothing about detail-only fields. Never use it
     to skip a detail fetch. Arguments are those of
-    `sync_concesiones_busqueda`.
+    [`sync_concesiones_busqueda`][].
     """
     start, end, run_type = resolve_when(window, since, until)
     return sync_search_range_inclusive(
@@ -440,7 +442,8 @@ def discover_convocatoria_codes(client: BDNSClient, start: date, end: date) -> s
     """Find every `numeroConvocatoria` registered in `[start, end]`.
 
     `fechaHasta` is inclusive, so `chunk_end` is sent as-is. It must not
-    go through `to_api_upper_bound`, which would over-fetch one day.
+    go through [`to_api_upper_bound`][bdns.sync.generic.to_api_upper_bound],
+    which would over-fetch one day.
 
     Args:
         client: The BDNS API client.
@@ -483,7 +486,7 @@ def _fetch_details(
 
     Each detail response is a single record, so the client's page-level
     parallelism never kicks in and a sequential loop stays far below the
-    10 req/s budget just from latency. `rate_limited_map` spreads request
+    10 req/s budget just from latency. [`rate_limited_map`][] spreads request
     starts so the pool can approach the limit without bursting past it.
 
     Every step of the two-step syncs goes through here.
@@ -494,7 +497,7 @@ def _fetch_details(
         context_for: Called with one key, returns the label recorded
             against any malformed record from it.
         errors: Malformed-record descriptors are appended here.
-            `_skip_malformed` runs on the consuming thread, so this list
+            [`_skip_malformed`][] runs on the consuming thread, so this list
             is only ever touched from one thread.
         label: Name used in the progress log, written every 500 keys.
         transform: Called as `transform(key, item)` on each surviving
@@ -525,7 +528,7 @@ def fetch_convocatoria_details(
 ) -> Iterator[dict]:
     """Fetch the full detail record for each discovered convocatoria code.
 
-    One real API call per code, paced and parallel; see `_fetch_details`.
+    One real API call per code, paced and parallel; see [`_fetch_details`][].
     This is the costly step of the two-step discover-then-detail flow.
     """
     return _fetch_details(
@@ -549,7 +552,7 @@ def sync_convocatorias(
     """Sync `convocatorias`: discover codes for the range, then fetch detail.
 
     The detail record is what gets versioned, under `codigoBDNS`.
-    Arguments are those of `sync_concesiones_busqueda`.
+    Arguments are those of [`sync_concesiones_busqueda`][].
     """
     start, end, run_type = resolve_when(window, since, until)
     codes = discover_convocatoria_codes(client, start, end)
@@ -596,7 +599,7 @@ def sync_grandesbeneficiarios_busqueda(sink: Sink, client: BDNSClient) -> dict[s
     different spelling of the same name on almost every call, so hashing
     it re-versioned half the table daily. Identity is `idPersona`, and
     the name is still stored; it just no longer counts as a change. See
-    docs/explanation/bdns-api-behavior.md#spurious-changes.
+    [the spurious-changes measurements](../../explanation/bdns-api-behavior.md#spurious-changes).
     """
     anios = [item["id"] for item in client.fetch_grandesbeneficiarios_anios()]
     return sink.sync_full(

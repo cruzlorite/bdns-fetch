@@ -32,8 +32,8 @@ corre sin cambios en SQLite, PostgreSQL y BigQuery.
 - Hace falta una tabla de staging por endpoint, que se vacía al principio
   y al final de cada ejecución.
 - Las diferencias entre motores se concentran en adaptadores
-  (`sinks.sql.dialects`); nada fuera de ahí ramifica por nombre de
+  ([`sinks.sql.dialects`][bdns.sync.sinks.sql.dialects]); nada fuera de ahí ramifica por nombre de
   dialecto.
 - Un destino sin conexión ni UPDATE ni transacción (Parquet, Delta) no
-  encaja en este diseño. Sería otra implementación de `Sink`, no un
+  encaja en este diseño. Sería otra implementación de [`Sink`][bdns.sync.sinks.Sink], no un
   adaptador.

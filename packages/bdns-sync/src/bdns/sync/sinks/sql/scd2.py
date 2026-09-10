@@ -49,9 +49,9 @@ def rejection_reason(
 
     A record without a usable natural key has no identity, so there is
     nothing to version it as. Rejecting it here, in the sink, covers every
-    entity: `syncers._skip_malformed` only guards the two-step detail
-    fetches, and it only catches responses that are not JSON objects at
-    all.
+    entity: [`syncers._skip_malformed`][bdns.sync.syncers._skip_malformed]
+    only guards the two-step detail fetches, and it only catches responses
+    that are not JSON objects at all.
 
     A null key is the case worth spelling out. It does not raise: it
     serializes to the literal key `[null]`, so every record missing that
@@ -149,7 +149,7 @@ def apply_incremental(
     """Apply a windowed batch: one reg-date window pass.
 
     Versioning of the keys present works exactly as in
-    `apply_full_reconciliation`. What differs is deletion: by default no
+    [`apply_full_reconciliation`][]. What differs is deletion: by default no
     key is ever closed, because a reg-date window is a subset of the
     table rather than its full current state, so absence says nothing.
 
@@ -269,12 +269,12 @@ def _load_staging(
 ) -> int:
     """Write `rows` into the staging table in chunks.
 
-    `prefetch` builds the next chunk on a helper thread while this thread
+    [`prefetch`][] builds the next chunk on a helper thread while this thread
     writes the current one. Writes have to stay on this thread:
     `conn` must not leave the thread that created it (SQLite requires
     this). They also stay serial on purpose: BigQuery caps table update
     operations at a low fixed rate, and concurrent writes trip a hard 429
-    (see `dialects.BigQueryAdapter.insert_rows`).
+    (see [`BigQueryAdapter.insert_rows`][bdns.sync.sinks.sql.dialects.BigQueryAdapter.insert_rows]).
     """
     chunk_size = adapter.staging_chunk_size(chunk_size)
 
@@ -466,7 +466,7 @@ def _close_stale(
 def _insert_new_versions(conn: Connection, table: Table, staging: Table, now: datetime) -> None:
     """Insert a current version for every staged key with no current row left.
 
-    Runs after `_close_stale`, so it covers both cases at once: keys
+    Runs after [`_close_stale`][], so it covers both cases at once: keys
     never seen before, and keys whose previous version was just closed
     because their hash changed.
     """

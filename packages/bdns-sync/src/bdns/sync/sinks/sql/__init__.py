@@ -69,7 +69,7 @@ class SQLSink(Sink):
     ) -> dict[str, int]:
         """Reconcile `endpoint` against `rows` as its complete current state.
 
-        See `bdns.sync.sinks.Sink.sync_full` for the contract this
+        See [`bdns.sync.sinks.Sink.sync_full`][] for the contract this
         implements.
         """
         # One list for both sources of skips: the caller's own (malformed
@@ -102,7 +102,7 @@ class SQLSink(Sink):
     ) -> dict[str, int]:
         """Apply `rows` as the slice of `endpoint` registered in a date range.
 
-        See `bdns.sync.sinks.Sink.sync_window` for the contract this
+        See [`bdns.sync.sinks.Sink.sync_window`][] for the contract this
         implements.
         """
         skips = skipped if skipped is not None else []

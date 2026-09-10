@@ -9,7 +9,7 @@ included. What tells them apart is the name:
 - **No leading underscore**: meant to be used from outside the module.
   What the module's `__all__` also declares is the contract: those names
   do not change without a breaking-change note in the changelog.
-- **Leading underscore** (`_apply`, `_order_independent`…): internals.
+- **Leading underscore** ([`_apply`][bdns.sync.sinks.sql.scd2._apply], [`_order_independent`][bdns.sync.hashing._order_independent]…): internals.
   Nothing outside the module should import them, and they may change
   without notice. They are documented because the reasoning they carry
   is what explains the design.

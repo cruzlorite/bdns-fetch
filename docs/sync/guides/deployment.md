@@ -12,7 +12,7 @@ Cada release publica una imagen en GitHub Container Registry con el extra de Big
 docker pull ghcr.io/cruzlorite/bdns-sync:latest    # o :0.5.0
 ```
 
-- El comando por defecto es `scripts/delta_load.sh` (la carga diaria; la ventana la decide él solo).
+- El comando por defecto es [`scripts/delta_load.sh`](https://github.com/cruzlorite/bdns-sync/blob/main/scripts/delta_load.sh) (la carga diaria; la ventana la decide él solo).
 - Cualquier otro comando se pasa tal cual: `docker run ... ghcr.io/cruzlorite/bdns-sync bdns-sync sync sectores`.
 - El modelo tipo Cloud Function no encaja: sus timeouts (de 15 a 60 min) no dan para las ventanas anchas (una `annual` de `convocatorias` son unas 3 h) ni para la carga inicial (~24 h, ver [cargas iniciales y backfills](backfill.md)).
 

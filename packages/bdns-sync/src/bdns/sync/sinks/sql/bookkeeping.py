@@ -15,7 +15,7 @@ failed run from the log. Kept separate, the log always tells the truth:
 written only after the data transaction committed, and `failed` is written
 even though the data rolled back.
 
-Per-engine guarantee (documented in docs/reference/data-model.md): on
+Per-engine guarantee (documented in [the data model](../../reference/data-model.md)): on
 SQLite/Postgres the data transaction is real, so no terminal `success`
 event means the target table is untouched. On BigQuery there is no
 transaction at all (its DBAPI commit

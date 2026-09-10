@@ -10,19 +10,22 @@ whole point of the module:
   stored exactly as the source sent it: `hash_exclude`,
   `delimited_lists`, `canonical_arrays`.
 
-They apply in that order, and `prepare` is the only way to use them, so
-the two halves can never be paired wrongly. The invariant that protects:
+They apply in that order, and
+[`prepare`][bdns.sync.policy.PayloadPolicy.prepare] is the only way to use
+them, so the two halves can never be paired wrongly. The invariant that
+protects:
 
     a different hash always means a different stored payload,
     never the other way round.
 
 Identity is not policy either: the natural key and the registration-date
-field are out of reach of any policy, and `check_identity` refuses one
-that tries to drop them.
+field are out of reach of any policy, and
+[`check_identity`][bdns.sync.policy.PayloadPolicy.check_identity] refuses
+one that tries to drop them.
 
 Why the invariant only holds in that direction, why the hash-only rules
 are the safe half, and what the asymmetry costs when it is broken:
-docs/explanation/payload-policy.md.
+[the payload policy explanation](../../explanation/payload-policy.md).
 """
 
 from collections.abc import Mapping, Sequence
@@ -38,10 +41,11 @@ __all__ = ["DEFAULT_POLICY", "PayloadPolicy"]
 class PayloadPolicy:
     """The rules one entity's records go through.
 
-    Defaults are the measured findings for each entity (see
-    docs/explanation/bdns-api-behavior.md#spurious-changes), declared in
-    `bdns.sync.syncers` next to the entity they belong to. The empty policy is the identity function:
-    store what arrived, hash all of it.
+    Defaults are the measured findings for each entity (see [the
+    spurious-changes measurements](../../explanation/bdns-api-behavior.md#spurious-changes)),
+    declared in [`bdns.sync.syncers`][] next to the entity they belong to.
+    The empty policy is the identity function: store what arrived, hash
+    all of it.
 
     Attributes:
         drop: Fields removed from the record before anything else. They

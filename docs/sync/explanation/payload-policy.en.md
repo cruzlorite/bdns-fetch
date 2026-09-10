@@ -7,7 +7,7 @@ stored, and they are different questions:
 2. **What counts as a change?** What decides whether a new version is
    opened, or only the last-seen timestamp is refreshed.
 
-A `PayloadPolicy` is one entity's answer to both. The whole difficulty of
+A [`PayloadPolicy`][bdns.sync.policy.PayloadPolicy] is one entity's answer to both. The whole difficulty of
 the module is that the two answers are not symmetric: they can be
 decoupled in one direction and not in the other.
 
@@ -25,7 +25,7 @@ exactly what the hash-only rules do, and it is the safe half.
 
 ## Why the order matters
 
-The rules apply in a fixed order, and `prepare` is the only way to use
+The rules apply in a fixed order, and [`prepare`][bdns.sync.policy.PayloadPolicy.prepare] is the only way to use
 them. That is not API convenience: it is what stops them being paired
 wrongly.
 
@@ -38,7 +38,7 @@ The history claims a change nobody will ever be able to see, because the
 evidence was deliberately discarded. It is not a recoverable fault: the
 information that justified the version exists nowhere.
 
-That is why `prepare` returns the payload and its hash together, in one
+That is why [`prepare`][bdns.sync.policy.PayloadPolicy.prepare] returns the payload and its hash together, in one
 call. Exposing the two steps separately would put within a caller's
 reach the one combination that produces unreadable history.
 
@@ -71,7 +71,7 @@ Two things stay out of reach of any policy: the fields forming the
 natural key, and the registration-date field.
 
 They decide what a record **is** and what links its versions across time.
-`check_identity` refuses a policy that tries to drop them.
+[`check_identity`][bdns.sync.policy.PayloadPolicy.check_identity] refuses a policy that tries to drop them.
 
 The asymmetry of cost explains it:
 
@@ -87,6 +87,6 @@ row that simply aged out of the window — that distinction is in
 
 ## Where this lives in the code
 
-- `bdns.sync.policy` — `PayloadPolicy`, `prepare`, `check_identity`.
-- `bdns.sync.hashing` — the canonical JSON and the normalizations.
-- `bdns.sync.syncers` — the `POLICIES` map, one entry per entity.
+- [`bdns.sync.policy`][bdns.sync.policy] — [`PayloadPolicy`][bdns.sync.policy.PayloadPolicy], [`prepare`][bdns.sync.policy.PayloadPolicy.prepare], [`check_identity`][bdns.sync.policy.PayloadPolicy.check_identity].
+- [`bdns.sync.hashing`][bdns.sync.hashing] — the canonical JSON and the normalizations.
+- [`bdns.sync.syncers`][bdns.sync.syncers] — the `POLICIES` map, one entry per entity.

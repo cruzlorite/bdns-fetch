@@ -48,6 +48,10 @@ theme:
         icon: material/brightness-4
         name: Modo claro
 
+# A link to a missing anchor is a broken link; the default only logs it.
+validation:
+  anchors: warn
+
 markdown_extensions:
   - abbr
   - admonition
@@ -139,6 +143,9 @@ plugins:
             merge_init_into_class: true
             members_order: source
             filters: []
+            # `[name][]` in a docstring resolves against the names in scope,
+            # so a docstring can link a sibling without spelling its path.
+            scoped_crossrefs: true
 
 nav:
   - Inicio: index.md

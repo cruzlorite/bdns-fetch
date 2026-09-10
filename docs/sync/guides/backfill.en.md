@@ -55,8 +55,8 @@ $ bdns-sync sync concesiones_busqueda --since 2020-01-01 --until 2020-12-31 --dr
 ## How far back the history goes
 
 `bdns-sync` does not know: it is a primitive and has no idea how far back
-each endpoint's data reaches. Just as `delta_load.sh` owns the cadence,
-`full_load.sh` owns the start dates and passes them with `--since`.
+each endpoint's data reaches. Just as [`delta_load.sh`](https://github.com/cruzlorite/bdns-sync/blob/main/scripts/delta_load.sh) owns the cadence,
+[`full_load.sh`](https://github.com/cruzlorite/bdns-sync/blob/main/scripts/full_load.sh) owns the start dates and passes them with `--since`.
 
 The per-entity dates in the script are **conservative floors, not the
 exact first records**. The API retains a bounded history, and querying

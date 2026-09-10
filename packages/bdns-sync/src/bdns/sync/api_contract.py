@@ -4,8 +4,8 @@
 
 Everything the date handling does rests on behavior measured once against
 the real service and then frozen into tests (see
-docs/explanation/bdns-api-behavior.md#upper-bound). Those tests pin the assumption,
-not the API:
+[the upper-bound semantics](../../explanation/bdns-api-behavior.md#upper-bound)). Those
+tests pin the assumption, not the API:
 `tests/fake_client.py` models the same semantics, so if the source ever
 changes them, CI stays green forever while production quietly loses a day
 at every chunk boundary.

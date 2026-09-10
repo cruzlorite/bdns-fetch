@@ -57,8 +57,8 @@ $ bdns-sync sync concesiones_busqueda --since 2020-01-01 --until 2020-12-31 --dr
 ## Hasta dónde llega el histórico
 
 `bdns-sync` no lo sabe: es una pieza básica y no tiene idea de hasta dónde
-llegan los datos de cada endpoint. Igual que `delta_load.sh` posee la
-cadencia, `full_load.sh` posee las fechas de inicio y las pasa con
+llegan los datos de cada endpoint. Igual que [`delta_load.sh`](https://github.com/cruzlorite/bdns-sync/blob/main/scripts/delta_load.sh) posee la
+cadencia, [`full_load.sh`](https://github.com/cruzlorite/bdns-sync/blob/main/scripts/full_load.sh) posee las fechas de inicio y las pasa con
 `--since`.
 
 Las fechas por entidad del script son **suelos conservadores, no los

@@ -31,8 +31,8 @@ unchanged on SQLite, PostgreSQL and BigQuery.
   changes what the next one would have counted.
 - Each endpoint needs a staging table, emptied at the start and end of
   every run.
-- Engine differences are confined to adapters (`sinks.sql.dialects`);
+- Engine differences are confined to adapters ([`sinks.sql.dialects`][bdns.sync.sinks.sql.dialects]);
   nothing outside them branches on dialect name.
 - A target with no connection, no UPDATE and no transaction (Parquet,
-  Delta) does not fit this design. It would be another `Sink`
+  Delta) does not fit this design. It would be another [`Sink`][bdns.sync.sinks.Sink]
   implementation, not an adapter.

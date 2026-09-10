@@ -7,7 +7,7 @@ almacenarse, y son preguntas distintas:
 2. **¿Qué cuenta como un cambio?** Lo que decide si se abre una versión
    nueva o si solo se refresca la marca de última visita.
 
-Una `PayloadPolicy` es la respuesta a las dos para una entidad concreta.
+Una [`PayloadPolicy`][bdns.sync.policy.PayloadPolicy] es la respuesta a las dos para una entidad concreta.
 Toda la dificultad del módulo está en que las dos respuestas no son
 simétricas: se pueden desacoplar en un sentido y no en el otro.
 
@@ -27,7 +27,7 @@ segura.
 
 ## Por qué el orden importa
 
-Las reglas se aplican en un orden fijo, y `prepare` es la única forma de
+Las reglas se aplican en un orden fijo, y [`prepare`][bdns.sync.policy.PayloadPolicy.prepare] es la única forma de
 usarlas. No es comodidad de API: es lo que impide emparejarlas mal.
 
 Supón que se hace al revés — descartar un campo del payload almacenado,
@@ -39,7 +39,7 @@ El histórico afirma que hubo un cambio que nadie podrá ver nunca, porque
 la prueba se descartó a propósito. No es un fallo recuperable: la
 información que justificaba la versión no existe en ninguna parte.
 
-Por eso `prepare` devuelve el payload y su hash juntos, en una sola
+Por eso [`prepare`][bdns.sync.policy.PayloadPolicy.prepare] devuelve el payload y su hash juntos, en una sola
 llamada. Exponer los dos pasos por separado dejaría al alcance de quien
 llama la única combinación que produce un histórico ilegible.
 
@@ -73,7 +73,7 @@ Dos cosas quedan fuera del alcance de cualquier política: los campos que
 forman la clave natural, y el campo de fecha de registro.
 
 Deciden qué **es** un registro y qué enlaza sus versiones a lo largo del
-tiempo. `check_identity` rechaza una política que intente descartarlos.
+tiempo. [`check_identity`][bdns.sync.policy.PayloadPolicy.check_identity] rechaza una política que intente descartarlos.
 
 La asimetría de coste lo explica:
 
@@ -91,6 +91,6 @@ está en
 
 ## Dónde vive esto en el código
 
-- `bdns.sync.policy` — `PayloadPolicy`, `prepare`, `check_identity`.
-- `bdns.sync.hashing` — el JSON canónico y las normalizaciones.
-- `bdns.sync.syncers` — el mapa `POLICIES`, una entrada por entidad.
+- [`bdns.sync.policy`][bdns.sync.policy] — [`PayloadPolicy`][bdns.sync.policy.PayloadPolicy], [`prepare`][bdns.sync.policy.PayloadPolicy.prepare], [`check_identity`][bdns.sync.policy.PayloadPolicy.check_identity].
+- [`bdns.sync.hashing`][bdns.sync.hashing] — el JSON canónico y las normalizaciones.
+- [`bdns.sync.syncers`][bdns.sync.syncers] — el mapa `POLICIES`, una entrada por entidad.

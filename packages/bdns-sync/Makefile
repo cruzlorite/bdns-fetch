@@ -28,6 +28,7 @@ check-docs: ## Verify doc references, docstring conventions, and the site build
 	poetry run python scripts/check_doc_refs.py
 	poetry run python scripts/check_docstrings.py
 	poetry run mkdocs build --strict
+	poetry run python scripts/check_site_links.py
 
 docs: ## Serve the documentation site locally
 	poetry run mkdocs serve

@@ -59,6 +59,9 @@ jobs:
       - name: Build docs
         run: poetry run mkdocs build --strict
 
+      - name: Check site links
+        run: poetry run python scripts/check_site_links.py
+
       - name: Test (SQLite)
         run: poetry run pytest
 

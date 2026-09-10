@@ -15,6 +15,11 @@ import re
 import sys
 
 REF = re.compile(r"docs/[\w./-]+\.md(?:#([\w-]+))?")
+# A docstring links relative to the page it renders on, and every module's
+# page is in docs/reference/api/. mkdocs does not validate these: they come
+# out of mkdocstrings after its own link checks have run.
+REL = re.compile(r"\]\((\.\./[\w./-]+\.md)(?:#([\w-]+))?\)")
+API_PAGES = pathlib.Path("docs/reference/api")
 ANCHOR = re.compile(r'<a id="([\w-]+)"></a>')
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -49,6 +54,19 @@ def main() -> int:
                 problems.append(f"{where}: {ref} -> no such file")
             elif anchor and anchor not in anchors_in(target):
                 problems.append(f"{where}: {ref} -> no anchor '{anchor}' in that file")
+
+        if source.suffix != ".py" or "src" not in source.relative_to(ROOT).parts:
+            continue
+        for match in REL.finditer(text):
+            checked += 1
+            rel, anchor = match.group(1), match.group(2)
+            line = text.count("\n", 0, match.start()) + 1
+            target = (ROOT / API_PAGES / rel).resolve()
+            where = f"{source.relative_to(ROOT)}:{line}"
+            if not target.exists():
+                problems.append(f"{where}: {rel} -> no such file (relative to {API_PAGES})")
+            elif anchor and anchor not in anchors_in(target):
+                problems.append(f"{where}: {rel}#{anchor} -> no anchor '{anchor}' in that file")
 
     for problem in problems:
         print(problem, file=sys.stderr)

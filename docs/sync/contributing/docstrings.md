@@ -13,8 +13,8 @@ the constraint this convention exists to satisfy.
 | --- | --- |
 | What a function does, and what it promises the caller | Its docstring |
 | A design decision spanning several functions | The module docstring |
-| A measured fact about the BDNS API | `docs/bdns-api-behavior.md` |
-| A warning for whoever consumes the resulting tables | `docs/data-caveats.md` |
+| A measured fact about the BDNS API | [API behaviour](../explanation/bdns-api-behavior.md) |
+| A warning for whoever consumes the resulting tables | [Before querying the data](../explanation/data-caveats.md) |
 | How to run, deploy, or schedule the tool | The guides |
 
 Duplication is not a style problem here, it is a correctness problem:
@@ -40,7 +40,7 @@ Rules:
   as an oversight.
 - `Raises` is for exceptions a caller is expected to handle, not for
   every exception that can physically escape.
-- A genuinely obvious one-liner stays a one-liner. `chunked` needs no
+- A genuinely obvious one-liner stays a one-liner. [`chunked`][bdns.sync.pipeline.chunked] needs no
   `Args` block; forcing one adds noise, not information.
 
 ## Where the "why" goes: the three-way test
@@ -65,7 +65,7 @@ twenty-five lines mixing all three categories. Split:
 
 - Which fields shuffle their order (`sectorActividad` in minimis,
   `sectores` in ayudasestado) — **measurement**, belongs in
-  `docs/bdns-api-behavior.md`.
+  [the API behaviour notes](../explanation/bdns-api-behavior.md).
 - Why the separator is a regex and not a plain character (CNAE names
   contain their own semicolons) — **this function's choice**, stays.
 - Why hashing may be coarser than storage but never finer — **module
@@ -143,23 +143,61 @@ Every module declares `__all__`, and it is the contract: names in
 Module-private helpers keep the underscore prefix, and they stay
 documented. The reference renders them next to the public names, one
 page per module; the underscore is what tells a reader a name may change
-without notice. `_order_independent` is private, and its docstring is
+without notice. [`_order_independent`][bdns.sync.hashing._order_independent] is private, and its docstring is
 still one of the more useful ones in the package.
 
-## Referring to `docs/` from code
+## Links from code
 
-Keep these references. Copying evidence into docstrings is how it goes
-stale. Format:
+Keep references to the documentation rather than copying evidence into
+docstrings: copies go stale. How to write one depends on whether it gets
+rendered.
 
+**In a docstring**, write a Markdown link. It is relative to the page the
+docstring renders on, and every module's page lives in
+`docs/reference/api/`:
+
+```python
+"""...
+
+Evidence that the order varies is in
+[the spurious-changes measurements](../../explanation/bdns-api-behavior.md#spurious-changes).
+"""
 ```
-See docs/bdns-api-behavior.md#cambios-espurios.
+
+In the editor the path still says which file to open; on the site it is a
+link.
+
+**To another object**, use a cross-reference. A name in the docstring's
+scope needs no target, and anything else takes its full path:
+
+```python
+"""Same shape as [`sync_search_range`][], for the other date family.
+
+Serialized through [`PortableJSON`][bdns.sync.sinks.sql.schema.PortableJSON].
+"""
 ```
 
-- Reference an **anchor**, never a section number. Section numbers move
-  every time a section is inserted.
-- The anchor is the heading slug of the canonical file.
-- `scripts/check_doc_refs.py` verifies in CI that every referenced file
-  and anchor exists. A rename that breaks a reference fails the build.
+A name between plain backticks renders as code, not as a link.
+
+**In a comment, a script, a test or the Dockerfile**, nothing renders, so
+write the path from the repository root:
+
+```python
+# See docs/explanation/bdns-api-behavior.md#spurious-changes.
+```
+
+In every case:
+
+- Link an **anchor**, never a section number. Section numbers move every
+  time a section is inserted.
+- The anchors are the explicit `<a id="…">` ids in the evidence
+  documents. They are language-independent: a Spanish page and its
+  translation use the same ones.
+
+`scripts/check_doc_refs.py` resolves every such link, rendered or not, and
+fails on a missing file or anchor. `scripts/check_site_links.py` reads the
+built site and fails on any mention of a documented object, a document or
+a script that is not a link.
 
 ## Language
 

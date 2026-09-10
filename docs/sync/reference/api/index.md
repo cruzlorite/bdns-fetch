@@ -9,7 +9,7 @@ incluidos. Lo que distingue unos de otros es el nombre:
 - **Sin guion bajo**: pensado para usarse desde fuera del módulo. Lo que
   además declara el `__all__` del módulo es el contrato: esos nombres no
   cambian sin nota de ruptura en el changelog.
-- **Con guion bajo** (`_apply`, `_order_independent`…): internos. Nada de
+- **Con guion bajo** ([`_apply`][bdns.sync.sinks.sql.scd2._apply], [`_order_independent`][bdns.sync.hashing._order_independent]…): internos. Nada de
   fuera del módulo debería importarlos, y pueden cambiar sin aviso. Están
   documentados porque el razonamiento que llevan dentro es lo que explica
   el diseño.

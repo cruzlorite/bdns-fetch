@@ -10,10 +10,11 @@ BigQuery is a first-class target and, so far, the only one that needs an
 adapter, and PostgreSQL needs one only to truncate staging. SQLite is
 covered by the DialectAdapter default.
 
-To handle a new quirk, add a method to DialectAdapter with a portable
-default (usually a no-op), override it in the engine's adapter, and call
-it from the module that hits the difference. `prepare_metadata` is the
-existing example: BigQuery rejects CREATE INDEX, so its adapter strips
+To handle a new quirk, add a method to [`DialectAdapter`][] with a
+portable default (usually a no-op), override it in the engine's adapter,
+and call it from the module that hits the difference.
+[`DialectAdapter.prepare_metadata`][] is the existing example: BigQuery
+rejects CREATE INDEX, so its adapter strips
 indexes from the metadata before create_all, while every other target
 keeps them through the inherited no-op.
 
@@ -44,7 +45,7 @@ __all__ = [
 def staging_json_rows(table: Table, rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
     """Turn staged rows into the JSON records a BigQuery load job takes.
 
-    Separate from `BigQueryAdapter.insert_rows` so it can be tested
+    Separate from [`BigQueryAdapter.insert_rows`][] so it can be tested
     without the google-cloud stack: this is the part that can quietly go
     wrong, since it bypasses SQLAlchemy's bind processors and hand-builds
     what lands in the table.
@@ -119,7 +120,7 @@ class DialectAdapter:
         conn.execute(delete(table))
 
     def staging_chunk_size(self, default: int) -> int:
-        """Return how many rows to buffer per `insert_rows` call.
+        """Return how many rows to buffer per [`insert_rows`][] call.
 
         Args:
             default: The caller's value, set by the scd2 apply functions.
@@ -180,7 +181,7 @@ class BigQueryAdapter(DialectAdapter):
         limit. 50,000 keeps the bounded queue's worst-case in-memory
         footprint (three chunks: two queued, one in flight) in the low
         hundreds of MB. Measured figures in
-        docs/explanation/bdns-api-behavior.md#performance.
+        [the performance notes](../../explanation/bdns-api-behavior.md#performance).
 
         Args:
             default: The caller's value, ignored here.
@@ -195,7 +196,7 @@ class BigQueryAdapter(DialectAdapter):
 
         Load jobs are roughly 3-4x faster than batched DML and free: they
         do not count against the query/DML byte quota. Measured figures
-        in docs/explanation/bdns-api-behavior.md#performance.
+        in [the performance notes](../../explanation/bdns-api-behavior.md#performance).
 
         Blocks on `.result()` deliberately: BigQuery caps table *update*
         operations (loads count) at a low rate regardless of whether
@@ -206,8 +207,9 @@ class BigQueryAdapter(DialectAdapter):
 
         Bypasses SQLAlchemy's INSERT compilation and bind processors
         entirely, so payload serialization is done by hand here, reusing
-        the staging table's own `payload` column type (`PortableJSON`) so
-        the two paths can never drift out of sync with each other.
+        the staging table's own `payload` column type
+        ([`PortableJSON`][bdns.sync.sinks.sql.schema.PortableJSON]) so the two
+        paths can never drift out of sync with each other.
 
         Args:
             conn: Open connection, used to reach the BigQuery client.
@@ -234,7 +236,7 @@ def get_adapter(engine: Engine) -> DialectAdapter:
         engine: The target engine.
 
     Returns:
-        A new adapter instance. `DialectAdapter` for any dialect without
+        A new adapter instance. [`DialectAdapter`][] for any dialect without
         a registered one, which is the portable default rather than an
         error: an unknown engine works if its SQL is standard.
     """

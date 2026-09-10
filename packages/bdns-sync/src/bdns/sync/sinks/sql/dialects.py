@@ -180,7 +180,7 @@ class BigQueryAdapter(DialectAdapter):
         limit. 50,000 keeps the bounded queue's worst-case in-memory
         footprint (three chunks: two queued, one in flight) in the low
         hundreds of MB. Measured figures in
-        docs/bdns-api-behavior.md#performance.
+        docs/explanation/bdns-api-behavior.md#performance.
 
         Args:
             default: The caller's value, ignored here.
@@ -195,7 +195,7 @@ class BigQueryAdapter(DialectAdapter):
 
         Load jobs are roughly 3-4x faster than batched DML and free: they
         do not count against the query/DML byte quota. Measured figures
-        in docs/bdns-api-behavior.md#performance.
+        in docs/explanation/bdns-api-behavior.md#performance.
 
         Blocks on `.result()` deliberately: BigQuery caps table *update*
         operations (loads count) at a low rate regardless of whether

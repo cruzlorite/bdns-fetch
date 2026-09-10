@@ -1,6 +1,6 @@
 # Makefile for BDNS Sync project
 
-.PHONY: help install dev-install test lint format check-docs clean all
+.PHONY: help install dev-install test lint format check-docs docs clean all
 
 .DEFAULT_GOAL := help
 
@@ -24,9 +24,13 @@ lint: ## Run code linting with ruff
 format: ## Format code with ruff formatter
 	poetry run ruff format .
 
-check-docs: ## Verify doc references and docstring conventions
+check-docs: ## Verify doc references, docstring conventions, and the site build
 	poetry run python scripts/check_doc_refs.py
 	poetry run python scripts/check_docstrings.py
+	poetry run mkdocs build --strict
+
+docs: ## Serve the documentation site locally
+	poetry run mkdocs serve
 
 clean: ## Remove build artifacts and cache files
 	rm -rf dist/

@@ -102,7 +102,7 @@ def rate_limited_map(
     all its workers at once gets 429s even when the average rate is fine.
     Spacing the call starts fixes that, and leaves `max_workers` only
     needing to be large enough to cover call latency. Measured figures
-    are in docs/bdns-api-behavior.md#performance.
+    are in docs/explanation/bdns-api-behavior.md#performance.
 
     Args:
         keys: Work items. Pulled lazily.

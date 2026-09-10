@@ -12,7 +12,7 @@ Every `sync_*` function returns the sink's per-run counters: `fetched`,
 `inserted`, `updated`, `touched`, `soft_deleted` and `skipped`.
 
 Verified API behavior (date-parameter families, per-field registration
-dates, retention depths) is documented once in docs/bdns-api-behavior.md.
+dates, retention depths) is documented once in docs/explanation/bdns-api-behavior.md.
 Comments here only state which behavior applies, never the evidence.
 """
 
@@ -84,7 +84,7 @@ REGLAMENTOS_AMBITOS: tuple[str, ...] = tuple(Ambito)
 #
 # The measured rules for each entity, in one place. Every one is a finding,
 # not a preference; the evidence is in
-# docs/bdns-api-behavior.md#spurious-changes. Entities absent from this map
+# docs/explanation/bdns-api-behavior.md#spurious-changes. Entities absent from this map
 # take the default: store what arrived, hash all of it.
 #
 # This map is the definition, and the syncers read it through `policy_for`
@@ -132,7 +132,7 @@ def _skip_malformed(
     """Yield only the well-formed records, logging and recording the rest.
 
     The backend sometimes returns an HTML error page instead of JSON for
-    one specific record (see docs/bdns-api-behavior.md#api-issues).
+    one specific record (see docs/explanation/bdns-api-behavior.md#api-issues).
     Skipping beats crashing a whole batch over one bad record.
 
     Args:
@@ -259,7 +259,7 @@ def sync_reglamentos(sink: Sink, client: BDNSClient) -> dict[str, int]:
 # `reg_date_field` names the payload's own registration-date field, which
 # enables window-scoped deletion detection (see `Sink.sync_window`). Each
 # field was confirmed live per entity; see
-# docs/bdns-api-behavior.md#windowed-deletions.
+# docs/explanation/bdns-api-behavior.md#windowed-deletions.
 
 
 def sync_concesiones_busqueda(
@@ -372,7 +372,7 @@ def sync_partidospoliticos_busqueda(
     No `reg_date_field`: this payload carries no registration-date field,
     confirmed live and unlike what the official documentation implies, so
     windowed deletion detection is not possible here. See
-    docs/bdns-api-behavior.md#windowed-deletions. Arguments are those of
+    docs/explanation/bdns-api-behavior.md#windowed-deletions. Arguments are those of
     `sync_concesiones_busqueda`.
     """
     start, end, run_type = resolve_when(window, since, until)
@@ -400,7 +400,7 @@ def sync_partidospoliticos_busqueda(
 # (INCLUSIVE upper bound), not the `fechaRegInicio`/`fechaRegFin` family
 # (exclusive) the four big search endpoints use. That is why this section
 # calls `sync_search_range_inclusive` and never `to_api_upper_bound`.
-# Details in docs/bdns-api-behavior.md#upper-bound.
+# Details in docs/explanation/bdns-api-behavior.md#upper-bound.
 
 
 def sync_convocatorias_busqueda(
@@ -596,7 +596,7 @@ def sync_grandesbeneficiarios_busqueda(sink: Sink, client: BDNSClient) -> dict[s
     different spelling of the same name on almost every call, so hashing
     it re-versioned half the table daily. Identity is `idPersona`, and
     the name is still stored; it just no longer counts as a change. See
-    docs/bdns-api-behavior.md#spurious-changes.
+    docs/explanation/bdns-api-behavior.md#spurious-changes.
     """
     anios = [item["id"] for item in client.fetch_grandesbeneficiarios_anios()]
     return sink.sync_full(

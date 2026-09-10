@@ -11,28 +11,18 @@ whole point of the module:
   `delimited_lists`, `canonical_arrays`.
 
 They apply in that order, and `prepare` is the only way to use them, so
-the two halves can never be paired wrongly. What that protects:
+the two halves can never be paired wrongly. The invariant that protects:
 
     a different hash always means a different stored payload,
     never the other way round.
 
-Hashing the record as received, rather than the record as stored, breaks
-that. Drop a field and hash the original, and a change in the dropped
-field opens a new version whose stored payload is byte-identical to the
-one it closed: the history claims a change that nobody can ever see,
-because the evidence was deliberately discarded.
+Identity is not policy either: the natural key and the registration-date
+field are out of reach of any policy, and `check_identity` refuses one
+that tries to drop them.
 
-The hash-only rules are safe precisely because they go the other way.
-They make the hash *coarser* than what is stored, declaring that two
-payloads differing only by array order, or by a shuffled list inside a
-string, or by a field measured as unstable, are the same record. They
-decline to report a difference known to be noise; they never invent one.
-
-Identity is not policy. The natural key and the registration-date field
-decide what a record *is* and what links its versions across time. A
-policy may not touch them, and `check_identity` refuses a policy that
-tries: changing a hash rule costs storage and noise, while changing
-identity severs a record's past from its future, which nothing recovers.
+Why the invariant only holds in that direction, why the hash-only rules
+are the safe half, and what the asymmetry costs when it is broken:
+docs/explanation/payload-policy.md.
 """
 
 from collections.abc import Mapping, Sequence
@@ -49,7 +39,7 @@ class PayloadPolicy:
     """The rules one entity's records go through.
 
     Defaults are the measured findings for each entity (see
-    docs/bdns-api-behavior.md#spurious-changes), declared in
+    docs/explanation/bdns-api-behavior.md#spurious-changes), declared in
     `bdns.sync.syncers` next to the entity they belong to. The empty policy is the identity function:
     store what arrived, hash all of it.
 

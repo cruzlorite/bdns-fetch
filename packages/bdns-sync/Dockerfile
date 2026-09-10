@@ -5,7 +5,7 @@
 #   docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync \
 #     bdns-sync sync sectores                                                      # any CLI command
 #
-# See docs/deployment.md for running this on a schedule in the cloud.
+# See docs/guides/deployment.md for running this on a schedule in the cloud.
 FROM python:3.12-slim
 
 WORKDIR /app

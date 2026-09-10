@@ -22,7 +22,7 @@
 # minimis). Those rows are closed with the date the backfill ran, not the date
 # they expired. Nothing breaks, and the cadence never does this because its widest
 # window only reaches 365 days of registration date, but the bulk closure is easy
-# to mistake for a real event. See docs/data-caveats.md.
+# to mistake for a real event. See docs/explanation/data-caveats.md.
 #
 # The per-entity start years are floors, not exact firsts: the API only
 # retains a bounded history (measured live, see README "Carga histórica /

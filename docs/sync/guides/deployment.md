@@ -106,4 +106,4 @@ La única diferencia real está en la autenticación contra el destino: fuera de
 
 ## Sin nube
 
-Una línea de cron en cualquier máquina, tal como explica el [README](../README.md#operación-programada).
+Una línea de cron en cualquier máquina, tal como explica el [README](https://github.com/cruzlorite/bdns-sync/blob/main/README.md#operación-programada).

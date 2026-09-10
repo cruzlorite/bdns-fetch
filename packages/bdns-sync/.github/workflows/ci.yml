@@ -56,6 +56,9 @@ jobs:
       - name: Check docstring conventions
         run: poetry run python scripts/check_docstrings.py
 
+      - name: Build docs
+        run: poetry run mkdocs build --strict
+
       - name: Test (SQLite)
         run: poetry run pytest
 

@@ -11,9 +11,9 @@ Toda la lógica de sincronización se escribe en SQL portable (subconsultas `EXI
 
 ## Arquitectura
 
-El almacenamiento queda detrás de una interfaz `Sink` ([`bdns/sync/sinks/`](../bdns/sync/sinks/)): la capa de fetch entrega lotes de registros y el sink se encarga de todo lo demás (versionado SCD2, detección de bajas, registro de ejecuciones). La implementación actual es [`SQLSink`](../bdns/sync/sinks/sql/__init__.py), que cubre cualquier motor con dialecto de SQLAlchemy; las diferencias entre motores se concentran en sus adaptadores internos ([`bdns/sync/sinks/sql/dialects.py`](../bdns/sync/sinks/sql/dialects.py)). Un destino futuro que no sea SQL (Parquet, por ejemplo) sería otra implementación de `Sink`, sin tocar la capa de fetch.
+El almacenamiento queda detrás de una interfaz `Sink` ([`bdns.sync.sinks`](../reference/api/sinks.md)): la capa de fetch entrega lotes de registros y el sink se encarga de todo lo demás (versionado SCD2, detección de bajas, registro de ejecuciones). La implementación actual es [`SQLSink`](../reference/api/sinks.sql.md), que cubre cualquier motor con dialecto de SQLAlchemy; las diferencias entre motores se concentran en sus adaptadores internos ([`bdns.sync.sinks.sql.dialects`](../reference/api/sinks.sql.dialects.md)). Un destino futuro que no sea SQL (Parquet, por ejemplo) sería otra implementación de `Sink`, sin tocar la capa de fetch.
 
-Al cargar el staging se solapa la descarga del lote siguiente con la escritura del actual, mediante un pipeline productor/consumidor genérico ([`bdns/sync/pipeline.py`](../bdns/sync/pipeline.py)), con una cola acotada que hace de contrapresión. Las cifras y el porqué están en la [sección 7 de bdns-api-behavior.md](bdns-api-behavior.md#7-rendimiento-medido).
+Al cargar el staging se solapa la descarga del lote siguiente con la escritura del actual, mediante un pipeline productor/consumidor genérico ([`pipeline.py`](../reference/api/pipeline.md)), con una cola acotada que hace de contrapresión. Las cifras y el porqué están en la [sección 7 de bdns-api-behavior.md](bdns-api-behavior.md#performance).
 
 ## BigQuery
 
@@ -27,4 +27,4 @@ export BDNS_SYNC_TARGET_URL="bigquery://<proyecto>/<dataset>"
 - **Escritura con load jobs, no con DML**: el staging se carga con `load_table_from_json` en vez de con sentencias INSERT, entre 3 y 4 veces más rápido y además **gratis** (los load jobs no cuentan para la cuota de bytes de query/DML). Medido sobre la misma carga histórica contra el servicio real: entre 250 y 325 filas/s con DML por lotes, frente a entre 900 y 1.300 filas/s con load jobs.
 - **Escrituras estrictamente en serie**: BigQuery limita a un ritmo fijo y bajo las operaciones de actualización sobre una misma tabla; si se envían load jobs en paralelo salta `429 too many table update operations`, un límite duro de la plataforma y no una cuota que se pueda ampliar.
 - **Sin autoincremento**: los identificadores de las tablas de control (`run_id`, `error_id`) los genera la aplicación (microsegundos desde el epoch), no la base de datos.
-- El resto de diferencias (el tipo JSON no admite parámetros bind, `DELETE` exige `WHERE`, los literales `NULL` necesitan tipo explícito) están resueltas y explicadas en [`dialects.py`](../bdns/sync/sinks/sql/dialects.py) y en el código de `sinks/sql/`.
+- El resto de diferencias (el tipo JSON no admite parámetros bind, `DELETE` exige `WHERE`, los literales `NULL` necesitan tipo explícito) están resueltas y explicadas en [`dialects`](../reference/api/sinks.sql.dialects.md) y en el código de `sinks/sql/`.

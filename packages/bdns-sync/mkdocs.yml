@@ -1,0 +1,173 @@
+site_name: BDNS Sync
+site_description: >-
+  Motor de sincronización que mantiene bases de datos de destino en forma
+  SCD2 a partir de la API de la Base de Datos Nacional de Subvenciones.
+site_url: https://cruzlorite.github.io/bdns-sync/
+repo_url: https://github.com/cruzlorite/bdns-sync
+repo_name: cruzlorite/bdns-sync
+edit_uri: edit/main/docs/
+copyright: GPL-3.0-or-later
+
+theme:
+  name: material
+  language: es
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    # navigation.instant is deliberately absent: it is incompatible with
+    # the i18n language switcher's contextual link.
+    - navigation.tracking
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+    - search.highlight
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Seguir el sistema
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Modo oscuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Modo claro
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  # Turns :material-*: / :octicons-*: shortcodes into inline SVG icons.
+  # Without it they render as literal text.
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+plugins:
+  - search:
+      lang: [es, en]
+  # Spanish is canonical: `foo.md` is Spanish, `foo.en.md` is its English
+  # translation. Pages with no translation fall back to the Spanish one.
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      languages:
+        - locale: es
+          name: Español
+          default: true
+          build: true
+        - locale: en
+          name: English
+          build: true
+          site_description: >-
+            Sync engine that keeps target databases in SCD2 form from the
+            Base de Datos Nacional de Subvenciones (BDNS) API.
+          # Merged by index into theme.palette: only the toggle labels change.
+          theme:
+            palette:
+              - toggle:
+                  name: Follow the system
+              - toggle:
+                  name: Switch to dark mode
+              - toggle:
+                  name: Switch to light mode
+          nav_translations:
+            Inicio: Home
+            Empezar: Get started
+            Guías: How-to guides
+            Explicación: Explanation
+            Referencia: Reference
+            API Python: Python API
+            Internals: Internals
+            Contribuir: Contributing
+            Hoja de ruta: Roadmap
+  # The reference is built once per locale, so every symbol has one URL per
+  # language and autorefs sees competing targets. `resolve_closest` picks
+  # the one in the same subtree as the linking page, which is the right
+  # answer: a Spanish page links to the Spanish build.
+  - autorefs:
+      resolve_closest: true
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            docstring_section_style: table
+            show_source: true
+            show_root_heading: false
+            show_root_full_path: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            merge_init_into_class: true
+            members_order: source
+            filters: ["!^_"]
+
+nav:
+  - Inicio: index.md
+  - Empezar: getting-started.md
+  - Guías:
+      - guides/scheduling.md
+      - guides/backfill.md
+      - guides/deployment.md
+  - Explicación:
+      - explanation/payload-policy.md
+      - explanation/bdns-api-behavior.md
+      - explanation/data-caveats.md
+      - explanation/sinks.md
+  - Referencia:
+      - reference/cli.md
+      - reference/data-model.md
+      - API Python:
+          - reference/api/index.md
+          - reference/api/policy.md
+          - reference/api/hashing.md
+          - reference/api/generic.md
+          - reference/api/syncers.md
+          - reference/api/pipeline.md
+          - reference/api/api_contract.md
+          - reference/api/sinks.md
+          - reference/api/cli.md
+          - Internals:
+              - reference/api/sinks.sql.md
+              - reference/api/sinks.sql.scd2.md
+              - reference/api/sinks.sql.schema.md
+              - reference/api/sinks.sql.bookkeeping.md
+              - reference/api/sinks.sql.dialects.md
+  - Contribuir:
+      - contributing/docstrings.md
+  - Hoja de ruta: roadmap.md

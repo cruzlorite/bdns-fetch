@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Verify that every docs/ reference in the code points somewhere real.
 
-Docstrings link to the evidence documents instead of copying them, which
-is what stops the two from drifting. That only works while the links do:
-a renamed file or a reworded heading silently turns a reference into a
-dead end that nothing else would catch.
+Docstrings, the orchestration scripts and the Dockerfile all link to the
+documents instead of copying them, which is what stops the two from
+drifting. That only works while the links do: a renamed file or a
+reworded heading silently turns a reference into a dead end that nothing
+else would catch.
 
 Run from the repository root, or via `make check-docs`.
 """
@@ -13,7 +14,7 @@ import pathlib
 import re
 import sys
 
-REF = re.compile(r"docs/[\w.-]+\.md(?:#([\w-]+))?")
+REF = re.compile(r"docs/[\w./-]+\.md(?:#([\w-]+))?")
 ANCHOR = re.compile(r'<a id="([\w-]+)"></a>')
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -29,7 +30,13 @@ def main() -> int:
     problems: list[str] = []
     checked = 0
 
-    for source in sorted(ROOT.glob("src/**/*.py")):
+    sources = [
+        path
+        for pattern in ("src/**/*.py", "scripts/*.sh", "Dockerfile", "Makefile")
+        for path in sorted(ROOT.glob(pattern))
+    ]
+
+    for source in sources:
         text = source.read_text(encoding="utf-8")
         for match in REF.finditer(text):
             checked += 1

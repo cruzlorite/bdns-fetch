@@ -66,13 +66,13 @@ Dos cosas que **no** sirven para distinguirlas. Que la baja llegue en bloque no 
 
 La cadencia normal apenas las ve. La ventana anual alcanza 365 días de fecha de registro, así que solo entran en su ámbito las filas registradas hace menos de un año; una concesión antigua registrada hace poco sí se cerrará al caducar, pero es un goteo.
 
-Un **backfill ancho es otra cosa**: su ámbito de comparación es todo el rango pedido, así que cierra de una vez todo lo caducado, con la fecha del día en que se lanzó. Volver a lanzar [`scripts/full_load.sh`](../scripts/full_load.sh) sobre un destino ya poblado produce exactamente eso. En septiembre de 2026, con 1,13 millones de concesiones de 2022 almacenadas y a punto de cumplir plazo, un backfill lanzado en 2027 las cerraría todas juntas.
+Un **backfill ancho es otra cosa**: su ámbito de comparación es todo el rango pedido, así que cierra de una vez todo lo caducado, con la fecha del día en que se lanzó. Volver a lanzar [`scripts/full_load.sh`](https://github.com/cruzlorite/bdns-sync/blob/main/scripts/full_load.sh) sobre un destino ya poblado produce exactamente eso. En septiembre de 2026, con 1,13 millones de concesiones de 2022 almacenadas y a punto de cumplir plazo, un backfill lanzado en 2027 las cerraría todas juntas.
 
 No es un fallo: el registro ya no está en el origen y la tabla lo refleja. Pero conviene saber que esa fecha de cierre dice cuándo te enteraste, no cuándo caducó.
 
 ## Plazos que desaparecen y vuelven
 
-En `convocatorias` verás versiones donde el plazo de solicitud se queda vacío y otra posterior donde reaparece con los mismos valores. No hubo modificación administrativa: la API deja caer el bloque entero —`fechaInicioSolicitud`, `fechaFinSolicitud`, `textInicio`, `textFin`— en algunas llamadas y lo devuelve en la siguiente. Afecta a algo menos del 9% de los pares de versiones (ver [sección 9 de `bdns-api-behavior.md`](bdns-api-behavior.md#9-cambios-espurios-el-mismo-dato-escrito-de-otra-forma)).
+En `convocatorias` verás versiones donde el plazo de solicitud se queda vacío y otra posterior donde reaparece con los mismos valores. No hubo modificación administrativa: la API deja caer el bloque entero —`fechaInicioSolicitud`, `fechaFinSolicitud`, `textInicio`, `textFin`— en algunas llamadas y lo devuelve en la siguiente. Afecta a algo menos del 9% de los pares de versiones (ver [cambios espurios](bdns-api-behavior.md#spurious-changes)).
 
 El registro es fiel a lo que devolvió el origen, pero si cuentas modificaciones de convocatorias sin filtrar te saldrán de más. Para descartarlas, ignora las versiones en las que un campo pasa de tener valor a `null` y vuelve al valor anterior:
 

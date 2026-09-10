@@ -43,7 +43,7 @@ def all_pages(fetch: Callable[..., Any]) -> Callable[..., Any]:
     methods accept the parameter, so it is added by signature inspection
     rather than blindly.
 
-    See docs/bdns-api-behavior.md#api-issues for what this cost when it
+    See docs/explanation/bdns-api-behavior.md#api-issues for what this cost when it
     was missing.
 
     Args:
@@ -87,7 +87,7 @@ def iter_date_chunks(start: date, end: date, chunk_days: int = CHUNK_DAYS) -> It
 
     Both bounds are inclusive, the project-wide convention. Why the range
     is chunked at all, and why the result does not depend on the chunk
-    size, is in docs/bdns-api-behavior.md#window-chunking.
+    size, is in docs/explanation/bdns-api-behavior.md#window-chunking.
 
     Args:
         start: First day of the range, inclusive.
@@ -115,7 +115,7 @@ def to_api_upper_bound(inclusive_end: date) -> date:
     It is NOT universal: it applies to the four `fechaRegFin` endpoints
     only. The `fechaDesde`/`fechaHasta` family is inclusive and must not
     go through here. Both semantics, and the measurements behind them,
-    are in docs/bdns-api-behavior.md#upper-bound.
+    are in docs/explanation/bdns-api-behavior.md#upper-bound.
 
     Args:
         inclusive_end: Last day the caller wants included.
@@ -269,7 +269,7 @@ def sync_search_range(
             None, the run never closes out a key, because a range is a
             subset of the table rather than its full current state. Only
             entities that expose their own registration date can set it;
-            see docs/bdns-api-behavior.md#windowed-deletions.
+            see docs/explanation/bdns-api-behavior.md#windowed-deletions.
         policy: Rules applied to each record before storing and hashing.
 
     Returns:
@@ -309,7 +309,7 @@ def sync_search_range_inclusive(
     family. This one is inclusive on the upper bound, so `chunk_end` is
     passed as-is with no `to_api_upper_bound` bridge; calling it here
     would over-fetch one day past the window. Both semantics are in
-    docs/bdns-api-behavior.md#upper-bound.
+    docs/explanation/bdns-api-behavior.md#upper-bound.
 
     Args:
         sink: Where the rows are applied.

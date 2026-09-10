@@ -106,4 +106,4 @@ The only real difference is authentication towards the target: outside GCP there
 
 ## No cloud
 
-One cron line on any machine, as documented in the [README](../README.en.md#scheduled-operation).
+One cron line on any machine, as documented in the [README](https://github.com/cruzlorite/bdns-sync/blob/main/README.en.md#scheduled-operation).

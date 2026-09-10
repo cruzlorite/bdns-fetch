@@ -110,6 +110,7 @@ plugins:
             Referencia: Reference
             API Python: Python API
             Internals: Internals
+            Decisiones: Decisions
             Contribuir: Contributing
             Hoja de ruta: Roadmap
   # The reference is built once per locale, so every symbol has one URL per
@@ -168,6 +169,13 @@ nav:
               - reference/api/sinks.sql.schema.md
               - reference/api/sinks.sql.bookkeeping.md
               - reference/api/sinks.sql.dialects.md
+  - Decisiones:
+      - adr/index.md
+      - adr/0001-payload-entero-hash.md
+      - adr/0002-staging-diff-en-bloque.md
+      - adr/0003-log-de-eventos.md
+      - adr/0004-beneficiario-fuera-del-hash.md
+      - adr/0005-tolerancia-de-rechazo.md
   - Contribuir:
       - contributing/docstrings.md
   - Hoja de ruta: roadmap.md

@@ -24,8 +24,9 @@ lint: ## Run code linting with ruff
 format: ## Format code with ruff formatter
 	poetry run ruff format .
 
-check-docs: ## Verify every docs/ reference in the code resolves
+check-docs: ## Verify doc references and docstring conventions
 	poetry run python scripts/check_doc_refs.py
+	poetry run python scripts/check_docstrings.py
 
 clean: ## Remove build artifacts and cache files
 	rm -rf dist/

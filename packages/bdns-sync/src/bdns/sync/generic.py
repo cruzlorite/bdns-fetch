@@ -9,9 +9,9 @@ here.
 
 import inspect
 import logging
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from datetime import date, timedelta
-from typing import Optional
+from typing import Any, Optional
 
 from bdns.fetch import BDNSClient
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
-def all_pages(fetch):
+def all_pages(fetch: Callable[..., Any]) -> Callable[..., Any]:
     """Wrap a client fetch method so paginated endpoints return EVERY page.
 
     bdns-fetch's `num_pages` option defaults to 1, which silently

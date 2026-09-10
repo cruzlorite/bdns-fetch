@@ -40,6 +40,7 @@ app = typer.Typer(
 
 
 def _version_callback(value: bool) -> None:
+    """Print the version and exit, when `--version` was passed."""
     if value:
         typer.echo(f"bdns-sync {__version__}")
         raise typer.Exit()
@@ -88,6 +89,12 @@ TARGET_URL_OPTION = typer.Option(
 
 
 def _parse_iso_date(value: Optional[str], flag: str) -> Optional[date]:
+    """Parse an ISO date option, reporting a bad one as a CLI error.
+
+    Raises:
+        typer.BadParameter: If `value` is not an ISO date, so the user
+            sees a usage error rather than a traceback.
+    """
     if value is None:
         return None
     try:

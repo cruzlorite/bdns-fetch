@@ -53,6 +53,7 @@ _LEAK_TOLERANCE = 0.05
 
 
 def _keys(records, key_field):
+    """Collect the key values of the records that have one, skipping the rest."""
     return {record[key_field] for record in records if isinstance(record, dict) and key_field in record}
 
 
@@ -146,23 +147,26 @@ def _check_shape(name, records, key_field, reg_field, day, problems):
 def check_api_contract(client: BDNSClient, day: Optional[date] = None) -> tuple[str, list[str]]:
     """Ask the live API whether it still behaves the way this engine assumes.
 
+    There are three outcomes. **ok** means every invariant held.
+
+    **inconclusive** means the probe days came back empty or the API
+    errored. Deliberately not a failure: transient trouble is normal
+    here, and blocking a whole day's cadence over it would cost more than
+    it saves. A genuinely unreachable API makes the syncs themselves
+    fail, which is the real signal.
+
+    **changed** means the API returned valid data contradicting an
+    invariant. That is the one case worth stopping for, because syncing
+    through a changed boundary loses or duplicates data silently.
+
     Args:
         client: The BDNS API client.
         day: Probe day. Defaults to `API_CHECK_LOOKBACK_DAYS` ago, far
             enough back that the day is fully registered.
 
     Returns:
-        `(status, messages)`, where `status` is one of:
-
-        - "ok": every invariant held.
-        - "inconclusive": the probe days came back empty or the API
-          errored. Deliberately not a failure. Transient trouble is
-          normal here, and blocking a whole day's cadence over it would
-          cost more than it saves; a genuinely unreachable API makes the
-          syncs themselves fail, which is the real signal.
-        - "changed": the API returned valid data contradicting an
-          invariant. The one case worth stopping for, because syncing
-          through a changed boundary loses or duplicates data silently.
+        `(status, messages)`, where `status` is "ok", "inconclusive" or
+        "changed", and `messages` explains what was found.
     """
     start = day or (date.today() - timedelta(days=API_CHECK_LOOKBACK_DAYS))
     problems: list[str] = []

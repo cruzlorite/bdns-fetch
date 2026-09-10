@@ -205,6 +205,34 @@ def _apply(
     window: Optional[tuple] = None,
     skipped: Optional[list[dict[str, str]]] = None,
 ) -> dict[str, int]:
+    """Stage the batch, then apply the diff. The engine both entry points share.
+
+    The sequence is fixed: clear staging, load the batch into it, count
+    what the diff will do, then insert, touch and close in that order.
+    Counting first matters, because each statement changes what the next
+    one would have counted.
+
+    Args:
+        conn: Open connection, inside the run's transaction.
+        table: The endpoint's SCD2 table.
+        staging: Its staging table.
+        rows: The fetched batch. Consumed once.
+        key_fields: Fields forming the natural key.
+        policy: Rules applied before storing and hashing.
+        limits: How much of the batch may be unusable.
+        chunk_size: Rows per staging insert, before the adapter raises it.
+        detect_deletions: Close keys absent from the batch. Only true for
+            a full reconciliation, where absence actually proves removal.
+        window: `(reg_date_field, start, end)` for window-scoped deletion
+            detection, or None for no deletion detection at all.
+        skipped: List that rejected records are appended to.
+
+    Returns:
+        The run's counters.
+
+    Raises:
+        BatchRejected: If the rejects cross `limits`.
+    """
     now = datetime.now(timezone.utc)
     reg_date_field = window[0] if window else None
     policy.check_identity(key_fields, reg_date_field)
@@ -251,7 +279,7 @@ def _load_staging(
     chunk_size = adapter.staging_chunk_size(chunk_size)
 
     def stage(payload):
-        """Returns the staged row, or None if the record cannot be versioned.
+        """Build the staged row, or None if the record cannot be versioned.
 
         A rejected record is dropped and recorded rather than raised on:
         one malformed record out of millions should not cost a multi-hour
@@ -288,6 +316,12 @@ def _load_staging(
 
 
 def _check_rejects(table_name: str, fetched: int, rejected: int, limits: RejectLimits) -> None:
+    """Log the rejects, and refuse the batch if there are too many of them.
+
+    Raises:
+        BatchRejected: If `limits` says this many rejects is no longer
+            noise but a change in what the source returns.
+    """
     if not rejected:
         return
     logger.warning(
@@ -302,6 +336,7 @@ def _check_rejects(table_name: str, fetched: int, rejected: int, limits: RejectL
 
 
 def _matches(table: Table, staging: Table):
+    """Build the natural-key join predicate every diff statement shares."""
     return staging.c._natural_key == table.c._natural_key
 
 
@@ -325,6 +360,12 @@ def _missing_in_window(table: Table, staging: Table, window: tuple):
 def _diff_stats(
     conn: Connection, table: Table, staging: Table, detect_deletions: bool, window: Optional[tuple] = None
 ) -> dict[str, int]:
+    """Count what the diff is about to do, before any statement changes it.
+
+    Every counter is a separate COUNT over the same staging/table join.
+    They have to run before the writes: once rows are inserted or closed,
+    the queries would no longer see the state they are meant to measure.
+    """
     touched = conn.execute(
         select(func.count())
         .select_from(table)
@@ -375,6 +416,11 @@ def _diff_stats(
 
 
 def _touch_unchanged(conn: Connection, table: Table, staging: Table, now: datetime) -> None:
+    """Refresh `_synced_at` on current rows whose hash the batch confirms.
+
+    No new version: the record was seen again and is unchanged, so only
+    the last-seen timestamp moves.
+    """
     conn.execute(
         update(table)
         .where(
@@ -393,6 +439,13 @@ def _close_stale(
     detect_deletions: bool,
     window: Optional[tuple] = None,
 ) -> None:
+    """Close every current version this batch supersedes or proves gone.
+
+    A changed hash always closes the old version. Absence closes one only
+    when the batch is entitled to conclude removal: a full reconciliation
+    always is, a windowed run only for rows whose own `_reg_date` puts
+    them inside the window, and a plain windowed run never is.
+    """
     changed = exists(
         select(1).where(_matches(table, staging), staging.c._row_hash != table.c._row_hash)
     )
@@ -411,6 +464,12 @@ def _close_stale(
 
 
 def _insert_new_versions(conn: Connection, table: Table, staging: Table, now: datetime) -> None:
+    """Insert a current version for every staged key with no current row left.
+
+    Runs after `_close_stale`, so it covers both cases at once: keys
+    never seen before, and keys whose previous version was just closed
+    because their hash changed.
+    """
     no_current_match = ~exists(
         select(1).where(_matches(table, staging), table.c._is_current.is_(True))
     )

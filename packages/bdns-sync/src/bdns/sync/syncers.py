@@ -17,7 +17,7 @@ Comments here only state which behavior applies, never the evidence.
 """
 
 import logging
-from collections.abc import Iterator
+from collections.abc import Callable, Collection, Iterable, Iterator
 from datetime import date
 from typing import Any, Optional
 
@@ -471,12 +471,12 @@ DETAIL_SPACING_SECONDS = 0.105
 
 
 def _fetch_details(
-    keys,
-    fetch_single,
-    context_for,
+    keys: Collection[Any],
+    fetch_single: Callable[[Any], Iterable[Any]],
+    context_for: Callable[[Any], str],
     errors: Optional[list[dict[str, str]]],
     label: str,
-    transform=None,
+    transform: Optional[Callable[[Any, dict], dict]] = None,
     max_workers: int = DETAIL_WORKERS,
 ) -> Iterator[dict]:
     """Fetch one detail record per discovered key, in parallel.
@@ -634,8 +634,8 @@ def discover_pes_ids(client: BDNSClient) -> set[int]:
     return {item["id"] for item in all_pages(client.fetch_planesestrategicos_busqueda)()}
 
 
-def _tag_id_pes(id_pes, item):
-    # Neither detail nor vigencia echoes idPES back, confirmed live.
+def _tag_id_pes(id_pes: int, item: dict) -> dict:
+    """Tag `idPES` onto a record, since neither detail nor vigencia echoes it."""
     return {**item, "idPES": id_pes}
 
 

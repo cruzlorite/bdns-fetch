@@ -130,13 +130,21 @@ class Sink(ABC):
       successful run, and one record per skipped malformed row. How that
       log is stored is the sink's business; callers never see it.
 
-    Stats contract: both methods return a dict with at least the keys
-    `fetched` (rows consumed from `rows`), `inserted` (new versions
-    written, whether for new keys or changed payloads), `updated` (changed
-    payloads, i.e. the subset of `inserted` that closed a previous
-    version), `touched` (unchanged rows re-seen), and `soft_deleted`
-    (versions closed due to detected deletion). `skipped` is present when
-    a `skipped` list was passed.
+    Stats contract: both methods return a dict with at least these keys,
+    all counted before the diff is applied:
+
+    - `fetched`: rows consumed from `rows`.
+    - `inserted`: keys seen for the first time, each written as a new
+      current version.
+    - `updated`: keys whose payload changed. Each closes its previous
+      version and writes a new current one. Disjoint from `inserted`, so
+      the new versions a run wrote are `inserted + updated`, which is
+      what `_sync_runs.rows_inserted` records.
+    - `touched`: unchanged keys seen again.
+    - `soft_deleted`: versions closed because the batch proved the key
+      gone.
+
+    `skipped` is present when a `skipped` list was passed.
     """
 
     @abstractmethod

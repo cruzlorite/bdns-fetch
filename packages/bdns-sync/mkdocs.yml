@@ -11,8 +11,10 @@ copyright: GPL-3.0-or-later
 theme:
   name: material
   language: es
+  favicon: assets/favicon.svg
   icon:
     repo: fontawesome/brands/github
+    logo: material/database-sync
   features:
     # navigation.instant is deliberately absent: it is incompatible with
     # the i18n language switcher's contextual link.

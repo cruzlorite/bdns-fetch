@@ -8,7 +8,7 @@ authors = ["José María Cruz Lorite <josemariacruzlorite@gmail.com>"]
 license = "GPL-3.0"
 homepage = "https://github.com/cruzlorite/bdns-sync"
 repository = "https://github.com/cruzlorite/bdns-sync"
-documentation = "https://github.com/cruzlorite/bdns-sync#readme"
+documentation = "https://cruzlorite.github.io/bdns-sync/"
 keywords = ["bdns", "subsidies", "spanish-government", "sync", "scd2", "cli"]
 classifiers = [
     "Development Status :: 4 - Beta",

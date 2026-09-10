@@ -13,11 +13,11 @@ dated measurements against the source API. "Measured on 1 September
 
 | ADR | Decision | Status |
 | --- | --- | --- |
-| [0001](0001-payload-entero-hash.md) | Store the whole record and version by hash | Accepted |
-| [0002](0002-staging-diff-en-bloque.md) | Staging plus bulk diff, never a per-row loop | Accepted |
-| [0003](0003-log-de-eventos.md) | `_sync_runs` as an event log, not a status column | Accepted |
-| [0004](0004-beneficiario-fuera-del-hash.md) | Exclude `beneficiario` from the content hash | Accepted |
-| [0005](0005-tolerancia-de-rechazo.md) | Reject tolerance set per run | Accepted |
+| [0001](0001-store-whole-record-version-by-hash.md) | Store the whole record and version by hash | Accepted |
+| [0002](0002-staging-and-bulk-diff.md) | Staging plus bulk diff, never a per-row loop | Accepted |
+| [0003](0003-run-event-log.md) | `_sync_runs` as an event log, not a status column | Accepted |
+| [0004](0004-beneficiario-out-of-hash.md) | Exclude `beneficiario` from the content hash | Accepted |
+| [0005](0005-per-run-reject-tolerance.md) | Reject tolerance set per run | Accepted |
 
 Dates before 8 July 2026 are not on record: the repository history starts
 there, with an already-consolidated initial commit.

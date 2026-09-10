@@ -30,5 +30,5 @@ canonicalizado.
   motores, porque se guarda como texto por portabilidad. Este código
   nunca lo consulta en SQL, solo lo lee de vuelta como dict en Python.
 - La canonicalización tiene que ser estable, o el hash reporta cambios
-  que no existen. De ahí salen [0004](0004-beneficiario-fuera-del-hash.md)
+  que no existen. De ahí salen [0004](0004-beneficiario-out-of-hash.md)
   y las reglas de política de payload.

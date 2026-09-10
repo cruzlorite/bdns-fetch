@@ -30,5 +30,5 @@ payload.
   engine, because it is stored as text for portability. This code never
   queries it in SQL, only reads it back as a dict in Python.
 - Canonicalization has to be stable, or the hash reports changes that do
-  not exist. That is where [0004](0004-beneficiario-fuera-del-hash.md)
+  not exist. That is where [0004](0004-beneficiario-out-of-hash.md)
   and the payload policy rules come from.

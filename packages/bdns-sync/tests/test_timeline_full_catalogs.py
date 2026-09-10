@@ -1,5 +1,5 @@
 """Multi-day scenarios for every full-replace-every-run entity (the "Simple"
-row of the README endpoint table): sectores, actividades, finalidades,
+row of the endpoint table in docs/explanation/endpoint-types.md): sectores, actividades, finalidades,
 beneficiarios, instrumentos, objetivos, regiones,
 sanciones_busqueda. Real anonymized payloads, real key fields, one shared
 day-by-day script covering insert / touch / rewrite / deletion / new-arrival.

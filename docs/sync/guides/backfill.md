@@ -71,9 +71,29 @@ La profundidad medida por endpoint está en
 
 ## Qué esperar
 
-Una carga inicial completa son horas, no minutos, y la parte cara es
-`concesiones_busqueda`. Las cifras medidas —throughput, límite de
-peticiones, solape productor/consumidor— están en
+Duraciones medidas en una carga inicial completa real (julio de 2026,
+destino BigQuery, una sola máquina). El cuello de botella es siempre la
+API de origen, nunca el destino:
+
+| Carga | Filas | Duración |
+|---|---|---|
+| Los catálogos de reemplazo completo | ~150.000 | ~10 s la mayoría; `planesestrategicos` y `planesestrategicos_vigencia`, ~4 min cada uno (detalle por clave); `grandesbeneficiarios_busqueda`, ~2 min |
+| `concesiones_busqueda` (desde 2020) | 27,7 M | ~2,5 h |
+| `ayudasestado_busqueda` (desde 2015) | 6,4 M | ~2 h |
+| `minimis_busqueda` (desde 2015) | 4,3 M | ~30 min |
+| `convocatorias_busqueda` (desde 2013) | 636 K | ~6 min |
+| `partidospoliticos_busqueda` (desde 2020) | 6 K | ~2 min |
+| `convocatorias` (desde 2013) | 636 K | **~19 h** |
+
+En total, una carga inicial completa ronda las **24 horas**, y se la lleva
+casi entera `convocatorias`: cada código descubierto exige su propia
+llamada de detalle, paralelizada justo por debajo del límite oficial de 10
+peticiones por segundo. Es coste de API puro, no depende del motor de
+destino. Los cortes puntuales de la API —timeouts, mantenimiento
+nocturno— los absorben los reintentos con backoff del cliente.
+
+Las cifras de throughput, límite de peticiones y solape
+productor/consumidor están en
 [rendimiento medido](../explanation/bdns-api-behavior.md#performance).
 
 Un detalle a tener presente al terminar: una carga histórica masiva en una

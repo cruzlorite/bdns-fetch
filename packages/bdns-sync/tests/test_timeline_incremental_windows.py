@@ -213,7 +213,7 @@ def test_new_registration_is_caught_by_the_next_daily_run(endpoint, key_fields):
 @pytest.mark.parametrize("window,days", list(WINDOWS.items()))
 def test_window_date_bounds_match_the_declared_cadence(endpoint, key_fields, window, days):
     """`--window daily/weekly/monthly/annual` must translate into the exact
-    reg-date range the README documents: ending yesterday, spanning `days`
+    reg-date range docs/guides/scheduling.md documents: ending yesterday, spanning `days`
     days back. This is the "does the CLI option actually change API request
     behavior" check.
 

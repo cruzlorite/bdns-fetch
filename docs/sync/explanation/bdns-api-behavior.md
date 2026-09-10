@@ -107,7 +107,7 @@ Los valores por defecto de `bdns-fetch` (3 reintentos, espera fija de 2 s) se ri
 <a id="api-issues"></a>
 ## 8. Problemas conocidos de la API
 
-Cada punto sigue el mismo orden: qué hace la API, qué observamos, y qué hace `bdns-sync` al respecto. El resto del proyecto (README, comentarios del código) enlaza aquí en vez de repetir la explicación.
+Cada punto sigue el mismo orden: qué hace la API, qué observamos, y qué hace `bdns-sync` al respecto. El resto del proyecto (la documentación, los comentarios del código) enlaza aquí en vez de repetir la explicación.
 
 - **Registros sueltos malformados.** El backend rechaza a veces un registro concreto y devuelve una página de error HTML en vez de JSON. No es un límite de peticiones ni un problema de parámetros: las llamadas de justo antes y justo después del mismo registro funcionan. En `planesestrategicos`, entre el 8 de julio y el 30 de agosto de 2026, los mismos 10 `idPES` fallaron en las 57 ejecuciones, siempre con la misma página HTML; el 30 de agosto fueron 114 sobre 2.029 claves, así que un registro roto tiende a seguir roto pero el conjunto no es fijo. `bdns-sync` descarta el registro con un aviso, lo cuenta en `_sync_runs.rows_skipped` y guarda el contenido en `_sync_errors`, enlazado a la ejecución.
 - **`ERR_MANTENIMIENTO_BBDD` en rangos largos.** Los rangos de varios años fallan de forma intermitente, a cualquier profundidad de página. Un rango de 4 años sobre `concesiones_busqueda` (27,4 millones de filas) falló repetidamente, mientras que una ventana semanal sobre esas mismas fechas no falló ni una vez en 6 intentos. `bdns-sync` parte toda consulta en tramos de 7 días; ver [sección 3](#window-chunking).

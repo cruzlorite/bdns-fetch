@@ -1,6 +1,6 @@
 """Idempotency, asserted as a property rather than inferred from counters.
 
-This is the promise the README makes to operators and that the whole
+This is the promise the documentation makes to operators and that the whole
 recovery story rests on: no `success` event means re-run, and re-running
 anything is safe. Other tests check that a second pass reports `touched`;
 these check the stronger thing, that the stored history is byte-identical

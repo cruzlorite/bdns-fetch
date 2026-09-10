@@ -215,7 +215,7 @@ def test_a_rejected_batch_records_the_failure_too(engine, metadata, table_name):
 def test_a_rejected_record_closes_its_stored_version_on_a_full_catalog(
     engine, metadata, table_name
 ):
-    """The limitation documented in the README, pinned so it stays a known
+    """The limitation documented in docs/explanation/limitations.md, pinned so it stays a known
     trade rather than a surprise. A record with no usable key cannot be
     matched to the row it belongs to, so the sink cannot tell "the source
     sent this back malformed" from "the source no longer has it". On a

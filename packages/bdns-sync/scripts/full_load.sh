@@ -25,8 +25,9 @@
 # to mistake for a real event. See docs/explanation/data-caveats.md.
 #
 # The per-entity start years are floors, not exact firsts: the API only
-# retains a bounded history (measured live, see README "Carga histórica /
-# Historical load"), and querying earlier just returns empty weeks cheaply.
+# retains a bounded history (measured live, see
+# docs/explanation/bdns-api-behavior.md#history-depth), and querying earlier
+# just returns empty weeks cheaply.
 # A single conservative floor (2013, roughly when the portal started) would
 # also work; per-entity floors just avoid a pile of empty calls for the
 # short-retention endpoints. Widen any start if you want to be extra safe.
@@ -67,7 +68,7 @@ backfill() {
   run bdns-sync sync "$entity" --since "$current-01-01"
 }
 
-# entity                       earliest reg-date worth requesting (see README)
+# entity                       earliest reg-date worth requesting (see docs/explanation/bdns-api-behavior.md#history-depth)
 backfill concesiones_busqueda        2020   # ~4y retention
 backfill partidospoliticos_busqueda  2020   # tracks concesiones
 backfill ayudasestado_busqueda       2015   # ~10y retention

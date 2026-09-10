@@ -15,6 +15,11 @@ El repositorio trae uno listo:
 
 Eso es todo. El script decide qué ventana toca hoy.
 
+Antes de programarlo, lanza una sola vez la carga histórica inicial: ver
+[cargas iniciales y backfills](backfill.md). Si prefieres no mantener una
+máquina propia, hay una imagen de contenedor con los scripts dentro y una
+receta de job programado en la nube: ver [despliegue](deployment.md).
+
 ## Por qué una sola ventana al día
 
 Las ventanas están **anidadas, no son independientes**: todas terminan

@@ -14,7 +14,7 @@ docker pull ghcr.io/cruzlorite/bdns-sync:latest    # o :0.5.0
 
 - El comando por defecto es `scripts/delta_load.sh` (la carga diaria; la ventana la decide él solo).
 - Cualquier otro comando se pasa tal cual: `docker run ... ghcr.io/cruzlorite/bdns-sync bdns-sync sync sectores`.
-- El modelo tipo Cloud Function no encaja: sus timeouts (de 15 a 60 min) no dan para las ventanas anchas (una `annual` de `convocatorias` son unas 3 h) ni para la carga inicial (~24 h, ver el README).
+- El modelo tipo Cloud Function no encaja: sus timeouts (de 15 a 60 min) no dan para las ventanas anchas (una `annual` de `convocatorias` son unas 3 h) ni para la carga inicial (~24 h, ver [cargas iniciales y backfills](backfill.md)).
 
 ## Receta: Google Cloud (Cloud Run Jobs + Cloud Scheduler)
 
@@ -82,7 +82,7 @@ Con este esquema hay dos servicios de pago en juego, y el gasto esperado son cé
 
 ## La carga inicial
 
-Es una operación de unas 24 h (ver la tabla del README) que se lanza a mano una sola vez. Dos opciones:
+Es una operación de unas 24 h (ver la tabla de [cargas iniciales y backfills](backfill.md)) que se lanza a mano una sola vez. Dos opciones:
 
 - **Un segundo job** con el comando de la carga completa y el timeout al máximo (24 h en Cloud Run Jobs, justo; si un corte lo interrumpe, basta con volver a lanzarlo, porque los tramos de un año se confirman por separado):
 
@@ -106,4 +106,4 @@ La única diferencia real está en la autenticación contra el destino: fuera de
 
 ## Sin nube
 
-Una línea de cron en cualquier máquina, tal como explica el [README](https://github.com/cruzlorite/bdns-sync/blob/main/README.md#operación-programada).
+Una línea de cron en cualquier máquina, tal como explica [operación programada](scheduling.md).

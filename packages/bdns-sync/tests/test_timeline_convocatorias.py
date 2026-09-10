@@ -42,8 +42,8 @@ def test_convocatorias_cascade_progressively_reveals_older_registrations():
 def test_convocatorias_discovery_is_chunked_for_wide_windows():
     """`monthly` (30 days) discovery must be split into <=CHUNK_DAYS-wide,
     contiguous pieces. A single 30-day call is exactly the range that
-    proved unreliable against the real API (see README "Limitaciones
-    conocidas").
+    proved unreliable against the real API (see
+    docs/explanation/bdns-api-behavior.md#window-chunking).
     """
     engine = create_engine("sqlite:///:memory:")
     client = FakeBDNSClient()

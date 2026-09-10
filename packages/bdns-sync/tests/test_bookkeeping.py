@@ -1,7 +1,7 @@
 """Run bookkeeping and staging lifecycle, against whatever engine
 `BDNS_SYNC_TEST_URL` selects (see tests/conftest.py).
 
-These cover the two guarantees the README makes to operators and that no
+These cover the two guarantees docs/reference/data-model.md makes to operators and that no
 other test exercised: a failed run is still recorded as failed, and
 staging is emptied at both ends of a run so a crashed run cannot leak its
 rows into the next one's diff.
@@ -49,7 +49,7 @@ def test_failed_run_records_a_failed_event_and_reraises(engine, metadata, table_
 
 
 def test_failed_run_leaves_no_success_event_and_no_rows(engine, metadata, table_name):
-    """The operational rule the README states: no `success` event means
+    """The operational rule docs/reference/data-model.md states: no `success` event means
     re-run. The synced table must hold nothing from the failed attempt.
     """
 

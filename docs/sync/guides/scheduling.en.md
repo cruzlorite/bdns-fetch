@@ -15,6 +15,11 @@ The repository ships one ready to use:
 
 That is all. The script decides which window applies today.
 
+Before scheduling it, run the initial historical load once: see
+[initial loads and backfills](backfill.md). If you would rather not keep
+a machine running, there is a container image with the scripts inside and
+a recipe for a scheduled cloud job: see [deployment](deployment.md).
+
 ## Why one window a day
 
 The windows are **nested, not independent**: they all end yesterday, so

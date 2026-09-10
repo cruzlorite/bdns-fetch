@@ -6,7 +6,7 @@ site_url: https://cruzlorite.github.io/bdns-sync/
 repo_url: https://github.com/cruzlorite/bdns-sync
 repo_name: cruzlorite/bdns-sync
 edit_uri: edit/main/docs/
-copyright: GPL-3.0-or-later
+copyright: "GPL-3.0-or-later · Proyecto no oficial, sin relación con la BDNS ni con el Ministerio de Hacienda"
 
 theme:
   name: material
@@ -95,6 +95,7 @@ plugins:
           site_description: >-
             Sync engine that keeps target databases in SCD2 form from the
             Base de Datos Nacional de Subvenciones (BDNS) API.
+          copyright: "GPL-3.0-or-later · Unofficial project, not affiliated with the BDNS or Spain's Ministerio de Hacienda"
           # Merged by index into theme.palette: only the toggle labels change.
           theme:
             palette:
@@ -148,9 +149,12 @@ nav:
       - guides/backfill.md
       - guides/deployment.md
   - Explicación:
+      - explanation/endpoint-types.md
       - explanation/payload-policy.md
       - explanation/bdns-api-behavior.md
+      - explanation/official-practices.md
       - explanation/data-caveats.md
+      - explanation/limitations.md
       - explanation/sinks.md
   - Referencia:
       - reference/cli.md

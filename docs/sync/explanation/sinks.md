@@ -13,7 +13,7 @@ Toda la lógica de sincronización se escribe en SQL portable (subconsultas `EXI
 
 El almacenamiento queda detrás de una interfaz `Sink` ([`bdns.sync.sinks`](../reference/api/sinks.md)): la capa de fetch entrega lotes de registros y el sink se encarga de todo lo demás (versionado SCD2, detección de bajas, registro de ejecuciones). La implementación actual es [`SQLSink`](../reference/api/sinks.sql.md), que cubre cualquier motor con dialecto de SQLAlchemy; las diferencias entre motores se concentran en sus adaptadores internos ([`bdns.sync.sinks.sql.dialects`](../reference/api/sinks.sql.dialects.md)). Un destino futuro que no sea SQL (Parquet, por ejemplo) sería otra implementación de `Sink`, sin tocar la capa de fetch.
 
-Al cargar el staging se solapa la descarga del lote siguiente con la escritura del actual, mediante un pipeline productor/consumidor genérico ([`pipeline.py`](../reference/api/pipeline.md)), con una cola acotada que hace de contrapresión. Las cifras y el porqué están en la [sección 7 de bdns-api-behavior.md](bdns-api-behavior.md#performance).
+Al cargar el staging se solapa la descarga del lote siguiente con la escritura del actual, mediante un pipeline productor/consumidor genérico ([`pipeline.py`](../reference/api/pipeline.md)), con una cola acotada que hace de contrapresión. Las cifras y el porqué están en la [rendimiento medido](bdns-api-behavior.md#performance).
 
 ## BigQuery
 

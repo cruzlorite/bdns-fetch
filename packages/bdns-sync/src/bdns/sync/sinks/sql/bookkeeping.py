@@ -15,9 +15,10 @@ failed run from the log. Kept separate, the log always tells the truth:
 written only after the data transaction committed, and `failed` is written
 even though the data rolled back.
 
-Per-engine guarantee (documented in the README): on SQLite/Postgres the data
-transaction is real, so no terminal `success` event means the target table
-is untouched. On BigQuery there is no transaction at all (its DBAPI commit
+Per-engine guarantee (documented in docs/reference/data-model.md): on
+SQLite/Postgres the data transaction is real, so no terminal `success`
+event means the target table is untouched. On BigQuery there is no
+transaction at all (its DBAPI commit
 is a no-op, verified live), so a crash mid-diff can leave partially-applied
 changes, but the design converges: staging is cleared and rebuilt at the
 start of every run, and re-running the same range heals any intermediate

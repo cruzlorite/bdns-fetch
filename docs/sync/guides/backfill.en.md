@@ -67,10 +67,29 @@ The depth measured per endpoint is in
 
 ## What to expect
 
-A full initial load takes hours, not minutes, and the expensive part is
-`concesiones_busqueda`. The measured figures — throughput, rate limit,
-producer/consumer overlap — are in
-[measured performance](../explanation/bdns-api-behavior.md#performance).
+Durations measured on a real full bootstrap (July 2026, BigQuery
+target, single machine). The bottleneck is always the source API, never
+the target:
+
+| Load | Rows | Duration |
+|---|---|---|
+| The full-replace catalogs | ~150K | ~10 s most; `planesestrategicos` and `planesestrategicos_vigencia` ~4 min each (per-key detail), `grandesbeneficiarios_busqueda` ~2 min |
+| `concesiones_busqueda` (since 2020) | 27.7 M | ~2.5 h |
+| `ayudasestado_busqueda` (since 2015) | 6.4 M | ~2 h |
+| `minimis_busqueda` (since 2015) | 4.3 M | ~30 min |
+| `convocatorias_busqueda` (since 2013) | 636 K | ~6 min |
+| `partidospoliticos_busqueda` (since 2020) | 6 K | ~2 min |
+| `convocatorias` (since 2013) | 636 K | **~19 h** |
+
+A full bootstrap totals around **24 hours**, almost all of it
+`convocatorias`: every discovered code needs its own detail call,
+parallelized just under the official cap of 10 requests per second. It is
+pure API cost, independent of the target engine. Transient API outages —
+timeouts, nightly maintenance — are absorbed by the client's backoff
+retries.
+
+The figures for throughput, rate limit and producer/consumer overlap are
+in [measured performance](../explanation/bdns-api-behavior.md#performance).
 
 One thing to keep in mind once it finishes: a large historical load in a
 single pass can leave the odd residual duplicate pair, because pagination

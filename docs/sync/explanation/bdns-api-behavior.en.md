@@ -107,7 +107,7 @@ A 7-day range against `concesiones_busqueda` pulled 147,856 rows with zero error
 <a id="api-issues"></a>
 ## 8. Known API issues
 
-Every entry follows the same order: what the API does, what we observed, and what `bdns-sync` does about it. The rest of the project (README, code comments) links here instead of repeating the explanation.
+Every entry follows the same order: what the API does, what we observed, and what `bdns-sync` does about it. The rest of the project (the other docs, code comments) links here instead of repeating the explanation.
 
 - **Individual malformed records.** The backend sometimes rejects a specific record and returns an HTML error page instead of JSON. It is not a rate limit or a parameter problem: the calls immediately before and after the same record work. In `planesestrategicos`, between 8 July and 30 August 2026, the same 10 `idPES` values failed on all 57 runs, always with the same HTML page; on 30 August there were 114 out of 2,029 keys, so a broken record tends to stay broken but the set is not fixed. `bdns-sync` discards the record with a warning, counts it in `_sync_runs.rows_skipped`, and stores the content in `_sync_errors`, linked to the run.
 - **`ERR_MANTENIMIENTO_BBDD` on long ranges.** Multi-year ranges fail intermittently, at every page depth. A 4-year range over `concesiones_busqueda` (27.4M rows) failed repeatedly, while a weekly window over those same dates did not fail once in 6 attempts. `bdns-sync` splits every query into 7-day chunks; see [section 3](#window-chunking).

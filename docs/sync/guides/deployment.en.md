@@ -14,7 +14,7 @@ docker pull ghcr.io/cruzlorite/bdns-sync:latest    # or :0.5.0
 
 - The default command is `scripts/delta_load.sh` (the daily delta; it picks the window by itself).
 - Any other command passes through as-is: `docker run ... ghcr.io/cruzlorite/bdns-sync bdns-sync sync sectores`.
-- A Cloud Function-style deployment does not fit: timeout limits (15-60 min) cannot cover the wide windows (an `annual` run of `convocatorias` is ~3 h) or the bootstrap (~24 h, see the README).
+- A Cloud Function-style deployment does not fit: timeout limits (15-60 min) cannot cover the wide windows (an `annual` run of `convocatorias` is ~3 h) or the bootstrap (~24 h, see [initial loads and backfills](backfill.md)).
 
 ## Recipe: Google Cloud (Cloud Run Jobs + Cloud Scheduler)
 
@@ -82,7 +82,7 @@ Two paid services are involved, and the expected spend is cents per month (the j
 
 ## The initial load (bootstrap)
 
-A one-off ~24 h operation (see the README table), launched by hand. Two options:
+A one-off ~24 h operation (see the table in [initial loads and backfills](backfill.md)), launched by hand. Two options:
 
 - **A second job** with the full-load command and the timeout at its maximum (24 h on Cloud Run Jobs — a tight fit; if an outage cuts it, re-running heals: the one-year slices commit independently):
 
@@ -106,4 +106,4 @@ The only real difference is authentication towards the target: outside GCP there
 
 ## No cloud
 
-One cron line on any machine, as documented in the [README](https://github.com/cruzlorite/bdns-sync/blob/main/README.en.md#scheduled-operation).
+One cron line on any machine, as described in [scheduled operation](scheduling.md).

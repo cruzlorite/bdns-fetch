@@ -157,8 +157,7 @@ See docs/bdns-api-behavior.md#cambios-espurios.
 ```
 
 - Reference an **anchor**, never a section number. Section numbers move
-  every time a section is inserted; the current "see section 9 of..."
-  references are already fragile.
+  every time a section is inserted.
 - The anchor is the heading slug of the canonical file.
 - `scripts/check_doc_refs.py` verifies in CI that every referenced file
   and anchor exists. A rename that breaks a reference fails the build.

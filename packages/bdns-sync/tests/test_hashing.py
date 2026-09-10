@@ -50,7 +50,7 @@ def test_natural_key_composite_is_order_stable():
 
 def test_delimited_list_order_does_not_change_the_hash():
     """minimis returns `sectorActividad` with the same sectors in a different
-    order between calls (see section 9 of docs/bdns-api-behavior.md).
+    order between calls (see docs/explanation/bdns-api-behavior.md#shuffled-lists).
     """
     a = {"id": 1, "sectorActividad": "52.3 - Intermediacion; 52.2 - Auxiliares"}
     b = {"id": 1, "sectorActividad": "52.2 - Auxiliares; 52.3 - Intermediacion"}
@@ -71,8 +71,8 @@ SPLIT_BEFORE_CODE = r";\s*(?=[A-Z0-9][A-Z0-9.]*\s*-\s)"
 
 def test_a_separator_inside_an_element_does_not_split_it():
     """Several CNAE names carry a semicolon of their own, so splitting on
-    every ";" would cut the description in half (see section 9 of
-    docs/bdns-api-behavior.md).
+    every ";" would cut the description in half (see
+    docs/explanation/bdns-api-behavior.md#shuffled-lists).
     """
     a = {"s": f"84 - {CNAE}; 16 - Madera"}
     b = {"s": f"16 - Madera; 84 - {CNAE}"}

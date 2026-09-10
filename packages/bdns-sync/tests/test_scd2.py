@@ -94,7 +94,7 @@ def test_composite_natural_key(table):
 def test_excluded_field_changing_does_not_version_the_row(table):
     """grandesbeneficiarios_busqueda returns a different spelling of
     `beneficiario` on almost every call; hashing it re-versioned half the
-    table daily (see section 8 of docs/bdns-api-behavior.md).
+    table daily (see docs/explanation/bdns-api-behavior.md#spurious-changes).
     """
     engine, tbl, staging = table
     first = [{"id": 1, "beneficiario": "M&M, S.L.", "importe": 100}]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify that every docs/ reference in the code points somewhere real.
 
-Docstrings, the orchestration scripts and the Dockerfile all link to the
+Docstrings, tests, the orchestration scripts and the Dockerfile link to the
 documents instead of copying them, which is what stops the two from
 drifting. That only works while the links do: a renamed file or a
 reworded heading silently turns a reference into a dead end that nothing
@@ -32,7 +32,7 @@ def main() -> int:
 
     sources = [
         path
-        for pattern in ("src/**/*.py", "scripts/*.sh", "Dockerfile", "Makefile")
+        for pattern in ("src/**/*.py", "tests/*.py", "scripts/*.sh", "Dockerfile", "Makefile")
         for path in sorted(ROOT.glob(pattern))
     ]
 

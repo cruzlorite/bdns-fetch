@@ -137,15 +137,14 @@ construction.
 
 ## Public surface: `__all__`
 
-Every module declares `__all__`. It is not decoration:
+Every module declares `__all__`, and it is the contract: names in
+`__all__` cannot change without a breaking-change note in the changelog.
 
-- The **Reference** section of the site is generated from `__all__`.
-  Anything outside it lands in **Internals**.
-- It is the contract. Names in `__all__` cannot change without a
-  breaking-change note in the changelog.
-
-Module-private helpers keep the underscore prefix. `_order_independent`
-stays private and stays documented — Internals is a real audience.
+Module-private helpers keep the underscore prefix, and they stay
+documented. The reference renders them next to the public names, one
+page per module; the underscore is what tells a reader a name may change
+without notice. `_order_independent` is private, and its docstring is
+still one of the more useful ones in the package.
 
 ## Referring to `docs/` from code
 

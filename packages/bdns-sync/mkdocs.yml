@@ -112,7 +112,6 @@ plugins:
             Explicación: Explanation
             Referencia: Reference
             API Python: Python API
-            Internals: Internals
             Decisiones: Decisions
             Contribuir: Contributing
             Hoja de ruta: Roadmap
@@ -139,7 +138,7 @@ plugins:
             signature_crossrefs: true
             merge_init_into_class: true
             members_order: source
-            filters: ["!^_"]
+            filters: []
 
 nav:
   - Inicio: index.md
@@ -169,12 +168,11 @@ nav:
           - reference/api/api_contract.md
           - reference/api/sinks.md
           - reference/api/cli.md
-          - Internals:
-              - reference/api/sinks.sql.md
-              - reference/api/sinks.sql.scd2.md
-              - reference/api/sinks.sql.schema.md
-              - reference/api/sinks.sql.bookkeeping.md
-              - reference/api/sinks.sql.dialects.md
+          - reference/api/sinks.sql.md
+          - reference/api/sinks.sql.scd2.md
+          - reference/api/sinks.sql.schema.md
+          - reference/api/sinks.sql.bookkeeping.md
+          - reference/api/sinks.sql.dialects.md
   - Decisiones:
       - adr/index.md
       - adr/0001-payload-entero-hash.md

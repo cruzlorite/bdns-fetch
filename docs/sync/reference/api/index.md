@@ -1,17 +1,18 @@
 # Referencia de la API
 
-Generada desde los docstrings del paquete. Está dividida en dos partes, y
-la diferencia importa:
+Generada desde los docstrings del paquete: una página por módulo, con el
+nombre del módulo que documenta.
 
-- **Superficie pública.** Lo que declara el `__all__` de cada módulo. Es
-  el contrato: estos nombres no cambian sin nota de ruptura en el
-  changelog.
-- **Internals.** Los submódulos de `sinks.sql`, con sus helpers privados
-  incluidos. Nada fuera de `bdns.sync.sinks.sql` debería importarlos y
-  pueden cambiar sin aviso. Están documentados porque el razonamiento que
-  llevan dentro es lo que explica el diseño.
+Cada página muestra todo lo que el módulo define, helpers privados
+incluidos. Lo que distingue unos de otros es el nombre:
 
-Las páginas se llaman como el módulo que documentan.
+- **Sin guion bajo**: pensado para usarse desde fuera del módulo. Lo que
+  además declara el `__all__` del módulo es el contrato: esos nombres no
+  cambian sin nota de ruptura en el changelog.
+- **Con guion bajo** (`_apply`, `_order_independent`…): internos. Nada de
+  fuera del módulo debería importarlos, y pueden cambiar sin aviso. Están
+  documentados porque el razonamiento que llevan dentro es lo que explica
+  el diseño.
 
 Para el porqué, y no el qué, están las páginas de
-[Diseño](../../explanation/payload-policy.md).
+[Explicación](../../explanation/payload-policy.md).

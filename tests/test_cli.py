@@ -1,180 +1,146 @@
-# -*- coding: utf-8 -*-
-"""
-Tests for the CLI interface.
-These tests verify the CLI works correctly with both stdout and file output.
-"""
-
+import inspect
 import json
-import tempfile
+from datetime import date
+
+import click
 import pytest
-from pathlib import Path
 from typer.testing import CliRunner
+
+from bdns.fetch import BDNSClient
 from bdns.fetch.cli import app
+from bdns.fetch.options import CLI_DEFAULTS, DATE, PARAMETERS
+from tests.conftest import endpoint, paginated, query_of
 
 
-class TestCLI:
-    """Test the CLI interface."""
+@pytest.fixture
+def runner():
+    try:
+        return CliRunner(mix_stderr=False)
+    except TypeError:  # Click >= 8.2 always keeps stderr apart
+        return CliRunner()
 
-    def setup_method(self):
-        """Set up test runner."""
-        self.runner = CliRunner()
 
-    def test_cli_help(self):
-        """Test that CLI help works."""
-        result = self.runner.invoke(app, ["--help"])
-        assert result.exit_code == 0
-        assert "BDNS Fetch" in result.stdout
-        assert "Base de Datos Nacional de Subvenciones" in result.stdout
+def run(runner, *args):
+    return runner.invoke(app, ["--no-progress", *args])
 
-    def test_cli_command_help(self):
-        """Test that command-specific help works."""
-        result = self.runner.invoke(app, ["organos", "--help"])
-        assert result.exit_code == 0
-        assert "organos" in result.stdout.lower()
 
-    def test_cli_actividades_stdout(self):
-        """Test actividades command outputs to stdout."""
-        # Run actividades command without output file (should go to stdout)
-        result = self.runner.invoke(app, ["actividades"])
+def endpoint_methods():
+    return [name for name in dir(BDNSClient) if name.startswith("fetch_")]
 
-        # Should succeed
-        assert result.exit_code == 0, f"CLI failed with: {result.stdout}"
 
-        # Should have JSON output in stdout
-        assert result.stdout.strip(), "Should have output to stdout"
+def test_help_lists_every_endpoint(runner):
+    result = runner.invoke(app, ["--help"])
+    assert result.exit_code == 0
+    for name in endpoint_methods():
+        assert name.removeprefix("fetch_").replace("_", "-") in result.stdout
 
-        # Each line should be valid JSON
-        lines = result.stdout.strip().split("\n")
-        assert len(lines) > 0, "Should have at least one line of output"
 
-        # Verify first line is valid JSON
-        first_record = json.loads(lines[0])
-        assert isinstance(first_record, dict), "Should output JSON objects"
-        assert "id" in first_record, "Should have id field"
-        assert "descripcion" in first_record, "Should have descripcion field"
+def test_every_client_parameter_has_a_flag():
+    for name in endpoint_methods():
+        params = list(inspect.signature(getattr(BDNSClient, name)).parameters)[1:]
+        missing = [param for param in params if param not in PARAMETERS]
+        assert not missing, f"{name}: no CLI spec for {missing}"
 
-    def test_cli_sectores_file_output(self):
-        """Test sectores command outputs to file."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".jsonl"
-        ) as tmp:
-            temp_file = Path(tmp.name)
 
-        try:
-            # Run sectores command with output file
-            result = self.runner.invoke(
-                app, ["--output-file", str(temp_file), "sectores"]
-            )
+def test_version(runner):
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0
+    assert result.stdout.startswith("bdns-fetch ")
 
-            # Should succeed
-            assert result.exit_code == 0, f"CLI failed with: {result.stdout}"
 
-            # File should exist and have content
-            assert temp_file.exists(), "Output file should be created"
-            content = temp_file.read_text(encoding="utf-8")
-            assert content.strip(), "Output file should have content"
+def test_records_are_written_as_json_lines(mocked, runner):
+    mocked.get(endpoint("sectores"), json=[{"id": 1, "descripcion": "Agricultura"}, {"id": 2}])
+    result = run(runner, "sectores")
+    assert result.exit_code == 0, result.output
+    lines = result.stdout.strip().split("\n")
+    assert [json.loads(line) for line in lines] == [
+        {"id": 1, "descripcion": "Agricultura"},
+        {"id": 2},
+    ]
 
-            # Each line should be valid JSON
-            lines = content.strip().split("\n")
-            assert len(lines) > 0, "Should have at least one line in file"
 
-            # Verify first line is valid JSON
-            first_record = json.loads(lines[0])
-            assert isinstance(first_record, dict), "Should output JSON objects"
-            assert "id" in first_record, "Should have id field"
-            assert "descripcion" in first_record, "Should have descripcion field"
+def test_output_file(mocked, runner, tmp_path):
+    mocked.get(endpoint("sectores"), json=[{"id": 1}])
+    out = tmp_path / "sectores.jsonl"
+    result = run(runner, "-o", str(out), "sectores")
+    assert result.exit_code == 0, result.output
+    assert out.read_text(encoding="utf-8") == '{"id": 1}\n'
 
-        finally:
-            # Clean up
-            if temp_file.exists():
-                temp_file.unlink()
 
-    def test_cli_finalidades_with_parameters(self):
-        """Test finalidades command with parameters to stdout."""
-        result = self.runner.invoke(app, ["finalidades"])
+def test_documents_are_written_as_bytes(mocked, runner, tmp_path):
+    mocked.get(endpoint("convocatorias/pdf"), body=b"%PDF-1.5 binary")
+    out = tmp_path / "c.pdf"
+    result = run(runner, "-o", str(out), "convocatorias-pdf", "--id", "1", "--vpd", "GE")
+    assert result.exit_code == 0, result.output
+    assert out.read_bytes() == b"%PDF-1.5 binary"
 
-        # Should succeed
-        assert result.exit_code == 0, f"CLI failed with: {result.stdout}"
 
-        # Should have JSON output
-        assert result.stdout.strip(), "Should have output to stdout"
-        lines = result.stdout.strip().split("\n")
+def test_underscore_alias(mocked, runner):
+    mocked.add_callback("GET", endpoint("concesiones/busqueda"), callback=paginated(1))
+    assert run(runner, "concesiones_busqueda").exit_code == 0
+    assert "concesiones_busqueda" not in runner.invoke(app, ["--help"]).stdout
 
-        # Should have data
-        assert len(lines) > 0, "Should have at least some data"
 
-        # Verify JSON structure
-        first_record = json.loads(lines[0])
-        assert isinstance(first_record, dict), "Should output JSON objects"
+def test_cli_fetches_one_page_by_default(mocked, runner):
+    assert CLI_DEFAULTS["num_pages"] == 1
+    mocked.add_callback("GET", endpoint("concesiones/busqueda"), callback=paginated(5))
+    result = run(runner, "concesiones-busqueda")
+    assert len(result.stdout.strip().split("\n")) == 2
+    assert len(mocked.calls) == 1
 
-    def test_cli_verbose_flag(self):
-        """Test that verbose flag produces more output."""
-        # Run without verbose
-        result_normal = self.runner.invoke(app, ["finalidades"])
 
-        # Run with verbose
-        result_verbose = self.runner.invoke(app, ["--verbose", "finalidades"])
+def test_options_reach_the_query(mocked, runner):
+    mocked.add_callback("GET", endpoint("concesiones/busqueda"), callback=paginated(1))
+    result = run(
+        runner,
+        "concesiones-busqueda",
+        "--fechaDesde",
+        "2024-01-31",
+        "--organos",
+        "1",
+        "--organos",
+        "2",
+        "--tipoAdministracion",
+        "A",
+    )
+    assert result.exit_code == 0, result.output
+    query = query_of(mocked.calls[0])
+    assert query["fechaDesde"] == ["31/01/2024"]
+    assert query["organos"] == ["1", "2"]
+    assert query["tipoAdministracion"] == ["A"]
 
-        # Both should succeed
-        assert result_normal.exit_code == 0, (
-            f"Normal mode failed: {result_normal.stdout}"
-        )
-        assert result_verbose.exit_code == 0, (
-            f"Verbose mode failed: {result_verbose.stdout}"
-        )
 
-        # Both should produce data output
-        assert result_normal.stdout.strip(), "Normal mode should produce data output"
-        assert result_verbose.stdout.strip(), (
-            "Verbose mode should still produce data output"
-        )
+def test_missing_required_option_is_a_usage_error(runner):
+    result = run(runner, "organos")
+    assert result.exit_code == 2
 
-    def test_cli_binary_output_error(self):
-        """Test that binary endpoints are not available in current CLI implementation."""
-        # The current simplified CLI only implements a few commands
-        # Binary endpoints like convocatorias-pdf are not included
-        result = self.runner.invoke(app, ["--help"])
 
-        # Should show available commands (only the ones we implemented)
-        assert result.exit_code == 0
-        assert "actividades" in result.stdout
-        assert "sectores" in result.stdout
-        assert "organos" in result.stdout
-        assert "finalidades" in result.stdout
+def test_api_error_is_reported_without_traceback(mocked, runner):
+    mocked.get(endpoint("sectores"), status=400, json={"codigo": "ERR_VALIDACION", "error": "bad"})
+    result = run(runner, "sectores")
+    assert result.exit_code == 1
+    assert "Error: Error (ERR_VALIDACION): bad" in result.stderr
+    assert "Traceback" not in result.output
 
-    def test_cli_invalid_command(self):
-        """Test that invalid commands show proper error."""
-        result = self.runner.invoke(app, ["nonexistent-command"])
 
-        # Should fail with proper error
-        assert result.exit_code != 0
-        assert "No such command" in result.stdout or "Usage:" in result.stdout
+def test_verbose_error_shows_response_details(mocked, runner):
+    mocked.get(endpoint("sectores"), status=400, json={"codigo": "ERR_VALIDACION", "error": "bad"})
+    result = run(runner, "--verbose", "sectores")
+    assert "HTTP 400 from" in result.stderr
 
-    def test_cli_missing_required_parameter(self):
-        """Test handling of required parameters in organos command."""
-        # Try organos command with required parameter
-        result = self.runner.invoke(app, ["organos", "--idAdmon", "C"])
 
-        # Should succeed with the required parameter
-        assert result.exit_code == 0, f"Organos command failed: {result.stdout}"
-        assert result.stdout.strip(), "Should produce output"
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("2024-02-01", date(2024, 2, 1)),
+        ("01/02/2024", date(2024, 2, 1)),  # day first, as written in Spain
+        ("1 de febrero de 2024", date(2024, 2, 1)),
+    ],
+)
+def test_date_parsing(text, expected):
+    assert DATE.convert(text, None, None) == expected
 
-        # Verify JSON output
-        lines = result.stdout.strip().split("\n")
-        first_record = json.loads(lines[0])
-        assert "descripcion" in first_record, "Should have descripcion field"
-        assert "id" in first_record, "Should have id field"
 
-    def test_cli_concesiones_busqueda_dates(self):
-        """Test that the CLI correctly handles date parameters for 'concesiones-busqueda'."""
-        result = self.runner.invoke(
-            app,
-            [
-                "concesiones-busqueda",
-                "--fechaDesde",
-                "two weeks ago",
-                "--fechaHasta",
-                "today",
-            ],
-        )
-        assert result.exit_code == 0
+def test_unparseable_date_is_a_usage_error():
+    with pytest.raises(click.BadParameter):
+        DATE.convert("not a date", None, None)

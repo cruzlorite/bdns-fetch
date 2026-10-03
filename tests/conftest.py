@@ -1,46 +1,72 @@
-# -*- coding: utf-8 -*-
-"""
-Configuration for all tests.
-"""
+"""Shared fixtures. Unit tests never touch the network: HTTP goes through `responses`."""
 
-import tempfile
+import json
+import re
+from urllib.parse import parse_qs, urlsplit
+
 import pytest
-from pathlib import Path
-from unittest.mock import Mock
+import responses as responses_lib
+
+from bdns.fetch import BDNSClient
+from bdns.fetch.endpoints import BDNS_API_BASE_URL
+
+
+class _NoRateLimit:
+    def acquire(self) -> None:
+        pass
+
+
+@pytest.fixture(autouse=True)
+def no_rate_limit(monkeypatch):
+    """Lift the 10 req/s limit, which would only slow the suite down."""
+    monkeypatch.setattr(BDNSClient, "_rate_limiter", _NoRateLimit())
+
+
+@pytest.fixture(autouse=True)
+def no_retry_sleep(monkeypatch):
+    """Record retry waits instead of sleeping through them."""
+    waits: list[float] = []
+    monkeypatch.setattr("tenacity.nap.time.sleep", waits.append)
+    return waits
 
 
 @pytest.fixture
-def get_test_context():
-    """Create a test context for integration tests."""
-
-    def _create_context(output_filename: str = "test_output.csv"):
-        # Create a temporary directory for output
-        temp_dir = tempfile.mkdtemp()
-        output_path = Path(temp_dir) / output_filename
-
-        # Mock typer context
-        mock_ctx = Mock()
-        mock_ctx.obj = {
-            "output_file": str(output_path),
-            "max_concurrent_requests": 5,  # Default value for paginated commands
-        }
-
-        return mock_ctx, output_path
-
-    return _create_context
+def mocked():
+    with responses_lib.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+        yield rsps
 
 
 @pytest.fixture
-def cleanup_test_file():
-    """Clean up test output files."""
+def client():
+    return BDNSClient(wait_time=1, progress=False)
 
-    def _cleanup(file_path: Path):
-        if file_path.exists():
-            file_path.unlink()
-        # Also try to remove the parent directory if empty
-        try:
-            file_path.parent.rmdir()
-        except OSError:
-            pass  # Directory not empty or doesn't exist
 
-    return _cleanup
+def endpoint(path: str) -> re.Pattern:
+    """Match an endpoint URL with any query string."""
+    return re.compile(re.escape(f"{BDNS_API_BASE_URL}/{path}") + r"(\?.*)?$")
+
+
+def query_of(call) -> dict[str, list[str]]:
+    return parse_qs(urlsplit(call.request.url).query)
+
+
+def page(number: int, total_pages: int, size: int = 2) -> dict:
+    """A page document in the API's shape, with records numbered by position."""
+    start = number * size
+    return {
+        "content": [{"id": start + i} for i in range(size)],
+        "number": number,
+        "totalPages": total_pages,
+    }
+
+
+def paginated(total_pages: int, size: int = 2, delay=None):
+    """A `responses` callback serving `total_pages` pages, optionally delayed per page."""
+
+    def callback(request):
+        number = int(parse_qs(urlsplit(request.url).query)["page"][0])
+        if delay:
+            delay(number)
+        return 200, {}, json.dumps(page(number, total_pages, size))
+
+    return callback

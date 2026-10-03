@@ -1,42 +1,44 @@
-# Docstring and documentation conventions
+# Convenciones de docstrings y documentación
 
-These conventions are shared by the BDNS family. The full text, with
-worked examples, lives in
-[bdns-sync's contributing guide](https://cruzlorite.github.io/bdns-sync/contributing/docstrings/);
-this page is the summary that applies here.
+Estas convenciones son comunes a la familia BDNS. El texto completo, con
+ejemplos, está en la
+[guía de contribución de bdns-sync](https://cruzlorite.github.io/bdns-sync/contributing/docstrings/);
+esta página es el resumen que aplica aquí.
 
-## The one rule
+## La regla
 
-**A fact has one home. Code links to it, never copies it.** A measured
-fact about the API lives in [API behaviour](../explanation/api-behavior.md);
-a decision lives in its [ADR](../adr/index.md); what a function promises
-lives in its docstring.
+**Un hecho tiene un solo sitio. El código enlaza a él, nunca lo copia.**
+Un hecho medido sobre la API vive en
+[comportamiento de la API](../explanation/api-behavior.md); una decisión,
+en su [ADR](../adr/index.md); lo que promete una función, en su docstring.
 
 ## Docstrings
 
-- Google style: summary line in the imperative mood, ending with a
-  period; an optional "why" paragraph of three to six lines; then `Args`,
-  `Returns`, `Yields`, `Raises`.
-- Do not restate types in prose: the signature carries them.
-- Document every parameter, or omit `Args` entirely.
-- Every module has a docstring and declares `__all__`, which is its
-  contract.
-- In a docstring, link a document relative to `docs/reference/api/`
-  (`../../explanation/api-behavior.md#upper-bound`) and an object by
-  cross-reference (`[`split_range`][bdns.fetch.dates.split_range]`).
-  Link anchors, never section numbers.
+- Estilo Google: una línea de resumen en imperativo, terminada en punto;
+  un párrafo opcional con el porqué, de tres a seis líneas; después
+  `Args`, `Returns`, `Yields`, `Raises`.
+- No repitas los tipos en el texto: ya los lleva la firma.
+- Documenta todos los parámetros o ninguno: una lista a medias parece un
+  descuido.
+- Todo módulo tiene docstring y declara `__all__`, que es su contrato.
+- Desde un docstring, un documento se enlaza con una ruta relativa a
+  `docs/reference/api/` (`../../explanation/api-behavior.md#upper-bound`)
+  y un objeto con una referencia cruzada
+  (`[`split_range`][bdns.fetch.dates.split_range]`). Se enlazan anclas,
+  nunca números de sección.
 
-## Language
+## Idioma
 
-Code, comments and docstrings are in English. The site is Spanish-first:
-`foo.md` is Spanish and `foo.en.md` its English translation; the API
-reference and this page are English in both languages.
+El código, los comentarios y los docstrings van en inglés. La web va
+primero en español: `foo.md` es la página en español y `foo.en.md` su
+traducción al inglés. La referencia de la API Python se genera de los
+docstrings, así que está en inglés en los dos idiomas.
 
-## Enforcement
+## Cómo se comprueba
 
-`make check-docs` runs what CI runs: `scripts/check_doc_refs.py` (every
-link from code resolves), `scripts/check_docstrings.py` (docstrings agree
-with signatures), `mkdocs build --strict`, and
-`scripts/check_site_links.py` (no unlinked reference on the built site).
-`ruff` enforces the docstring shape with the same configuration as
-bdns-sync.
+`make check-docs` ejecuta lo mismo que el CI: `scripts/check_doc_refs.py`
+(todo enlace desde el código resuelve), `scripts/check_docstrings.py` (los
+docstrings coinciden con las firmas), `mkdocs build --strict` y
+`scripts/check_site_links.py` (ninguna referencia sin enlazar en la web
+generada). `ruff` comprueba la forma de los docstrings, con la misma
+configuración que bdns-sync.

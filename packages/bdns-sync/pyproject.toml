@@ -5,7 +5,7 @@ version = "0.5.0"
 description = "Sync engine that keeps target databases in SCD2 form from the Base de Datos Nacional de Subvenciones (BDNS) API"
 readme = "README.md"
 authors = ["José María Cruz Lorite <josemariacruzlorite@gmail.com>"]
-license = "GPL-3.0-or-later"
+license = "MIT"
 homepage = "https://github.com/cruzlorite/bdns-sync"
 repository = "https://github.com/cruzlorite/bdns-sync"
 documentation = "https://cruzlorite.github.io/bdns-sync/"
@@ -15,7 +15,7 @@ classifiers = [
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",

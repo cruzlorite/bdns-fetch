@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: MIT
 
 """BDNS Sync - keeps target databases in SCD2 form from the BDNS API."""
 

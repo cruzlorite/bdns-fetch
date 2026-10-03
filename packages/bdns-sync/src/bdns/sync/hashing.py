@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: MIT
 
 """Canonical JSON, row hashing, and natural key derivation for SCD2 versioning."""
 

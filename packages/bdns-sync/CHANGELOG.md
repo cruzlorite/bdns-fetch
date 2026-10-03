@@ -52,6 +52,8 @@ Planned as 0.6.0, on bdns-fetch 2.0.
 
 ### Changed
 
+- **License.** bdns-sync is now distributed under the MIT license, instead of GPL-3.0-or-later, so it can be
+  used in software under any license. Releases up to 0.5.0 remain under the GPL.
 - **Breaking.** Entities are declared once, in `bdns.sync.entities.ENTITIES`, and run with `sync_entity`. The 22
   `sync_*` functions, `FULL_SYNCERS`, `SEARCH_SYNCERS`, `POLICIES`, `policy_for` and the `generic`, `syncers` and
   `api_contract` modules are gone.

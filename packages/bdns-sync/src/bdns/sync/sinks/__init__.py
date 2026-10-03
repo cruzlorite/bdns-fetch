@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: MIT
 
 """The storage abstraction: everything above this package fetches rows, a sink persists them.
 

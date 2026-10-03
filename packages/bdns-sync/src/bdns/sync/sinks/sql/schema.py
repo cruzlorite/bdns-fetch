@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: MIT
 
 """Generic SCD2 table shape shared by every synced endpoint, plus control tables."""
 

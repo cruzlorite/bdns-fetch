@@ -1,0 +1,16 @@
+name: Propuesta / Feature request
+description: Una funcionalidad o cambio de comportamiento. / A feature or a change in behaviour.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema / Problem
+      description: Qué necesitas hacer y por qué hoy no puedes. / What you need to do and why you cannot today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta / Proposal
+      description: Cómo lo resolverías, si tienes una idea. / How you would solve it, if you have an idea.

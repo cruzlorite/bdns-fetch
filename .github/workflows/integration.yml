@@ -1,0 +1,29 @@
+name: Integration
+
+# Live tests against the real BDNS API. Kept out of CI so a pull request is
+# never blocked by a third-party outage; run nightly instead, so a change in
+# the API is noticed within a day.
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  live-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pipx install poetry==2.2.1
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Test against the live API
+        run: poetry run pytest -m integration --no-cov

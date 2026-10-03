@@ -1,34 +1,25 @@
 # Makefile for BDNS Fetch project
 
-.PHONY: help install dev-install test test-integration test-working lint format clean all
+.PHONY: help install dev-install test test-integration lint format clean all
 
 .DEFAULT_GOAL := help
 
 help: ## Show this help message
 	@echo "BDNS Fetch - Available Make Targets:"
-	@echo "===================================="
+	@echo "====================================="
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
 install: ## Install project dependencies
-	poetry install --no-dev
+	poetry install --only main
 
 dev-install: ## Install project with development dependencies
 	poetry install
 
-test-cli: ## Run CLI tests
-	@echo "🚀 Running CLI Tests..."
-	poetry run python -m pytest tests/test_cli.py -v -s
-	@echo "🎉 CLI Tests Completed!"
-
-test-integration: ## Run integration tests against real BDNS API
-	@echo "🚀 Running Integration Tests Against Real BDNS API..."
-	poetry run python -m pytest tests/integration/ -v -s
-	@echo "🎉 Integration Tests Completed!"
-
-test: ## Run all tests (CLI + integration)
-	@echo "🚀 Running All Tests..."
+test: ## Run unit tests (no network)
 	poetry run python -m pytest tests/ -v
-	@echo "🎉 All Tests Completed!"
+
+test-integration: ## Run live tests against the real BDNS API
+	poetry run python -m pytest tests/ -m integration --no-cov -v
 
 lint: ## Run code linting with ruff
 	poetry run ruff check .

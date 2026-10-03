@@ -1,11 +1,11 @@
 [tool.poetry]
-packages = [{include = "bdns"}]
+packages = [{ include = "bdns", from = "src" }]
 name = "bdns-fetch"
 version = "1.3.0"
 description = "Python client and CLI to fetch data from the Base de Datos Nacional de Subvenciones (BDNS)"
 readme = "README.md"
 authors = ["José María Cruz Lorite <josemariacruzlorite@gmail.com>"]
-license = "GPL-3.0"
+license = "GPL-3.0-or-later"
 homepage = "https://github.com/cruzlorite/bdns-fetch"
 repository = "https://github.com/cruzlorite/bdns-fetch"
 documentation = "https://github.com/cruzlorite/bdns-fetch#readme"

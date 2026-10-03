@@ -20,7 +20,7 @@ def _order_independent(value: Any) -> Any:
 
     Evidence that the order varies between calls, and what it cost before
     this existed, is in [the spurious-changes
-    measurements](../../explanation/bdns-api-behavior.md#spurious-changes).
+    measurements](../../explanation/sync-behavior.md#spurious-changes).
 
     Args:
         value: Any JSON-compatible value.
@@ -60,7 +60,7 @@ def sorted_delimited_list(value: str, split_pattern: str) -> str:
 
     Which fields carry these lists, and the evidence that their order
     varies between calls, is in
-    [the shuffled-lists evidence](../../explanation/bdns-api-behavior.md#shuffled-lists).
+    [the shuffled-lists evidence](../../explanation/sync-behavior.md#shuffled-lists).
 
     Args:
         value: The raw field value, elements joined by a separator.

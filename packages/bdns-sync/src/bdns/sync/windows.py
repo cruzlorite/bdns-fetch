@@ -6,7 +6,9 @@ Every range in this package is inclusive at both ends, and ends at
 yesterday at the latest: today is still receiving registrations, so a run
 that covered it would leave a partial day behind that nothing revisits.
 Translating an inclusive range into each API date family's arguments is
-bdns-fetch's job ([`bdns.fetch.dates`][]), not this module's.
+bdns-fetch's job
+([`bdns.fetch.dates`](https://cruzlorite.github.io/bdns-fetch/en/reference/api/dates/)),
+not this module's.
 
 The windows are nested: each ends yesterday, so on any given day annual
 contains monthly, which contains weekly, which contains daily. Running

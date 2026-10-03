@@ -42,7 +42,7 @@ class PayloadPolicy:
     """The rules one entity's records go through.
 
     Defaults are the measured findings for each entity (see [the
-    spurious-changes measurements](../../explanation/bdns-api-behavior.md#spurious-changes)),
+    spurious-changes measurements](../../explanation/sync-behavior.md#spurious-changes)),
     declared in [`bdns.sync.entities`][] next to the entity they belong to.
     The empty policy is the identity function: store what arrived, hash
     all of it.

@@ -19,7 +19,7 @@ class _NoRateLimit:
 @pytest.fixture(autouse=True)
 def no_rate_limit(monkeypatch):
     """Lift the 10 req/s limit, which would only slow the suite down."""
-    monkeypatch.setattr(BDNSClient, "_rate_limiter", _NoRateLimit())
+    monkeypatch.setattr("bdns.fetch.client.DEFAULT_RATE_LIMITER", _NoRateLimit())
 
 
 @pytest.fixture(autouse=True)

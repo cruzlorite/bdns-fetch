@@ -88,3 +88,54 @@ def test_each_method_requests_the_path_its_docstring_names(mocked, client, name)
         list(result)
     requested = mocked.calls[0].request.url.split("/bdnstrans/api", 1)[1].split("?")[0]
     assert requested == path
+
+
+def test_get_requests_any_path_with_encoded_params(mocked, client):
+    mocked.get(endpoint("vpd/GE/configuracion"), json={"titulo": "x"})
+    assert client.get("/vpd/GE/configuracion", {"fecha": date(2024, 1, 2), "x": None}) == {
+        "titulo": "x"
+    }
+    assert query_of(mocked.calls[0]) == {"fecha": ["02/01/2024"]}
+
+
+def test_get_returns_none_on_204(mocked, client):
+    mocked.get(endpoint("sectores"), status=204)
+    assert client.get("/sectores") is None
+
+
+def test_get_bytes(mocked, client):
+    mocked.get(endpoint("convocatorias/pdf"), body=b"%PDF")
+    assert client.get_bytes("convocatorias/pdf", {"id": 1}) == b"%PDF"
+
+
+def test_errors_carry_status_code_and_api_code(mocked, client):
+    from bdns.fetch import BDNSError
+
+    mocked.get(endpoint("sectores"), status=400, json={"codigo": "ERR_VALIDACION", "error": "x"})
+    with pytest.raises(BDNSError) as excinfo:
+        client.get("/sectores")
+    assert excinfo.value.status_code == 400
+    assert excinfo.value.code == "ERR_VALIDACION"
+    assert excinfo.value.url.endswith("/sectores?")
+
+
+def test_a_given_rate_limiter_is_used(mocked):
+    class Counting:
+        calls = 0
+
+        def acquire(self):
+            Counting.calls += 1
+
+    mocked.get(endpoint("sectores"), json=[])
+    list(BDNSClient(rate_limiter=Counting()).fetch_sectores())
+    assert Counting.calls == 1
+
+
+def test_base_url_is_configurable(mocked):
+    mocked.get("https://mirror.example/api/sectores", json=[{"id": 1}])
+    assert list(BDNSClient(base_url="https://mirror.example/api/").fetch_sectores()) == [{"id": 1}]
+
+
+def test_constructor_takes_keywords_only():
+    with pytest.raises(TypeError):
+        BDNSClient(3)

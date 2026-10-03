@@ -4,13 +4,9 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
-from bdns.fetch import TipoAdministracion, format_date_for_api_request, format_url
-from bdns.fetch.exceptions import (
-    BDNSError,
-    handle_api_response,
-    parse_bdns_error_response,
-)
-from bdns.fetch.utils import RateLimiter
+from bdns.fetch import BDNSError, BDNSTransientError, TipoAdministracion
+from bdns.fetch.exceptions import error_from_response
+from bdns.fetch.utils import RateLimiter, format_date_for_api_request, format_url
 
 
 def test_format_date():
@@ -34,17 +30,45 @@ def test_rate_limiter_spaces_out_calls_beyond_the_burst():
     assert time.monotonic() - start >= 0.45
 
 
-def test_parse_error_body():
-    assert parse_bdns_error_response('{"codigo": "E1", "errores": ["a", "b"]}') == (
-        "E1",
-        ["a", "b"],
+def _error(status, body, headers=None):
+    return error_from_response(
+        status_code=status,
+        url="https://x/api",
+        body=body,
+        headers=headers or {},
+        transient_statuses={503},
+        transient_codes={"ERR_MANTENIMIENTO_BBDD"},
     )
-    assert parse_bdns_error_response("<html>")[0] == "PARSE_ERROR"
 
 
-@pytest.mark.parametrize("status", [400, 401, 403, 404, 429, 500, 418])
-def test_handle_api_response_builds_an_error(status):
-    error = handle_api_response(status, "https://x", '{"codigo": "E", "error": "boom"}')
-    assert isinstance(error, BDNSError)
-    assert "boom" in error.message
-    assert f"HTTP {status}" in error.technical_details
+def test_error_carries_status_code_and_url():
+    error = _error(400, '{"codigo": "ERR_VALIDACION", "error": "bad"}')
+    assert type(error) is BDNSError
+    assert (error.status_code, error.code, error.url) == (400, "ERR_VALIDACION", "https://x/api")
+    assert str(error) == "Error (ERR_VALIDACION): bad"
+    assert "HTTP 400 from https://x/api" in error.details
+
+
+def test_several_messages_are_numbered():
+    error = _error(400, '{"codigo": "E", "errores": ["a", "b"]}')
+    assert error.message == "Error (E):\n  1. a\n  2. b"
+
+
+@pytest.mark.parametrize(
+    ("status", "body", "expected"),
+    [
+        (404, "", "HTTP 404: Not Found"),
+        (500, "<html>", "HTTP 500: Server error"),
+        (418, "teapot", "HTTP 418: teapot"),
+    ],
+)
+def test_message_without_an_error_document(status, body, expected):
+    assert _error(status, body).message == expected
+
+
+def test_transient_by_status_or_by_code():
+    assert isinstance(_error(503, ""), BDNSTransientError)
+    assert isinstance(
+        _error(200, '{"codigo": "ERR_MANTENIMIENTO_BBDD", "error": "x"}'), BDNSTransientError
+    )
+    assert _error(503, "", {"Retry-After": "3"}).retry_after == 3.0

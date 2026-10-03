@@ -1,183 +1,156 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Exceptions raised by the BDNS client, and the mapping from HTTP errors to them.
+"""Exceptions raised by the BDNS client.
 
-Every failure the client reports is a [`BDNSError`][bdns.fetch.exceptions.BDNSError].
-The ones worth retrying (rate limiting, server errors, database maintenance)
-are the subclass [`BDNSTransientError`][bdns.fetch.exceptions.BDNSTransientError],
-which is what the client's retry policy keys on. Callers that only want to
-know whether a request failed can keep catching `BDNSError`.
+Every failure the API reports is a [`BDNSError`][bdns.fetch.exceptions.BDNSError],
+carrying what a program needs to react to it: the HTTP status, the API's
+own error code and the URL. The ones worth retrying (rate limiting, server
+errors, database maintenance) are the subclass
+[`BDNSTransientError`][bdns.fetch.exceptions.BDNSTransientError], which is
+what the client's retry policy keys on.
 
-Nothing here prints: presenting an error is the CLI's job.
+Nothing here prints or gives advice: presenting an error is the CLI's job.
 """
 
 import json
+from collections.abc import Collection, Mapping
 
-__all__ = [
-    "BDNSError",
-    "BDNSTransientError",
-    "BDNSWarning",
-    "handle_api_response",
-]
+__all__ = ["BDNSError", "BDNSTransientError", "error_from_response"]
 
 
 class BDNSError(Exception):
-    """A request to the BDNS API failed.
+    """The BDNS API reported an error.
+
+    `str(error)` is `message`.
 
     Attributes:
-        message: What went wrong, in the API's own words when it gave any.
-        suggestion: What the caller could change, if anything.
-        technical_details: Status, URL, and a preview of the response body.
+        message: What went wrong, in the API's own words when it gave any
+            (usually Spanish).
+        status_code: HTTP status of the response.
+        code: The API's error code (`codigo`), such as `ERR_VALIDACION`,
+            when the body carried one.
+        url: The requested URL.
+        details: Status, URL, response headers and a preview of the body,
+            for logs and bug reports.
     """
 
     def __init__(
         self,
         message: str,
-        suggestion: str | None = None,
-        technical_details: str | None = None,
+        *,
+        status_code: int | None = None,
+        code: str | None = None,
+        url: str | None = None,
+        details: str | None = None,
     ):
+        super().__init__(message)
         self.message = message
-        self.suggestion = suggestion
-        self.technical_details = technical_details
-        super().__init__(self.message)
+        self.status_code = status_code
+        self.code = code
+        self.url = url
+        self.details = details
 
 
 class BDNSTransientError(BDNSError):
     """A request failed in a way that may succeed if repeated.
 
-    Raised for HTTP 429 and 5xx responses, and for API error codes that
-    signal a temporary condition such as `ERR_MANTENIMIENTO_BBDD`. The
-    client retries these; one reaches the caller only after the retries
-    are exhausted.
+    Raised for HTTP 429 and 5xx responses, and for error codes that signal
+    a temporary condition such as `ERR_MANTENIMIENTO_BBDD`. The client
+    retries these; one reaches the caller only after the retries run out.
 
     Attributes:
         retry_after: Seconds the server asked to wait (`Retry-After`), if
             it said.
     """
 
-    def __init__(
-        self,
-        message: str,
-        suggestion: str | None = None,
-        technical_details: str | None = None,
-        retry_after: float | None = None,
-    ):
-        super().__init__(message, suggestion, technical_details)
+    def __init__(self, message: str, *, retry_after: float | None = None, **kwargs):
+        super().__init__(message, **kwargs)
         self.retry_after = retry_after
 
 
-class BDNSWarning(BDNSError):
-    """The API answered successfully but with no data.
-
-    Kept for backward compatibility. The client no longer raises it: an
-    empty answer is an empty result.
-    """
-
-
-def parse_bdns_error_response(response_text: str) -> tuple[str, list[str]]:
-    """Extract the error code and messages from a BDNS error body.
-
-    Args:
-        response_text: The raw response body.
-
-    Returns:
-        The `codigo` field (or `"PARSE_ERROR"` when the body is not a BDNS
-        error document) and the list of messages it carries.
-    """
+def _parse_body(body: str) -> tuple[str | None, list[str]]:
+    """Extract the error code and messages from a BDNS error body."""
     try:
-        error_data = json.loads(response_text)
+        document = json.loads(body)
     except (TypeError, ValueError):
-        error_data = None
-
-    if isinstance(error_data, dict):
-        error_code = error_data.get("codigo", "UNKNOWN_ERROR")
-        if isinstance(error_data.get("errores"), list):
-            return error_code, error_data["errores"]
-        for key in ("error", "message", "detail"):
-            if key in error_data:
-                return error_code, [str(error_data[key])]
-        return error_code, []
-
-    return "PARSE_ERROR", [response_text[:200] if response_text else "No error details available"]
+        document = None
+    if not isinstance(document, dict):
+        return None, []
+    code = document.get("codigo")
+    if isinstance(document.get("errores"), list):
+        return code, [str(m) for m in document["errores"]]
+    for key in ("error", "message", "detail"):
+        if key in document:
+            return code, [str(document[key])]
+    return code, []
 
 
-def format_bdns_error_message(error_code: str, error_messages: list[str]) -> str:
-    """Render an error code and its messages as one human-readable string.
-
-    The messages stay in the language the API wrote them in (Spanish).
-    """
-    if not error_messages:
-        return "Server returned an error (no details provided)"
-
-    error_type = f"Error ({error_code})" if error_code != "PARSE_ERROR" else "Server Error"
-    if len(error_messages) == 1:
-        return f"{error_type}: {error_messages[0]}"
-    numbered = "\n".join(f"  {i}. {msg}" for i, msg in enumerate(error_messages, 1))
-    return f"{error_type}:\n{numbered}"
-
-
-# Fallback message and advice for each status, used when the body says nothing.
-_STATUS_HINTS: dict[int, tuple[str, str]] = {
-    400: (
-        "Bad Request",
-        "Check your parameter values and formats. Use --help to see valid parameter examples.",
-    ),
-    401: ("Unauthorized", "This endpoint may require authentication."),
-    403: ("Forbidden", "You don't have permission to access this resource."),
-    404: (
-        "Not Found",
-        "Check if the endpoint URL is correct or if the requested resource exists.",
-    ),
-    429: ("Too Many Requests", "Wait a moment and try again, or reduce --max-workers."),
+_STATUS_TEXT = {
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    429: "Too Many Requests",
 }
 
 
-def handle_api_response(
+def _message(status_code: int, code: str | None, messages: list[str], body: str) -> str:
+    prefix = f"Error ({code})" if code else f"HTTP {status_code}"
+    if len(messages) == 1:
+        return f"{prefix}: {messages[0]}"
+    if messages:
+        return f"{prefix}:\n" + "\n".join(f"  {i}. {m}" for i, m in enumerate(messages, 1))
+    fallback = _STATUS_TEXT.get(status_code)
+    if fallback is None:
+        fallback = "Server error" if status_code >= 500 else (body[:200] or "No details")
+    return f"{prefix}: {fallback}"
+
+
+def _parse_retry_after(headers: Mapping[str, str]) -> float | None:
+    """Read `Retry-After` as seconds. HTTP-date values are ignored."""
+    value = next((v for k, v in headers.items() if k.lower() == "retry-after"), None)
+    try:
+        return max(0.0, float(value)) if value is not None else None
+    except ValueError:
+        return None
+
+
+def error_from_response(
+    *,
     status_code: int,
     url: str,
-    response_text: str = "",
-    response_headers: dict | None = None,
+    body: str,
+    headers: Mapping[str, str],
+    transient_statuses: Collection[int],
+    transient_codes: Collection[str],
 ) -> BDNSError:
-    """Build the exception that describes an unsuccessful response.
+    """Build the exception that describes an error response.
+
+    The API sometimes reports an error inside a 200 response; that is an
+    error too.
 
     Args:
         status_code: HTTP status of the response.
         url: The requested URL.
-        response_text: The response body.
-        response_headers: The response headers, included in the details.
+        body: The response body.
+        headers: The response headers.
+        transient_statuses: Statuses that make the error transient.
+        transient_codes: API error codes that make it transient, whatever
+            the status.
 
     Returns:
-        The exception to raise. It is returned rather than raised so the
-        caller can decide whether it is transient.
+        A `BDNSTransientError` if either rule matches, else a `BDNSError`.
+        Returned rather than raised, so the caller raises it in context.
     """
-    tech_details = f"HTTP {status_code} from {url}"
-    if response_text:
-        preview = response_text[:100] + ("..." if len(response_text) > 100 else "")
-        tech_details += f"\nResponse content (first 100 chars): {preview}"
-    if response_headers:
-        tech_details += "\nResponse headers:"
-        for key, value in response_headers.items():
-            tech_details += f"\n  {key}: {value}"
-
-    if status_code in (200, 204):
-        return BDNSWarning(
-            message="No data available for the specified parameters.",
-            suggestion="This might be expected if no records match your criteria. Try different parameters.",
-            technical_details=tech_details,
-        )
-
-    error_code, error_messages = parse_bdns_error_response(response_text)
-    if status_code in _STATUS_HINTS:
-        fallback, suggestion = _STATUS_HINTS[status_code]
-    elif status_code >= 500:
-        fallback, suggestion = (
-            "Internal Server Error",
-            "The API server is experiencing issues. Try again later.",
-        )
-    else:
-        fallback, suggestion = None, "Check your internet connection and try again."
-
-    message = format_bdns_error_message(error_code, error_messages)
-    if fallback and not error_messages:
-        message = fallback
-    return BDNSError(message=message, suggestion=suggestion, technical_details=tech_details)
+    code, messages = _parse_body(body)
+    preview = body[:500] + ("..." if len(body) > 500 else "")
+    details = "\n".join(
+        [f"HTTP {status_code} from {url}", "Response headers:"]
+        + [f"  {key}: {value}" for key, value in headers.items()]
+        + [f"Response body: {preview}"]
+    )
+    fields = {"status_code": status_code, "code": code, "url": url, "details": details}
+    message = _message(status_code, code, messages, body)
+    if status_code in transient_statuses or code in transient_codes:
+        return BDNSTransientError(message, retry_after=_parse_retry_after(headers), **fields)
+    return BDNSError(message, **fields)

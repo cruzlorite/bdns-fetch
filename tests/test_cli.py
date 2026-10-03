@@ -134,13 +134,45 @@ def test_verbose_error_shows_response_details(mocked, runner):
     [
         ("2024-02-01", date(2024, 2, 1)),
         ("01/02/2024", date(2024, 2, 1)),  # day first, as written in Spain
-        ("1 de febrero de 2024", date(2024, 2, 1)),
+        ("1-2-2024", date(2024, 2, 1)),
     ],
 )
 def test_date_parsing(text, expected):
     assert DATE.convert(text, None, None) == expected
 
 
-def test_unparseable_date_is_a_usage_error():
+@pytest.mark.parametrize("text", ["not a date", "two weeks ago", "31/02/2024", "2024/01/31"])
+def test_anything_else_is_a_usage_error(text):
     with pytest.raises(click.BadParameter):
-        DATE.convert("not a date", None, None)
+        DATE.convert(text, None, None)
+
+
+def test_rate_limited_error_suggests_lowering_the_rate(mocked, runner):
+    mocked.get(endpoint("sectores"), status=429)
+    result = run(runner, "--max-retries", "0", "sectores")
+    assert result.exit_code == 1
+    assert "--rate-limit" in result.stderr
+
+
+def test_get_command_requests_any_path(mocked, runner):
+    mocked.get(endpoint("vpd/GE/configuracion"), json={"titulo": "Portal"})
+    result = run(runner, "get", "/vpd/GE/configuracion", "-p", "a=1", "-p", "a=2")
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {"titulo": "Portal"}
+    assert query_of(mocked.calls[0]) == {"a": ["1", "2"]}
+
+
+def test_get_command_rejects_a_malformed_param(runner):
+    assert run(runner, "get", "/x", "-p", "novalue").exit_code == 2
+
+
+@pytest.mark.parametrize(("status", "code"), [("ok", 0), ("inconclusive", 0), ("changed", 1)])
+def test_check_api_exit_code(monkeypatch, runner, status, code):
+    from bdns.fetch.contract import ContractReport
+
+    monkeypatch.setattr(
+        "bdns.fetch.cli.check_api_contract", lambda client, day: ContractReport(status, ["msg"])
+    )
+    result = run(runner, "check-api", "--day", "2024-01-31")
+    assert result.exit_code == code
+    assert "msg" in result.stdout

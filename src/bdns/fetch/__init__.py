@@ -2,8 +2,9 @@
 
 """BDNS Fetch: Python client and CLI for the BDNS API.
 
-The public API is what this module exports. Names elsewhere in the package
-may change in any release.
+The public API is what this module exports, plus the modules
+[`dates`][bdns.fetch.dates] and [`contract`][bdns.fetch.contract]. Names
+elsewhere in the package may change in any release.
 """
 
 from importlib.metadata import PackageNotFoundError, version
@@ -17,7 +18,7 @@ from bdns.fetch.types import (
     Order,
     TipoAdministracion,
 )
-from bdns.fetch.utils import format_date_for_api_request, format_url, smart_open
+from bdns.fetch.utils import RateLimiter
 
 try:
     __version__ = version("bdns-fetch")
@@ -33,9 +34,7 @@ __all__ = [
     "DescripcionTipoBusqueda",
     "Direccion",
     "Order",
+    "RateLimiter",
     "TipoAdministracion",
     "__version__",
-    "format_date_for_api_request",
-    "format_url",
-    "smart_open",
 ]

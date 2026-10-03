@@ -45,9 +45,9 @@ def test_no_warning_when_every_page_is_returned(mocked, client, caplog):
     assert caplog.text == ""
 
 
-def test_return_raw_yields_pages(mocked):
+def test_pages_yields_whole_page_documents(mocked, client):
     mocked.add_callback("GET", SEARCH, callback=paginated(total_pages=3))
-    pages = list(BDNSClient(return_raw=True, progress=False).fetch_concesiones_busqueda())
+    pages = list(client.pages("/concesiones/busqueda", {"pageSize": 2}))
     assert pages == [page(0, 3), page(1, 3), page(2, 3)]
 
 

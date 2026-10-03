@@ -116,3 +116,10 @@ def test_cli_end_to_end():
     result = CliRunner().invoke(app, ["--no-progress", "sectores"])
     assert result.exit_code == 0, result.output
     assert result.stdout.strip()
+
+
+def test_documented_date_semantics_still_hold(client):
+    from bdns.fetch.contract import check_api_contract
+
+    report = check_api_contract(client)
+    assert report.status != "changed", report.messages

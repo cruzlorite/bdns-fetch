@@ -1,43 +1,48 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""URLs of the BDNS API endpoints.
+"""Paths of the BDNS API endpoints, relative to [`BDNS_API_BASE_URL`][bdns.fetch.endpoints.BDNS_API_BASE_URL].
 
-One constant per endpoint, all under [`BDNS_API_BASE_URL`][bdns.fetch.endpoints.BDNS_API_BASE_URL].
+Only the endpoints that have a `fetch_*` method are listed. Any other path
+can be requested with [`BDNSClient.get`][bdns.fetch.client.BDNSClient.get].
 """
 
 BDNS_API_BASE_URL = "https://www.infosubvenciones.es/bdnstrans/api"
-BDNS_API_ENDPOINT_CONVOCATORIAS_BUSQUEDA = f"{BDNS_API_BASE_URL}/convocatorias/busqueda"
-BDNS_API_ENDPOINT_CONVOCATORIAS_ULTIMAS = f"{BDNS_API_BASE_URL}/convocatorias/ultimas"
-BDNS_API_ENDPOINT_CONVOCATORIAS = f"{BDNS_API_BASE_URL}/convocatorias"
-BDNS_API_ENDPOINT_CONVOCATORIAS_DOCUMENTOS = f"{BDNS_API_BASE_URL}/convocatorias/documentos"
-BDNS_API_ENDPOINT_CONVOCATORIAS_PDF = f"{BDNS_API_BASE_URL}/convocatorias/pdf"
-BDNS_API_ENDPOINT_CONCESIONES_BUSQUEDA = f"{BDNS_API_BASE_URL}/concesiones/busqueda"
-BDNS_API_ENDPOINT_AYUDASESTADO_BUSQUEDA = f"{BDNS_API_BASE_URL}/ayudasestado/busqueda"
-BDNS_API_ENDPOINT_MINIMIS_BUSQUEDA = f"{BDNS_API_BASE_URL}/minimis/busqueda"
-BDNS_API_ENDPOINT_GRANDES_BENEFICIARIOS_BUSQUEDA = (
-    f"{BDNS_API_BASE_URL}/grandesbeneficiarios/busqueda"
-)
-BDNS_API_ENDPOINT_GRANDES_BENEFICIARIOS_ANIOS = f"{BDNS_API_BASE_URL}/grandesbeneficiarios/anios"
-BDNS_API_ENDPOINT_PARTIDOSPOLITICOS_BUSQUEDA = f"{BDNS_API_BASE_URL}/partidospoliticos/busqueda"
-BDNS_API_ENDPOINT_PLANESESTRATEGICOS_BUSQUEDA = f"{BDNS_API_BASE_URL}/planesestrategicos/busqueda"
-BDNS_API_ENDPOINT_PLANESESTRATEGICOS = f"{BDNS_API_BASE_URL}/planesestrategicos"
-BDNS_API_ENDPOINT_PLANESESTRATEGICOS_DOCUMENTOS = (
-    f"{BDNS_API_BASE_URL}/planesestrategicos/documentos"
-)
-BDNS_API_ENDPOINT_PLANESESTRATEGICOS_VIGENCIA = f"{BDNS_API_BASE_URL}/planesestrategicos/vigencia"
-BDNS_API_ENDPOINT_SANCIONES_BUSQUEDA = f"{BDNS_API_BASE_URL}/sanciones/busqueda"
-BDNS_API_ENDPOINT_TERCEROS = f"{BDNS_API_BASE_URL}/terceros"
-BDNS_API_ENDPOINT_REGIONES = f"{BDNS_API_BASE_URL}/regiones"
-BDNS_API_ENDPOINT_FINALIDADES = f"{BDNS_API_BASE_URL}/finalidades"
-BDNS_API_ENDPOINT_TIPOS_BENEFICIARIOS = f"{BDNS_API_BASE_URL}/beneficiarios"
-BDNS_API_ENDPOINT_INSTRUMENTOS = f"{BDNS_API_BASE_URL}/instrumentos"
-BDNS_API_ENDPOINT_REGLAMENTOS = f"{BDNS_API_BASE_URL}/reglamentos"
-BDNS_API_ENDPOINT_SECTORES = f"{BDNS_API_BASE_URL}/sectores"
-BDNS_API_ENDPOINT_ACTIVIDADES = f"{BDNS_API_BASE_URL}/actividades"
-BDNS_API_ENDPOINT_OBJETIVOS = f"{BDNS_API_BASE_URL}/objetivos"
-BDNS_API_ENDPOINT_ORGANOS = f"{BDNS_API_BASE_URL}/organos"
-BDNS_API_ENDPOINT_ORGANOS_AGRUPACION = f"{BDNS_API_BASE_URL}/organos/agrupacion"
-BDNS_API_ENDPOINT_ORGANOS_CODIGO = f"{BDNS_API_BASE_URL}/organos/codigo"
-BDNS_API_ENDPOINT_ORGANOS_CODIGO_ADMIN = f"{BDNS_API_BASE_URL}/organos/codigoAdmin"
-BDNS_API_ENDPOINT_MICROPORTAL_CONFIGURACION = f"{BDNS_API_BASE_URL}/vpd/{{vpd}}/configuracion"
-BDNS_API_ENDPOINT_ENLACES = f"{BDNS_API_BASE_URL}/enlaces"
+
+# Catalogs
+ACTIVIDADES = "/actividades"
+BENEFICIARIOS = "/beneficiarios"
+FINALIDADES = "/finalidades"
+INSTRUMENTOS = "/instrumentos"
+OBJETIVOS = "/objetivos"
+REGIONES = "/regiones"
+REGLAMENTOS = "/reglamentos"
+SECTORES = "/sectores"
+GRANDESBENEFICIARIOS_ANIOS = "/grandesbeneficiarios/anios"
+
+# Administrative bodies
+ORGANOS = "/organos"
+ORGANOS_AGRUPACION = "/organos/agrupacion"
+ORGANOS_CODIGO = "/organos/codigo"
+ORGANOS_CODIGOADMIN = "/organos/codigoAdmin"
+
+# Calls for applications
+CONVOCATORIAS = "/convocatorias"
+CONVOCATORIAS_BUSQUEDA = "/convocatorias/busqueda"
+CONVOCATORIAS_ULTIMAS = "/convocatorias/ultimas"
+CONVOCATORIAS_DOCUMENTOS = "/convocatorias/documentos"
+CONVOCATORIAS_PDF = "/convocatorias/pdf"
+
+# Searches
+CONCESIONES_BUSQUEDA = "/concesiones/busqueda"
+AYUDASESTADO_BUSQUEDA = "/ayudasestado/busqueda"
+MINIMIS_BUSQUEDA = "/minimis/busqueda"
+PARTIDOSPOLITICOS_BUSQUEDA = "/partidospoliticos/busqueda"
+GRANDESBENEFICIARIOS_BUSQUEDA = "/grandesbeneficiarios/busqueda"
+SANCIONES_BUSQUEDA = "/sanciones/busqueda"
+TERCEROS = "/terceros"
+
+# Strategic plans
+PLANESESTRATEGICOS = "/planesestrategicos"
+PLANESESTRATEGICOS_BUSQUEDA = "/planesestrategicos/busqueda"
+PLANESESTRATEGICOS_DOCUMENTOS = "/planesestrategicos/documentos"
+PLANESESTRATEGICOS_VIGENCIA = "/planesestrategicos/vigencia"

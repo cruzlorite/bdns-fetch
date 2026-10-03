@@ -40,8 +40,9 @@ def test_client_error_is_not_retried(mocked, client):
 
 def test_error_payload_in_a_200_is_raised(mocked, client):
     mocked.get(SECTORES, status=200, json={"codigo": "ERR_VALIDACION", "error": "bad"})
-    with pytest.raises(BDNSError, match="API returned error"):
+    with pytest.raises(BDNSError) as excinfo:
         list(client.fetch_sectores())
+    assert (excinfo.value.status_code, excinfo.value.code) == (200, "ERR_VALIDACION")
 
 
 def test_max_retries_counts_retries_after_the_first_attempt(mocked):

@@ -5,10 +5,10 @@
 ## Context
 
 Each endpoint takes between zero and twenty-five parameters, named in
-Spanish camelCase (`fechaRegInicio`, `tipoAdministracion`). Up to 1.x they
-could be passed by position, and nobody remembers the order of twenty
-parameters: an argument in the wrong place sends a different filter with
-no error at all.
+Spanish camelCase (`fechaRegInicio`, `tipoAdministracion`). If they can be
+passed by position, nobody remembers the order of twenty parameters: an
+argument in the wrong place sends a different filter with no error at
+all.
 
 Translating the names to `snake_case` or English would make the code more
 "Pythonic", but would break the one-to-one match with the official

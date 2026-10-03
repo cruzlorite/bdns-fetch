@@ -15,6 +15,3 @@ decision is reversed, a new ADR supersedes it and the original is marked
 | [0005](0005-ordered-bounded-pagination.md) | Concurrent pagination, in order, with bounded memory | Accepted |
 | [0006](0006-cli-generated-from-client.md) | The CLI is generated from the client | Accepted |
 | [0007](0007-api-knowledge-lives-in-fetch.md) | Knowledge of the API lives in bdns-fetch | Accepted |
-
-All were taken while preparing version 2.0.0 (October 2026), which rebuilt
-the client. The 1.x releases left no recorded decisions.

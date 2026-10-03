@@ -4,16 +4,16 @@
 
 ## Context
 
-The official good practices set 10 requests per second per IP. The 1.3
-limiter was a token bucket that started full: it allowed a burst of 10
-simultaneous requests and then 10 per second on average.
+The official good practices set 10 requests per second per IP. A classic
+token bucket starts full: it allows a burst of as many simultaneous
+requests as its capacity, then the average.
 
 Measured against the live service, the server answers `429` to bursts
 even when the average complies: 10 threads that only respected the
 average died within seconds. With spaced starts it accepts a sustained
 9.8 requests per second ([measurement](../explanation/api-behavior.md#rate-limit)).
-`bdns-sync` worked around it by spacing its own calls on top of the
-client.
+If the client does not space requests, every threaded consumer has to do
+it on its own.
 
 ## Decision
 

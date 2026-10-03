@@ -4,15 +4,18 @@
 
 ## Context
 
-Up to 1.3 only network errors were retried. A `503`, a `429` or an
-`ERR_MANTENIMIENTO_BBDD` was raised at the first attempt, whatever
-`max_retries` said. `bdns-sync` configured 8 retries believing they
-protected it from server trouble, and they did not. On top of that,
-`max_retries=3` meant three *attempts*, and running out raised a
-`tenacity.RetryError` instead of the real error.
+The API fails in two ways. Sometimes transiently: network errors, `429`,
+`5xx`, or `ERR_MANTENIMIENTO_BBDD`, which it returns intermittently on
+long queries ([measurement](../explanation/api-behavior.md#range-reliability)).
+Sometimes permanently: a malformed parameter, a document that does not
+exist.
 
-Retrying everything is no better: a repeated `400` is still a `400`, and
-retrying it only delays the news and spends request budget.
+An unattended process must ride out the former without intervention.
+Retrying the latter is pointless: a repeated `400` is still a `400`, and
+retrying it only delays the news and spends request budget. Whoever
+configures retries also expects the number to mean retries, and the real
+error to reach them when they run out, not a wrapper from the retry
+library.
 
 ## Decision
 
@@ -30,8 +33,9 @@ after the first attempt. When they run out, the last error is re-raised.
 - An unattended process rides out rough patches of minutes with no
   special configuration.
 - Jitter stops several clients from retrying in lockstep.
-- Code catching [`BDNSError`][bdns.fetch.exceptions.BDNSError] needs no change; code that wants to tell
-  transient failures apart has the subclass.
+- Code that only needs to know something failed catches
+  [`BDNSError`][bdns.fetch.exceptions.BDNSError]; code that wants to tell transient failures apart has the
+  subclass.
 - The list of transient codes is a measurement, not a certainty: if
   another one shows up, it is added to
   [`TRANSIENT_API_ERROR_CODES`][bdns.fetch.client.TRANSIENT_API_ERROR_CODES].

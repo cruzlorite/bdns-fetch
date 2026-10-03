@@ -4,16 +4,17 @@
 
 ## Contexto
 
-Casi todo lo que se sabe del comportamiento real de la API (la semántica
-contraria de `fechaRegFin` y `fechaHasta`, los fallos en rangos largos,
-el rechazo de ráfagas, la retención por endpoint, los cambios espurios)
-se midió construyendo `bdns-sync`, y vivía allí: en su documentación, en
-su `api_contract.py` y en sus helpers de fechas.
+La familia tiene dos proyectos: `bdns-fetch` habla con la API y
+`bdns-sync` almacena lo que devuelve. Lo que se sabe del comportamiento
+real de la API (la semántica contraria de `fechaRegFin` y `fechaHasta`,
+los fallos en rangos largos, el rechazo de ráfagas, la retención por
+endpoint, los cambios espurios) le sirve a cualquiera que la use, no solo
+a quien almacena.
 
-Pero son hechos de la API, no del almacenamiento. Quien usaba solo
-`bdns-fetch` tropezaba con ellos sin aviso, y `bdns-sync` compensaba
-defectos del cliente (el espaciado de peticiones) en vez de corregirlos
-donde tocaba.
+Si ese conocimiento vive en la capa de almacenamiento, quien usa solo el
+cliente tropieza con todo ello sin aviso, y la capa de almacenamiento
+acaba compensando limitaciones del cliente en vez de corregirlas donde
+tocan.
 
 ## Decisión
 

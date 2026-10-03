@@ -4,12 +4,15 @@
 
 ## Context
 
-In 1.x the defaults of the client's methods were `typer.OptionInfo`
-objects, translated on the fly by a decorator. The client could not be
-used, typed or documented without dragging the CLI along: signatures
-lied, editors showed Typer objects, and mkdocstrings could not have
-produced a useful reference. Exceptions also suggested CLI flags to
-library users.
+A CLI built on a library tempts one to put CLI details into the library:
+defaults that are Typer objects, exceptions that suggest flags. Then the
+client cannot be used, typed or documented without dragging the CLI
+along: signatures lie, editors show framework objects, and mkdocstrings
+cannot produce a useful reference.
+
+The usual alternative, writing the commands by hand, duplicates every
+endpoint and parameter, with its types and defaults, in two lists that
+end up diverging.
 
 ## Decision
 

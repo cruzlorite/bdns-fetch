@@ -4,12 +4,15 @@
 
 ## Contexto
 
-En la 1.x los valores por defecto de los métodos del cliente eran objetos
-`typer.OptionInfo`, que un decorador traducía al vuelo. El cliente no se
-podía usar, tipar ni documentar sin arrastrar el CLI: las firmas mentían,
-el editor mostraba objetos de Typer y mkdocstrings no habría podido
-generar una referencia útil. Las excepciones, además, sugerían flags del
-CLI a quien usaba la librería.
+Un CLI construido sobre una librería tienta a meter detalles del CLI en
+la librería: valores por defecto que son objetos de Typer, excepciones que
+sugieren flags. Entonces el cliente no se puede usar, tipar ni documentar
+sin arrastrar el CLI: las firmas mienten, el editor muestra objetos del
+framework y mkdocstrings no puede generar una referencia útil.
+
+La alternativa habitual, escribir los comandos a mano, duplica en dos
+listas cada endpoint y cada parámetro, con sus tipos y valores por
+defecto, que acaban divergiendo.
 
 ## Decisión
 

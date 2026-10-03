@@ -5,10 +5,10 @@
 ## Contexto
 
 Cada endpoint acepta entre cero y veinticinco parámetros, con nombres en
-camelCase y en español (`fechaRegInicio`, `tipoAdministracion`). Hasta la
-1.x se podían pasar por posición, y el orden de veinte parámetros no es
-algo que nadie recuerde: un argumento en el sitio equivocado manda un
-filtro distinto sin ningún error.
+camelCase y en español (`fechaRegInicio`, `tipoAdministracion`). Si se
+pueden pasar por posición, nadie recuerda el orden de veinte parámetros:
+un argumento en el sitio equivocado manda un filtro distinto sin ningún
+error.
 
 Traducir los nombres a `snake_case` o al inglés haría el código más
 "pythónico", pero rompería la correspondencia con la documentación

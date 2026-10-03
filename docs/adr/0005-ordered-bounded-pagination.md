@@ -5,14 +5,14 @@
 ## Contexto
 
 Una búsqueda grande tiene miles de páginas. Pedirlas en serie desperdicia
-el cupo de peticiones esperando latencia. La 1.3 las pedía en paralelo,
-pero de una forma que causaba tres problemas:
+el cupo de peticiones esperando latencia, así que se piden en paralelo.
+La forma ingenua (enviar todas las peticiones y entregar cada página
+cuando llega) tiene tres problemas:
 
-- entregaba las páginas en el orden en que **terminaban**, así que el
-  resultado salía barajado;
-- enviaba **todas** las peticiones de golpe, de modo que con un
-  consumidor lento el resultado entero se acumulaba en memoria;
-- si el consumidor dejaba de iterar, se descargaban igualmente todas.
+- el resultado sale en el orden en que **terminan** las peticiones, es
+  decir, barajado;
+- con un consumidor lento, el resultado entero se acumula en memoria;
+- si el consumidor deja de iterar, se descargan igualmente todas.
 
 ## Decisión
 

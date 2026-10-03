@@ -16,6 +16,3 @@ texto se queda como estaba.
 | [0005](0005-ordered-bounded-pagination.md) | Paginación concurrente, en orden y con memoria acotada | Aceptada |
 | [0006](0006-cli-generated-from-client.md) | El CLI se genera a partir del cliente | Aceptada |
 | [0007](0007-api-knowledge-lives-in-fetch.md) | El conocimiento de la API vive en bdns-fetch | Aceptada |
-
-Todas se tomaron al preparar la versión 2.0.0 (octubre de 2026), que
-rehízo el cliente. Las versiones 1.x no dejaron decisiones registradas.

@@ -4,15 +4,18 @@
 
 ## Contexto
 
-Hasta la 1.3 solo se reintentaban los errores de red. Un `503`, un `429`
-o un `ERR_MANTENIMIENTO_BBDD` se lanzaban al primer intento, dijera lo que
-dijera `max_retries`. `bdns-sync` configuraba 8 reintentos creyendo que le
-protegían de los baches del servidor, y no lo hacían. Además,
-`max_retries=3` significaba tres *intentos*, y al agotarse llegaba un
-`tenacity.RetryError` en lugar del error real.
+La API falla de dos maneras. Unas veces de forma pasajera: errores de
+red, `429`, `5xx`, o `ERR_MANTENIMIENTO_BBDD`, que devuelve de forma
+intermitente en consultas largas
+([medición](../explanation/api-behavior.md#range-reliability)). Otras de
+forma permanente: un parámetro mal formado, un documento que no existe.
 
-Reintentarlo todo tampoco vale: un `400` repetido sigue siendo un `400`,
-y reintentarlo solo retrasa el aviso y gasta cupo de peticiones.
+Un proceso desatendido tiene que aguantar las primeras sin intervención.
+Reintentar las segundas no sirve de nada: un `400` repetido sigue siendo
+un `400`, y reintentarlo solo retrasa el aviso y gasta cupo de
+peticiones. Quien configura los reintentos espera además que el número
+signifique reintentos, y que al agotarse le llegue el error real, no un
+envoltorio de la librería de reintentos.
 
 ## Decisión
 
@@ -31,8 +34,8 @@ error.
 - Un proceso desatendido aguanta baches de minutos sin configuración
   especial.
 - El margen aleatorio evita que varios clientes reintenten a la vez.
-- Quien captura [`BDNSError`][bdns.fetch.exceptions.BDNSError] no tiene que cambiar nada; quien quiera
-  distinguir lo transitorio tiene la subclase.
+- Quien solo quiere saber si algo falló captura [`BDNSError`][bdns.fetch.exceptions.BDNSError]; quien
+  quiere distinguir lo transitorio tiene la subclase.
 - La lista de códigos transitorios es una medición, no una certeza: si
   aparece otro, se añade a
   [`TRANSIENT_API_ERROR_CODES`][bdns.fetch.client.TRANSIENT_API_ERROR_CODES].

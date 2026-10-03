@@ -5,14 +5,14 @@
 ## Context
 
 A large search has thousands of pages. Requesting them one after another
-wastes the request budget waiting on latency. 1.3 requested them in
-parallel, but in a way that caused three problems:
+wastes the request budget waiting on latency, so they are requested in
+parallel. The naive way (send every request and deliver each page as it
+arrives) has three problems:
 
-- it delivered pages in the order they **finished**, so the result came
-  out shuffled;
-- it sent **every** request at once, so with a slow consumer the whole
-  result piled up in memory;
-- a consumer that stopped iterating still downloaded every page.
+- the result comes out in the order the requests **finish**, that is,
+  shuffled;
+- with a slow consumer, the whole result piles up in memory;
+- a consumer that stops iterating still downloads every page.
 
 ## Decision
 

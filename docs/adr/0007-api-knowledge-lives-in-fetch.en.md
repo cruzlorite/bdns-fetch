@@ -4,16 +4,17 @@
 
 ## Context
 
-Nearly everything known about the API's real behaviour (the opposite
-semantics of `fechaRegFin` and `fechaHasta`, failures on long ranges,
-burst rejection, per-endpoint retention, spurious changes) was measured
-while building `bdns-sync`, and lived there: in its documentation, in its
-`api_contract.py` and in its date helpers.
+The family has two projects: `bdns-fetch` talks to the API and
+`bdns-sync` stores what it returns. What is known about the API's real
+behaviour (the opposite semantics of `fechaRegFin` and `fechaHasta`,
+failures on long ranges, burst rejection, per-endpoint retention,
+spurious changes) is useful to anyone using it, not only to whoever
+stores it.
 
-But these are facts about the API, not about storage. Users of
-`bdns-fetch` alone hit them without warning, and `bdns-sync` compensated
-for client defects (request spacing) instead of fixing them where they
-belonged.
+If that knowledge lives in the storage layer, users of the client alone
+hit all of it without warning, and the storage layer ends up
+compensating for the client's limitations instead of fixing them where
+they belong.
 
 ## Decision
 

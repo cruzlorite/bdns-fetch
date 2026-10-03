@@ -4,16 +4,16 @@
 
 ## Contexto
 
-Las buenas prácticas oficiales fijan 10 peticiones por segundo por IP. El
-limitador de la 1.3 era un *token bucket* que arrancaba lleno: permitía
-una ráfaga de 10 peticiones simultáneas y luego 10 por segundo de media.
+Las buenas prácticas oficiales fijan 10 peticiones por segundo por IP. Un
+*token bucket* clásico arranca lleno: permite una ráfaga de tantas
+peticiones simultáneas como su capacidad, y luego la media.
 
 Medido contra el servicio real, el servidor responde `429` a las ráfagas
 aunque la media cumpla: 10 hilos que solo respetaban la media se cayeron
 en segundos. Con los arranques espaciados acepta 9,8 peticiones por
 segundo sostenidas ([medición](../explanation/api-behavior.md#rate-limit)).
-`bdns-sync` lo sorteaba espaciando sus propias llamadas por encima del
-cliente.
+Si el cliente no espacia, cada consumidor con hilos tiene que hacerlo por
+su cuenta.
 
 ## Decisión
 

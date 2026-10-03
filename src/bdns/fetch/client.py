@@ -12,8 +12,8 @@ same policies.
 
 Three policies apply to every request:
 
-- **Rate limit.** At most 10 requests per second by default, shared by
-  every client in the process that does not bring its own
+- **Rate limit.** Requests are spaced evenly, 9.5 per second by default,
+  shared by every client in the process that does not bring its own
   [`RateLimiter`][bdns.fetch.utils.RateLimiter]. That is the per-IP limit
   of the official good-practice guide.
 - **Retries.** Network failures, HTTP 429 and 5xx, and error codes that
@@ -80,10 +80,10 @@ TRANSIENT_API_ERROR_CODES = frozenset({"ERR_MANTENIMIENTO_BBDD"})
 #: Upper bound, in seconds, for a single wait between retries.
 MAX_RETRY_WAIT = 60.0
 
-#: Shared by every client that is not given its own limiter: the API allows
-#: at most 10 GET requests per second per IP, however many clients or
-#: worker threads a process runs.
-DEFAULT_RATE_LIMITER = RateLimiter(rate=10, per=1.0)
+#: Shared by every client that is not given its own limiter. The API allows
+#: 10 GET requests per second per IP and rejects bursts, so requests are
+#: spaced evenly, with a margin: 9.5 per second, one every ~105 ms.
+DEFAULT_RATE_LIMITER = RateLimiter(rate=9.5)
 
 try:
     _VERSION = version("bdns-fetch")

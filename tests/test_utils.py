@@ -22,12 +22,26 @@ def test_format_url_drops_none_unwraps_enums_and_repeats_lists():
     assert query == {"b": ["L"], "c": ["1", "2"], "d": ["é"]}
 
 
-def test_rate_limiter_spaces_out_calls_beyond_the_burst():
-    limiter = RateLimiter(rate=5, per=0.5)
+def test_rate_limiter_spaces_calls_evenly_by_default():
+    limiter = RateLimiter(rate=20)
     start = time.monotonic()
-    for _ in range(10):  # 5 from the full bucket, then 5 more at 10/s
+    for _ in range(5):  # first at once, then one every 50 ms
         limiter.acquire()
-    assert time.monotonic() - start >= 0.45
+    assert 0.19 <= time.monotonic() - start < 0.5
+
+
+def test_rate_limiter_allows_a_burst_when_asked():
+    limiter = RateLimiter(rate=1, burst=5)
+    start = time.monotonic()
+    for _ in range(5):
+        limiter.acquire()
+    assert time.monotonic() - start < 0.1
+
+
+@pytest.mark.parametrize("kwargs", [{"rate": 0}, {"rate": 1, "per": 0}, {"rate": 1, "burst": 0}])
+def test_rate_limiter_rejects_nonsense(kwargs):
+    with pytest.raises(ValueError):
+        RateLimiter(**kwargs)
 
 
 def _error(status, body, headers=None):

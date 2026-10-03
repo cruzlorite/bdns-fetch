@@ -24,15 +24,27 @@ __all__ = [
 
 
 class RateLimiter:
-    """Thread-safe token bucket: at most `rate` acquisitions every `per` seconds.
+    """Thread-safe token bucket: `rate` acquisitions every `per` seconds, at most `burst` at once.
 
-    Starts full, so a burst of up to `rate` calls goes through at once.
+    With the default `burst=1` it spaces requests evenly, `per / rate`
+    apart. That is deliberate: the BDNS API answers 429 to a burst even when
+    the average stays under its limit, and accepts a sustained 9.8 requests
+    per second when their starts are spaced (measured; see the API
+    behaviour notes).
+
+    Args:
+        rate: Acquisitions allowed per `per` seconds.
+        per: Length of the period, in seconds.
+        burst: Acquisitions that may happen back to back after a pause.
     """
 
-    def __init__(self, rate: float, per: float = 1.0):
+    def __init__(self, rate: float, per: float = 1.0, burst: int = 1):
+        if rate <= 0 or per <= 0 or burst < 1:
+            raise ValueError("rate and per must be positive, burst 1 or greater")
         self.rate = rate
         self.per = per
-        self._tokens = rate
+        self.burst = burst
+        self._tokens = float(burst)
         self._last = time.monotonic()
         self._lock = threading.Lock()
 
@@ -42,7 +54,7 @@ class RateLimiter:
             with self._lock:
                 now = time.monotonic()
                 self._tokens = min(
-                    self.rate,
+                    self.burst,
                     self._tokens + (now - self._last) * (self.rate / self.per),
                 )
                 self._last = now

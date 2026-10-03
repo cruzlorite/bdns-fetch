@@ -104,7 +104,7 @@ def main(
         5, "--max-workers", min=1, max=20, help="Threads fetching pages concurrently."
     ),
     rate_limit: float = typer.Option(
-        10,
+        9.5,
         "--rate-limit",
         min=0.1,
         max=10,
@@ -149,7 +149,7 @@ def main(
             wait_time=wait_time,
             max_workers=max_workers,
             progress=progress,
-            rate_limiter=RateLimiter(rate=rate_limit) if rate_limit < 10 else None,
+            rate_limiter=RateLimiter(rate=rate_limit),
         ),
         output_file=output_file,
         verbose=verbose,

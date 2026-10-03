@@ -12,7 +12,7 @@ Sync engine that maintains a local, versioned (SCD2) copy of the [Spanish Nation
 
 It builds on [`bdns-fetch`](https://github.com/cruzlorite/bdns-fetch), which implements data extraction from the API; `bdns-sync` adds the storage layer: historical versioning, change and deletion detection, and run logging.
 
-It is a single-purpose tool: each invocation syncs one endpoint, with no configuration file. Scheduling cadence lives in [`scripts/delta_load.sh`](scripts/delta_load.sh).
+One command a day keeps the target up to date: it checks that the API has not changed, syncs the 22 entities with the window that day calls for, and records every run. No configuration file.
 
 **Documentation:** <https://cruzlorite.github.io/bdns-sync/en/>
 
@@ -31,9 +31,10 @@ The target is any SQLAlchemy URL, in `BDNS_SYNC_TARGET_URL`:
 
 ```bash
 export BDNS_SYNC_TARGET_URL="sqlite:///bdns.db"          # or postgresql://..., bigquery://project/dataset
-bdns-sync sync sectores                                  # catalog: full replace
-bdns-sync sync concesiones_busqueda --window daily       # incremental: yesterday
-bdns-sync sync concesiones_busqueda --since 2020-01-01   # historical load, up to yesterday
+bdns-sync backfill                                       # once: the full history
+bdns-sync delta                                          # daily: the cadence, with an API check
+bdns-sync sync concesiones_busqueda --window weekly      # a single entity
+bdns-sync delta --dry-run                                # what it would do today, touching nothing
 ```
 
 From nothing to a synced table in about ten minutes: [Get started](https://cruzlorite.github.io/bdns-sync/en/getting-started/). Every option: [CLI reference](https://cruzlorite.github.io/bdns-sync/en/reference/cli/).
@@ -42,9 +43,9 @@ From nothing to a synced table in about ten minutes: [Get started](https://cruzl
 
 - **[Get started](https://cruzlorite.github.io/bdns-sync/en/getting-started/)**: tutorial, from nothing to a queryable table.
 - **How-to guides**: [scheduled operation](https://cruzlorite.github.io/bdns-sync/en/guides/scheduling/) · [initial loads and backfills](https://cruzlorite.github.io/bdns-sync/en/guides/backfill/) · [cloud deployment](https://cruzlorite.github.io/bdns-sync/en/guides/deployment/)
-- **Explanation**: [endpoint types](https://cruzlorite.github.io/bdns-sync/en/explanation/endpoint-types/) · [what counts as a change](https://cruzlorite.github.io/bdns-sync/en/explanation/payload-policy/) · [API behaviour](https://cruzlorite.github.io/bdns-sync/en/explanation/bdns-api-behavior/) · [official good practices](https://cruzlorite.github.io/bdns-sync/en/explanation/official-practices/) · [before querying the data](https://cruzlorite.github.io/bdns-sync/en/explanation/data-caveats/) · [known limitations](https://cruzlorite.github.io/bdns-sync/en/explanation/limitations/) · [target databases](https://cruzlorite.github.io/bdns-sync/en/explanation/sinks/)
+- **Explanation**: [endpoint types](https://cruzlorite.github.io/bdns-sync/en/explanation/endpoint-types/) · [what counts as a change](https://cruzlorite.github.io/bdns-sync/en/explanation/payload-policy/) · [how it syncs](https://cruzlorite.github.io/bdns-sync/en/explanation/sync-behavior/) · [official good practices](https://cruzlorite.github.io/bdns-sync/en/explanation/official-practices/) · [before querying the data](https://cruzlorite.github.io/bdns-sync/en/explanation/data-caveats/) · [known limitations](https://cruzlorite.github.io/bdns-sync/en/explanation/limitations/) · [target databases](https://cruzlorite.github.io/bdns-sync/en/explanation/sinks/)
 - **Reference**: [CLI](https://cruzlorite.github.io/bdns-sync/en/reference/cli/) · [data model](https://cruzlorite.github.io/bdns-sync/en/reference/data-model/) · [Python API](https://cruzlorite.github.io/bdns-sync/en/reference/api/)
-- **[Architecture decisions](https://cruzlorite.github.io/bdns-sync/en/adr/)**
+- **[Architecture decisions](https://cruzlorite.github.io/bdns-sync/en/adr/)** · **[Compatibility](https://cruzlorite.github.io/bdns-sync/en/compatibility/)** · **[Changelog](CHANGELOG.md)**
 
 ## Development
 
@@ -57,7 +58,7 @@ make check-docs   # docs/ references, docstrings, and the site build
 make docs         # serve the documentation locally
 ```
 
-Docstring conventions are in [docs/contributing/docstrings.md](docs/contributing/docstrings.md), and pending work in the [roadmap](docs/roadmap.en.md).
+How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md). Vulnerabilities: [SECURITY.md](SECURITY.md). Pending work is in the [roadmap](docs/roadmap.en.md).
 
 ## Legal notice
 

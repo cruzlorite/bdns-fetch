@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: MIT
 
 """Paths of the BDNS API endpoints, relative to [`BDNS_API_BASE_URL`][bdns.fetch.endpoints.BDNS_API_BASE_URL].
 

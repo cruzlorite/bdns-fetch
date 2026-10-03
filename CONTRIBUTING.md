@@ -35,4 +35,4 @@ El CI ejecuta lo mismo que `make lint`, `make check-docs` y `make test`; un PR e
 
 ## Licencia
 
-Al contribuir aceptas que tu aportación se distribuya bajo la [GPL-3.0-or-later](LICENSE) del proyecto.
+Al contribuir aceptas que tu aportación se distribuya bajo la [licencia MIT](LICENSE) del proyecto.

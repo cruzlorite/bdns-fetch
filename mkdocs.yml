@@ -6,7 +6,7 @@ site_url: https://cruzlorite.github.io/bdns-fetch/
 repo_url: https://github.com/cruzlorite/bdns-fetch
 repo_name: cruzlorite/bdns-fetch
 edit_uri: edit/main/docs/
-copyright: "GPL-3.0-or-later · Proyecto no oficial, sin relación con la BDNS ni con el Ministerio de Hacienda"
+copyright: "Licencia MIT · Proyecto no oficial, sin relación con la BDNS ni con el Ministerio de Hacienda"
 
 theme:
   name: material
@@ -97,7 +97,7 @@ plugins:
           site_description: >-
             Python client and CLI for the API of Spain's National Subsidies
             Database (BDNS).
-          copyright: "GPL-3.0-or-later · Unofficial project, not affiliated with the BDNS or Spain's Ministerio de Hacienda"
+          copyright: "MIT license · Unofficial project, not affiliated with the BDNS or Spain's Ministerio de Hacienda"
           theme:
             palette:
               - toggle:

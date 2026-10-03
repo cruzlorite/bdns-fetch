@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: MIT
 
 """Entry point for `python -m bdns.fetch` and the `bdns-fetch` console script."""
 

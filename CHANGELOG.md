@@ -85,8 +85,9 @@ Planned as 2.0.0: the client's signatures change (see *Changed*).
   names (`CONCESIONES_BUSQUEDA`).
 - **Breaking.** CLI flags have no multi-letter short forms (`-mr`, `-np`, `-iddoc`...); `-o` and `-v`
   remain. CLI dates accept `YYYY-MM-DD` or `DD/MM/YYYY` only.
-- The package moved to a `src/` layout. The license identifier is `GPL-3.0-or-later`, as the file
-  headers always stated.
+- The package moved to a `src/` layout.
+- **License.** bdns-fetch is now distributed under the MIT license, instead of GPL-3.0-or-later,
+  so it can be used in software under any license. Releases up to 1.3.0 remain under the GPL.
 
 ### Removed
 

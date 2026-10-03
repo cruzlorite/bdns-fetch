@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/cruzlorite/bdns-fetch/actions/workflows/ci.yml/badge.svg)](https://github.com/cruzlorite/bdns-fetch/actions/workflows/ci.yml)
 [![PyPI version](https://badge.fury.io/py/bdns-fetch.svg)](https://badge.fury.io/py/bdns-fetch)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
 [🇪🇸 Spanish version](./README.md)
@@ -68,7 +68,7 @@ How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md). Vulnerabilities: [SECURIT
 
 ## Legal notice
 
-Unofficial project, not affiliated in any way with the Base de Datos Nacional de Subvenciones (BDNS) or Spain's Ministerio de Hacienda. Distributed under the GPL v3, which expressly excludes any warranty: use it at your own risk, with no warranty of any kind and no liability of the author for damages, data loss or misuse.
+Unofficial project, not affiliated in any way with the Base de Datos Nacional de Subvenciones (BDNS) or Spain's Ministerio de Hacienda. Distributed under the MIT license, which expressly excludes any warranty: use it at your own risk, with no warranty of any kind and no liability of the author for damages, data loss or misuse.
 
 The data comes from the [Sistema Nacional de Publicidad de Subvenciones y Ayudas Públicas](https://www.infosubvenciones.es) and is subject to its own [legal notice](https://www.infosubvenciones.es/bdnstrans/GE/es/avisolegal) and the [API good practices](https://www.infosubvenciones.es/bdnstrans/estaticos/ayuda/Buenas%20pr%C3%A1cticas%20API%20SNPSAP.pdf).
 
@@ -76,6 +76,6 @@ The data comes from the [Sistema Nacional de Publicidad de Subvenciones y Ayudas
 
 ## License and links
 
-- [GNU GPL v3.0 or later](./LICENSE)
+- [MIT license](./LICENSE)
 - [Official API](https://www.infosubvenciones.es/bdnstrans/api) · [BDNS portal](https://www.infosubvenciones.es) · [PyPI](https://pypi.org/project/bdns-fetch)
 - Sister project: [bdns-sync](https://github.com/cruzlorite/bdns-sync) (versioned history)

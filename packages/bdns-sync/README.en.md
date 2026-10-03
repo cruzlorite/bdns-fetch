@@ -65,6 +65,8 @@ Unofficial project, not affiliated with the Base de Datos Nacional de Subvencion
 
 The synced data comes from the [Sistema Nacional de Publicidad de Subvenciones y Ayudas Públicas](https://www.infosubvenciones.es) and is subject to its own [legal notice](https://www.infosubvenciones.es/bdnstrans/GE/es/avisolegal) and to the [API good-practices document](https://www.infosubvenciones.es/bdnstrans/estaticos/ayuda/Buenas%20pr%C3%A1cticas%20API%20SNPSAP.pdf).
 
+**Personal data.** Several tables (`concesiones_busqueda`, `sanciones_busqueda`, among others) hold names and tax IDs of natural persons, and the SCD2 history keeps them even after the source withdraws them. `bdns-sync` stores them exactly as the API publishes them. Whoever operates the target database is responsible for processing them in accordance with the GDPR: purpose, retention period and access control.
+
 ## License and links
 
 - [GNU GPL v3.0](./LICENSE)

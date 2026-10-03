@@ -1,445 +1,170 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from datetime import date, datetime
-from typing import List, Optional
-from pathlib import Path
+"""Command-line flags and help texts for the client's parameters.
+
+This is the CLI's catalog, and only that. Types, defaults and which
+parameters are required come from the client method signatures, so the
+library and the CLI cannot disagree about them. A parameter appears here
+once, however many endpoints take it.
+
+Naming rule: flags of the tool itself are kebab-case (`--max-retries`);
+flags that map to an API query parameter keep the API's spelling
+(`--fechaDesde`), so the official documentation reads unchanged.
+"""
+
+from dataclasses import dataclass, field
+from datetime import date
+from typing import Any
 
 import click
-import typer
 import dateparser
 
-from bdns.fetch.types import (
-    Order,
-    Ambito,
-    Direccion,
-    TipoAdministracion,
-    DescripcionTipoBusqueda,
-)
+__all__ = ["CLI_DEFAULTS", "PARAMETERS", "DateParamType", "ParameterSpec"]
 
 
 class DateParamType(click.ParamType):
+    """A date given as ISO (`2024-01-31`) or in natural language (`two weeks ago`).
+
+    ISO is tried first, so it is never ambiguous. Anything else goes to
+    `dateparser` with day-first ordering, the convention in Spain:
+    `01/02/2024` is the 1st of February.
+    """
+
     name = "date"
 
-    def convert(self, value, param, ctx) -> date:
-        dt = dateparser.parse(value)
-        if dt is None:
+    def convert(self, value: Any, param: click.Parameter | None, ctx: click.Context | None) -> date:
+        """Parse `value` into a `date`, failing with a usage error."""
+        if isinstance(value, date):
+            return value
+        try:
+            return date.fromisoformat(value)
+        except ValueError:
+            pass
+        parsed = dateparser.parse(value, settings={"DATE_ORDER": "DMY"})
+        if parsed is None:
             self.fail(f"Could not parse date: {value}", param, ctx)
-        return dt.date()
+        return parsed.date()
 
 
-DateType = DateParamType()
+DATE = DateParamType()
+_DATE_HELP = " ISO (YYYY-MM-DD) or natural language, e.g. 'two weeks ago'."
 
 
-output_file: Optional[Path] = typer.Option(
-    "-",
-    "--output-file",
-    "-o",
-    help="File to save the output. '-' means standard output.",
-    show_default=True,
-)
-max_retries: int = typer.Option(
-    3,
-    "--max-retries",
-    "-mr",
-    min=1,
-    help="Maximum number of retries for failed requests.",
-    show_default=True,
-)
-wait_time: int = typer.Option(
-    2,
-    "--wait-time",
-    "-wt",
-    min=1,
-    help="Time to wait between retries in seconds.",
-    show_default=True,
-)
-version: Optional[bool] = typer.Option(
-    None,
-    "--version",
-    help="Show the version and exit.",
-    is_flag=True,
-)
-num_pages: Optional[int] = typer.Option(
-    1,
-    "--num-pages",
-    "-np",
-    min=0,
-    help="For paginated endpoints, the number of pages to fetch. If 0, fetches all pages.",
-    show_default=True,
-)
-from_page: Optional[int] = typer.Option(
-    0,
-    "--from-page",
-    "-fp",
-    min=0,
-    help="Page number to start fetching from. If 0, starts from the first page.",
-    show_default=True,
-)
-pageSize: Optional[int] = typer.Option(
-    10000,
-    "--pageSize",
-    "-ps",
-    min=1,
-    max=10000,
-    help="Number of results per page. The maximum allowed is 10000.",
-    show_default=True,
-)
-order: Optional[Order] = typer.Option(
-    None,
-    "--order",
-    "-ord",
-    help="Order of the results. Can be 'nivel1', 'nivel2', 'nivel3', 'codConcesion', 'numeroConvocatoria', 'convocatoria', 'descripcionCooficial', 'instrumento', 'urlBR', 'fechaConcesion', 'beneficiario', 'importe', 'ayudaEquivalente' or 'tieneProyecto'.",
-    show_default=True,
-)
-direccion: Optional[Direccion] = typer.Option(
-    None,
-    "--direccion",
-    "-d",
-    help="Direction of the search. Can be 'asc' or 'desc'.",
-    show_default=True,
-)
-vpd: Optional[str] = typer.Option(
-    "GE",
-    "--vpd",
-    "-vpd",
-    help="VPD portal ID.",
-    show_default=True,
-)
-vpd_required: str = typer.Option(
-    ...,
-    "--vpd",
-    "-vpd",
-    help="VPD portal ID.",
-)
-descripcion: Optional[str] = typer.Option(
-    None,
-    "--descripcion",
-    "-desc",
-    help="Title or part of it, in Spanish or co-official language.",
-    show_default=True,
-)
-descripcionTipoBusqueda: Optional[DescripcionTipoBusqueda] = typer.Option(
-    None,
-    "--descripcionTipoBusqueda",
-    "-dtb",
-    help="Type of search to perform on the title. 1 - all words, 2 - any of the words, 0 - exact phrase. Any other value should not be taken into account.",
-    show_default=True,
-)
-numeroConvocatoria: Optional[str] = typer.Option(
-    None,
-    "--numeroConvocatoria",
-    "-nconv",
-    help="BDNS number of the call to search for.",
-    show_default=True,
-)
-mrr: Optional[bool] = typer.Option(
-    False,
-    "--mrr",
-    "-mrr",
-    help="Indicates if the search is for the Recovery and Resilience Mechanism (MRR).",
-    show_default=True,
-)
-fechaDesde: Optional[date] = typer.Option(
-    None,
-    "--fechaDesde",
-    "-fd",
-    click_type=DateType,
-    metavar="DATE",
-    help="Start date of the period indicated for the search. See https://github.com/scrapinghub/dateparser for supported formats.",
-    show_default=True,
-)
-fechaHasta: Optional[date] = typer.Option(
-    None,
-    "--fechaHasta",
-    "-fh",
-    click_type=DateType,
-    metavar="DATE",
-    help="End date of the period indicated for the search. See https://github.com/scrapinghub/dateparser for supported formats.",
-    show_default=True,
-)
-fechaRegInicio: Optional[date] = typer.Option(
-    None,
-    "--fechaRegInicio",
-    "-fri",
-    click_type=DateType,
-    metavar="DATE",
-    help="Start date of the registration date period for the search (independent of fechaConcesion). See https://github.com/scrapinghub/dateparser for supported formats.",
-    show_default=True,
-)
-fechaRegFin: Optional[date] = typer.Option(
-    None,
-    "--fechaRegFin",
-    "-frf",
-    click_type=DateType,
-    metavar="DATE",
-    help="End date of the registration date period for the search (independent of fechaConcesion). See https://github.com/scrapinghub/dateparser for supported formats.",
-    show_default=True,
-)
-tipoAdministracion: Optional[TipoAdministracion] = typer.Option(
-    None,
-    "--tipoAdministracion",
-    "-ta",
-    help="Type of administrative body being searched for 'C' for State Administration, 'A' for Autonomous Community, 'L' for Local Entity and 'O' for other Bodies.",
-    show_default=True,
-)
-organos: Optional[List[int]] = typer.Option(
-    None,
-    "--organos",
-    "-org",
-    help="List of identifiers of the administrative bodies.",
-    show_default=True,
-)
-regiones: Optional[List[int]] = typer.Option(
-    None,
-    "--regiones",
-    "-r",
-    help="List of identifiers of the selected impact regions, separated by commas.",
-    show_default=True,
-)
-tiposBeneficiario: Optional[List[int]] = typer.Option(
-    None,
-    "--tiposBeneficiario",
-    "-tb",
-    help="List of identifiers of the selected beneficiary types, separated by commas.",
-    show_default=True,
-)
-tiposBeneficiario_str: Optional[List[str]] = typer.Option(
-    None,
-    "--tiposBeneficiario",
-    "-tb",
-    help="List of beneficiary type codes, separated by commas.",
-    show_default=True,
-)
-instrumentos: Optional[List[int]] = typer.Option(
-    None,
-    "--instrumentos",
-    "-ins",
-    help="List of identifiers of the selected aid instruments, separated by commas.",
-    show_default=True,
-)
-finalidad: Optional[int] = typer.Option(
-    None,
-    "--finalidad",
-    "-f",
-    help="Identifier of the purpose of the spending policy.",
-    show_default=True,
-)
-ayudaEstado: Optional[str] = typer.Option(
-    None,
-    "--ayudaEstado",
-    "-ae",
-    help="SA Number - State aid reference (only for State aid).",
-    show_default=True,
-)
-codConcesion: Optional[str] = typer.Option(
-    None,
-    "--codConcesion",
-    "-cc",
-    help="Code of the concession to search for.",
-    show_default=True,
-)
-idDocumento: Optional[int] = typer.Option(
-    None,
-    "--idDocumento",
-    "-iddoc",
-    help="Identifier of the document to search for.",
-    show_default=True,
-)
-idDocumento_required: int = typer.Option(
-    ...,
-    "--idDocumento",
-    "-iddoc",
-    help="Identifier of the document.",
-)
-nifCif: Optional[str] = typer.Option(
-    None,
-    "--nifCif",
-    "-n",
-    help="NIF/CIF of the beneficiary.",
-    show_default=True,
-)
-beneficiario: Optional[int] = typer.Option(
-    None,
-    "--beneficiario",
-    "-b",
-    help="ID of the beneficiary.",
-    show_default=True,
-)
-actividad: Optional[List[int]] = typer.Option(
-    None,
-    "--actividad",
-    "-act",
-    help="List of identifiers of the selected activities, separated by commas.",
-    show_default=True,
-)
-id: Optional[int] = typer.Option(
-    None,
-    "--id",
-    "-id",
-    help="Identifier of the document to search for.",
-    show_default=True,
-)
-id_required: int = typer.Option(
-    ...,
-    "--id",
-    "-id",
-    help="Identifier of the document.",
-)
-objetivos: Optional[List[int]] = typer.Option(
-    None,
-    "--objetivos",
-    "-obj",
-    help="List of identifiers of the objectives of the concession, separated by commas.",
-    show_default=True,
-)
-producto: Optional[List[int]] = typer.Option(
-    None,
-    "--producto",
-    "-p",
-    help="List of identifiers of the selected products, separated by commas.",
-    show_default=True,
-)
-codigoAdmin: Optional[str] = typer.Option(
-    None,
-    "--codigoAdmin",
-    "-ca",
-    help="Admin code of the body.",
-    show_default=True,
-)
-codigoAdmin_required: str = typer.Option(
-    ...,
-    "--codigoAdmin",
-    "-ca",
-    help="Admin code of the organ.",
-)
-codigo: Optional[str] = typer.Option(
-    None,
-    "--codigo",
-    "-c",
-    help="Code of the administrative body.",
-    show_default=True,
-)
-idAdmon: Optional[TipoAdministracion] = typer.Option(
-    None,
-    "--idAdmon",
-    "-ida",
-    help="Identifier of the administrative body.",
-    show_default=True,
-)
-idAdmon_required: TipoAdministracion = typer.Option(
-    ...,
-    "--idAdmon",
-    "-ida",
-    help="Type of administrative body: C (State), A (Autonomous Community), L (Local Entity), O (Other)",
-)
-ambito: Optional[Ambito] = typer.Option(
-    None,
-    "--ambito",
-    "-amb",
-    help="Indicator of the area where the search will be conducted (Concessions (C), State Aid (A), de Minimis (M), Sanctions (S), Political Parties (P), Large Beneficiaries (G)).",
-    show_default=True,
-)
-busqueda: Optional[str] = typer.Option(
-    None,
-    "--busqueda",
-    "-bus",
-    help="Filter for the description field, must have a minimum length of 3.",
-    show_default=True,
-)
-idPersona: Optional[int] = typer.Option(
-    None,
-    "--idPersona",
-    "-idp",
-    help="Identifier of the person.",
-    show_default=True,
-)
-reglamento: Optional[List[int]] = typer.Option(
-    None,
-    "--reglamento",
-    "-reg",
-    help="List of identifiers of the selected regulations, separated by commas.",
-    show_default=True,
-)
-anios: Optional[List[int]] = typer.Option(
-    None,
-    "--anios",
-    "-an",
-    help="List of years in which they have been a large beneficiary.",
-    show_default=True,
-)
-vigenciaDesde: Optional[date] = typer.Option(
-    None,
-    "--vigenciaDesde",
-    "-vd",
-    click_type=DateType,
-    metavar="DATE",
-    help="Start date of the validity of the strategic plan. See https://github.com/scrapinghub/dateparser for supported formats.",
-    show_default=True,
-)
-vigenciaHasta: Optional[date] = typer.Option(
-    None,
-    "--vigenciaHasta",
-    "-vh",
-    click_type=DateType,
-    metavar="DATE",
-    help="End date of the validity of the strategic plan. See https://github.com/scrapinghub/dateparser for supported formats.",
-    show_default=True,
-)
-numConv: Optional[str] = typer.Option(
-    None,
-    "--numConv",
-    "-nc",
-    help="Number of the call.",
-    show_default=True,
-)
-numConv_required: str = typer.Option(
-    ...,
-    "--numConv",
-    "-nc",
-    help="Number of the call.",
-)
-idPES_required: int = typer.Option(
-    ...,
-    "--idPES",
-    "-idpes",
-    help="Identifier of the strategic plan.",
-)
-idPES: Optional[int] = typer.Option(
-    None,
-    "--idPES",
-    "-idpes",
-    help="Identifier of the strategic plan.",
-    show_default=True,
-)
-codigo_required: str = typer.Option(
-    ...,
-    "--codigo",
-    "-cod",
-    help="Organ code.",
-)
+@dataclass(frozen=True)
+class ParameterSpec:
+    """How one client parameter is exposed on the command line.
 
-verbose_flag: bool = typer.Option(
-    False,
-    "--verbose",
-    "-v",
-    help="Enable verbose logging to show detailed HTTP requests and responses.",
-    show_default=True,
-)
+    Attributes:
+        decls: Flag names, long first.
+        help: Help text.
+        extra: Further keyword arguments for `typer.Option`.
+    """
 
-max_workers: int = typer.Option(
-    5,
-    "--max-workers",
-    "-mw",
-    min=1,
-    max=20,
-    help="Maximum number of concurrent threads for paginated requests.",
-    show_default=True,
-)
+    decls: tuple[str, ...]
+    help: str
+    extra: dict[str, Any] = field(default_factory=dict)
 
-return_raw: bool = typer.Option(
-    False,
-    "--return-raw",
-    "-rr",
-    help="Return raw page objects instead of individual items from paginated responses.",
-    show_default=True,
-)
+
+def _spec(*decls: str, help: str, **extra: Any) -> ParameterSpec:
+    return ParameterSpec(decls, help, extra)
+
+
+def _date_spec(*decls: str, help: str) -> ParameterSpec:
+    return _spec(*decls, help=help + _DATE_HELP, click_type=DATE, metavar="DATE")
+
+
+#: CLI defaults that differ from the library's. Fetching every page is the
+#: right default for a program; typed at a prompt against an endpoint with
+#: millions of rows, it is not. The client warns when it stops early.
+CLI_DEFAULTS: dict[str, Any] = {"num_pages": 1}
+
+PARAMETERS: dict[str, ParameterSpec] = {
+    # Pagination
+    "num_pages": _spec(
+        "--num-pages",
+        "-np",
+        help="Number of pages to fetch. 0 fetches all pages.",
+        min=0,
+    ),
+    "from_page": _spec("--from-page", "-fp", help="First page to fetch (0-based).", min=0),
+    "pageSize": _spec(
+        "--pageSize",
+        "-ps",
+        help="Results per page. The API allows at most 10000.",
+        min=1,
+        max=10000,
+    ),
+    "order": _spec("--order", "-ord", help="Field to sort the results by."),
+    "direccion": _spec("--direccion", "-d", help="Sort direction."),
+    # Portal and free-text search
+    "vpd": _spec("--vpd", "-vpd", help="Portal identifier (VPD). 'GE' is the national portal."),
+    "descripcion": _spec(
+        "--descripcion", "-desc", help="Title or part of it, in Spanish or a co-official language."
+    ),
+    "descripcionTipoBusqueda": _spec(
+        "--descripcionTipoBusqueda",
+        "-dtb",
+        help="How --descripcion matches: 0 exact phrase, 1 all words, 2 any word.",
+    ),
+    "busqueda": _spec(
+        "--busqueda", "-bus", help="Filter on the description, at least 3 characters."
+    ),
+    # Dates
+    "fechaDesde": _date_spec("--fechaDesde", "-fd", help="Start of the search period."),
+    "fechaHasta": _date_spec("--fechaHasta", "-fh", help="End of the search period."),
+    "fechaRegInicio": _date_spec(
+        "--fechaRegInicio",
+        "-fri",
+        help="Start of the registration-date period, independent of the award date.",
+    ),
+    "fechaRegFin": _date_spec(
+        "--fechaRegFin",
+        "-frf",
+        help="End of the registration-date period, independent of the award date.",
+    ),
+    # Identifiers
+    "id": _spec("--id", "-id", help="Identifier of the call for applications."),
+    "idDocumento": _spec("--idDocumento", "-iddoc", help="Identifier of the document."),
+    "idPES": _spec("--idPES", "-idpes", help="Identifier of the strategic plan."),
+    "idPersona": _spec("--idPersona", "-idp", help="Identifier of the person."),
+    "numConv": _spec("--numConv", "-nc", help="BDNS number of the call for applications."),
+    "numeroConvocatoria": _spec(
+        "--numeroConvocatoria", "-nconv", help="BDNS number of the call to search for."
+    ),
+    "codConcesion": _spec("--codConcesion", "-cc", help="Code of the award to search for."),
+    "codigo": _spec("--codigo", "-cod", help="Code of the administrative body."),
+    "codigoAdmin": _spec("--codigoAdmin", "-ca", help="Admin code of the administrative body."),
+    "nifCif": _spec("--nifCif", "-n", help="NIF/CIF of the beneficiary."),
+    "beneficiario": _spec("--beneficiario", "-b", help="Identifier of the beneficiary."),
+    "ayudaEstado": _spec(
+        "--ayudaEstado", "-ae", help="State aid reference (SA number). State aid only."
+    ),
+    # Administrative scope
+    "idAdmon": _spec(
+        "--idAdmon",
+        "-ida",
+        help="Type of administrative body: C State, A Autonomous Community, L Local, O Other.",
+    ),
+    "tipoAdministracion": _spec(
+        "--tipoAdministracion",
+        "-ta",
+        help="Type of administrative body: C State, A Autonomous Community, L Local, O Other.",
+    ),
+    "ambito": _spec(
+        "--ambito",
+        "-amb",
+        help="Area: C awards, A state aid, M de minimis, S sanctions, P political parties, G large beneficiaries.",
+    ),
+    # Repeatable filters
+    "organos": _spec("--organos", "-org", help="Administrative body identifier. Repeatable."),
+    "regiones": _spec("--regiones", "-r", help="Impact region identifier. Repeatable."),
+    "tiposBeneficiario": _spec("--tiposBeneficiario", "-tb", help="Beneficiary type. Repeatable."),
+    "instrumentos": _spec("--instrumentos", "-ins", help="Aid instrument identifier. Repeatable."),
+    "actividad": _spec("--actividad", "-act", help="Economic activity identifier. Repeatable."),
+    "objetivos": _spec("--objetivos", "-obj", help="Objective identifier. Repeatable."),
+    "producto": _spec("--producto", "-p", help="Product identifier. Repeatable."),
+    "reglamento": _spec("--reglamento", "-reg", help="Regulation identifier. Repeatable."),
+    "anios": _spec("--anios", "-an", help="Year as a large beneficiary. Repeatable."),
+    "finalidad": _spec("--finalidad", "-f", help="Spending-policy purpose identifier."),
+    "mrr": _spec("--mrr", "-mrr", help="Restrict to the Recovery and Resilience Facility (MRR)."),
+}

@@ -1,24 +1,40 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""
-Exception handling utilities for BDNS API
+"""Exceptions raised by the BDNS client, and the mapping from HTTP errors to them.
+
+Every failure the client reports is a [`BDNSError`][bdns.fetch.exceptions.BDNSError].
+The ones worth retrying (rate limiting, server errors, database maintenance)
+are the subclass [`BDNSTransientError`][bdns.fetch.exceptions.BDNSTransientError],
+which is what the client's retry policy keys on. Callers that only want to
+know whether a request failed can keep catching `BDNSError`.
+
+Nothing here prints: presenting an error is the CLI's job.
 """
 
-import sys
-import traceback
-from typing import Optional
+import json
 
-import typer
+__all__ = [
+    "BDNSError",
+    "BDNSTransientError",
+    "BDNSWarning",
+    "handle_api_response",
+]
 
 
 class BDNSError(Exception):
-    """Base exception for BDNS operations"""
+    """A request to the BDNS API failed.
+
+    Attributes:
+        message: What went wrong, in the API's own words when it gave any.
+        suggestion: What the caller could change, if anything.
+        technical_details: Status, URL, and a preview of the response body.
+    """
 
     def __init__(
         self,
         message: str,
-        suggestion: Optional[str] = None,
-        technical_details: Optional[str] = None,
+        suggestion: str | None = None,
+        technical_details: str | None = None,
     ):
         self.message = message
         self.suggestion = suggestion
@@ -26,210 +42,142 @@ class BDNSError(Exception):
         super().__init__(self.message)
 
 
-class BDNSWarning(BDNSError):
-    """Warning for 200 OK but empty results"""
+class BDNSTransientError(BDNSError):
+    """A request failed in a way that may succeed if repeated.
 
-    pass
+    Raised for HTTP 429 and 5xx responses, and for API error codes that
+    signal a temporary condition such as `ERR_MANTENIMIENTO_BBDD`. The
+    client retries these; one reaches the caller only after the retries
+    are exhausted.
+
+    Attributes:
+        retry_after: Seconds the server asked to wait (`Retry-After`), if
+            it said.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        suggestion: str | None = None,
+        technical_details: str | None = None,
+        retry_after: float | None = None,
+    ):
+        super().__init__(message, suggestion, technical_details)
+        self.retry_after = retry_after
+
+
+class BDNSWarning(BDNSError):
+    """The API answered successfully but with no data.
+
+    Kept for backward compatibility. The client no longer raises it: an
+    empty answer is an empty result.
+    """
 
 
 def parse_bdns_error_response(response_text: str) -> tuple[str, list[str]]:
-    """
-    Parse BDNS API error responses to extract structured error information
-    Returns (error_code, error_messages)
+    """Extract the error code and messages from a BDNS error body.
+
+    Args:
+        response_text: The raw response body.
+
+    Returns:
+        The `codigo` field (or `"PARSE_ERROR"` when the body is not a BDNS
+        error document) and the list of messages it carries.
     """
     try:
-        import json
-
         error_data = json.loads(response_text)
+    except (TypeError, ValueError):
+        error_data = None
 
-        if isinstance(error_data, dict):
-            # Extract error code
-            error_code = error_data.get("codigo", "UNKNOWN_ERROR")
+    if isinstance(error_data, dict):
+        error_code = error_data.get("codigo", "UNKNOWN_ERROR")
+        if isinstance(error_data.get("errores"), list):
+            return error_code, error_data["errores"]
+        for key in ("error", "message", "detail"):
+            if key in error_data:
+                return error_code, [str(error_data[key])]
+        return error_code, []
 
-            # Extract error messages
-            error_messages = []
-            if "errores" in error_data and isinstance(error_data["errores"], list):
-                error_messages = error_data["errores"]
-            elif "error" in error_data:
-                error_messages = [str(error_data["error"])]
-            elif "message" in error_data:
-                error_messages = [str(error_data["message"])]
-            elif "detail" in error_data:
-                error_messages = [str(error_data["detail"])]
-
-            return error_code, error_messages
-
-    except (json.JSONDecodeError, Exception):
-        pass
-
-    # Fallback: return raw response
-    return "PARSE_ERROR", [
-        response_text[:200] if response_text else "No error details available"
-    ]
+    return "PARSE_ERROR", [response_text[:200] if response_text else "No error details available"]
 
 
 def format_bdns_error_message(error_code: str, error_messages: list[str]) -> str:
-    """Format BDNS error messages in a beautiful way"""
+    """Render an error code and its messages as one human-readable string.
+
+    The messages stay in the language the API wrote them in (Spanish).
+    """
     if not error_messages:
         return "Server returned an error (no details provided)"
 
-    # Use the original error code as the error type
-    error_type = (
-        f"Error ({error_code})" if error_code != "PARSE_ERROR" else "Server Error"
-    )
-
-    # Keep all messages in their original language (Spanish)
+    error_type = f"Error ({error_code})" if error_code != "PARSE_ERROR" else "Server Error"
     if len(error_messages) == 1:
         return f"{error_type}: {error_messages[0]}"
-    else:
-        # Multiple errors - format as numbered list
-        formatted_errors = []
-        for i, msg in enumerate(error_messages, 1):
-            formatted_errors.append(f"  {i}. {msg}")
+    numbered = "\n".join(f"  {i}. {msg}" for i, msg in enumerate(error_messages, 1))
+    return f"{error_type}:\n{numbered}"
 
-        return f"{error_type}:\n" + "\n".join(formatted_errors)
+
+# Fallback message and advice for each status, used when the body says nothing.
+_STATUS_HINTS: dict[int, tuple[str, str]] = {
+    400: (
+        "Bad Request",
+        "Check your parameter values and formats. Use --help to see valid parameter examples.",
+    ),
+    401: ("Unauthorized", "This endpoint may require authentication."),
+    403: ("Forbidden", "You don't have permission to access this resource."),
+    404: (
+        "Not Found",
+        "Check if the endpoint URL is correct or if the requested resource exists.",
+    ),
+    429: ("Too Many Requests", "Wait a moment and try again, or reduce --max-workers."),
+}
 
 
 def handle_api_response(
-    status_code: int, url: str, response_text: str = "", response_headers: dict = None
-):
-    """Handle API responses and decide what to do"""
+    status_code: int,
+    url: str,
+    response_text: str = "",
+    response_headers: dict | None = None,
+) -> BDNSError:
+    """Build the exception that describes an unsuccessful response.
 
-    # Build technical details for debug mode
+    Args:
+        status_code: HTTP status of the response.
+        url: The requested URL.
+        response_text: The response body.
+        response_headers: The response headers, included in the details.
+
+    Returns:
+        The exception to raise. It is returned rather than raised so the
+        caller can decide whether it is transient.
+    """
     tech_details = f"HTTP {status_code} from {url}"
-
-    # Show first 100 chars of response content if present
     if response_text:
-        content_preview = response_text[:100]
-        if len(response_text) > 100:
-            content_preview += "..."
-        tech_details += f"\nResponse content (first 100 chars): {content_preview}"
-
-    # Show headers in debug mode
+        preview = response_text[:100] + ("..." if len(response_text) > 100 else "")
+        tech_details += f"\nResponse content (first 100 chars): {preview}"
     if response_headers:
         tech_details += "\nResponse headers:"
         for key, value in response_headers.items():
             tech_details += f"\n  {key}: {value}"
 
-    if status_code == 200:
-        # 200 OK but empty result - show warning
+    if status_code in (200, 204):
         return BDNSWarning(
             message="No data available for the specified parameters.",
             suggestion="This might be expected if no records match your criteria. Try different parameters.",
             technical_details=tech_details,
         )
 
-    elif status_code == 204:
-        # 204 No Content - also a warning (expected)
-        return BDNSWarning(
-            message="No data available for the specified parameters.",
-            suggestion="This might be expected if no records match your criteria. Try different parameters.",
-            technical_details=tech_details,
+    error_code, error_messages = parse_bdns_error_response(response_text)
+    if status_code in _STATUS_HINTS:
+        fallback, suggestion = _STATUS_HINTS[status_code]
+    elif status_code >= 500:
+        fallback, suggestion = (
+            "Internal Server Error",
+            "The API server is experiencing issues. Try again later.",
         )
-
     else:
-        # Not 200/204 - something went wrong
-        # Parse BDNS-specific error format for better user experience
-        error_code, error_messages = parse_bdns_error_response(response_text)
+        fallback, suggestion = None, "Check your internet connection and try again."
 
-        # Use HTTP status code names for error types
-        if status_code == 400:
-            message = (
-                format_bdns_error_message(error_code, error_messages)
-                if error_messages
-                else "Bad Request"
-            )
-            suggestion = "Check your parameter values and formats. Use --help to see valid parameter examples."
-        elif status_code == 401:
-            message = (
-                format_bdns_error_message(error_code, error_messages)
-                if error_messages
-                else "Unauthorized"
-            )
-            suggestion = "This endpoint may require authentication."
-        elif status_code == 403:
-            message = (
-                format_bdns_error_message(error_code, error_messages)
-                if error_messages
-                else "Forbidden"
-            )
-            suggestion = "You don't have permission to access this resource."
-        elif status_code == 404:
-            message = (
-                format_bdns_error_message(error_code, error_messages)
-                if error_messages
-                else "Not Found"
-            )
-            suggestion = "Check if the endpoint URL is correct or if the requested resource exists."
-        elif status_code == 429:
-            message = (
-                format_bdns_error_message(error_code, error_messages)
-                if error_messages
-                else "Too Many Requests"
-            )
-            suggestion = (
-                "Wait a moment and try again, or reduce --max-concurrent-requests."
-            )
-        elif status_code >= 500:
-            message = (
-                format_bdns_error_message(error_code, error_messages)
-                if error_messages
-                else "Internal Server Error"
-            )
-            suggestion = "The API server is experiencing issues. Try again later."
-        else:
-            message = format_bdns_error_message(error_code, error_messages)
-            suggestion = "Check your internet connection and try again."
-
-        return BDNSError(
-            message=message, suggestion=suggestion, technical_details=tech_details
-        )
-
-
-def show_error(error: Exception, debug: bool = False) -> None:
-    """Display error message to user, with optional technical details"""
-
-    if isinstance(error, BDNSWarning):
-        # Warning message (not an error)
-        typer.secho(f"ℹ️  {error.message}", fg=typer.colors.YELLOW, err=True)
-
-        if error.suggestion:
-            typer.secho(f"💡 {error.suggestion}", fg=typer.colors.CYAN, err=True)
-
-        if debug and error.technical_details:
-            typer.secho("\nResponse Details:", fg=typer.colors.BLUE, err=True)
-            typer.secho(error.technical_details, fg=typer.colors.BRIGHT_BLACK, err=True)
-
-    elif isinstance(error, BDNSError):
-        # Actual error message
-        typer.secho(f"❌ {error.message}", fg=typer.colors.RED, err=True)
-
-        if error.suggestion:
-            typer.secho(f"💡 {error.suggestion}", fg=typer.colors.YELLOW, err=True)
-
-        if debug and error.technical_details:
-            typer.secho("\nResponse Output:", fg=typer.colors.BLUE, err=True)
-            typer.secho(error.technical_details, fg=typer.colors.BRIGHT_BLACK, err=True)
-
-    else:
-        # For unexpected errors, show generic message unless debug mode
-        if debug:
-            typer.secho(
-                f"❌ Unexpected error: {str(error)}", fg=typer.colors.RED, err=True
-            )
-            typer.secho("\nFull traceback:", fg=typer.colors.BLUE, err=True)
-            traceback.print_exc(file=sys.stderr)
-        else:
-            typer.secho(
-                "❌ An unexpected error occurred. Use --debug for technical details.",
-                fg=typer.colors.RED,
-                err=True,
-            )
-
-
-# For backward compatibility - keep the old function name but redirect to new one
-def handle_api_error(
-    status_code: int, url: str, response_text: str = "", response_headers: dict = None
-):
-    """Legacy function name - redirects to handle_api_response"""
-    return handle_api_response(status_code, url, response_text, response_headers)
+    message = format_bdns_error_message(error_code, error_messages)
+    if fallback and not error_messages:
+        message = fallback
+    return BDNSError(message=message, suggestion=suggestion, technical_details=tech_details)

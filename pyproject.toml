@@ -20,26 +20,28 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Utilities",
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<3.15"
 requests = "^2.32.5"
-typer = { version = "^0.17.4", extras = ["all"] }
+typer = "^0.17.4"
 tqdm = "^4.67.1"
-aiohttp = "^3.12.15"
 tenacity = "^9.1.2"
 dateparser = "^1.2.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.2"
 pytest-cov = "^6.3.0"
-pytest-asyncio = "^1.1.0"
 pytest-mock = "^3.15.0"
 ruff = "^0.12.12"
+responses = "^0.25"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -49,17 +51,24 @@ build-backend = "poetry.core.masonry.api"
 bdns-fetch = "bdns.fetch.__main__:app"
 
 [tool.ruff]
-line-length = 88
+line-length = 100
+target-version = "py311"
 
 [tool.ruff.lint]
-# Ignore some rules that would require major refactoring
+select = ["E", "F", "I", "UP", "B", "D"]
 ignore = [
-    "F403",  # star imports in __main__.py (would require major refactoring) 
-    "F405",  # star import usage (would require major refactoring)
-    "F401",  # unused imports in __init__.py files (these are re-exports)
     "E741",  # ambiguous variable name (O is required by API)
+    "E501",  # long lines: help texts and URLs read better unbroken
+    "D105",  # magic methods: covered by the class docstring
+    "D107",  # __init__: documented on the class
 ]
 
+[tool.ruff.lint.flake8-bugbear]
+# Typer declares options as argument defaults; they are evaluated once, by design.
+extend-immutable-calls = ["typer.Option", "typer.Argument"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.ruff.lint.per-file-ignores]
-"bdns/api/__main__.py" = ["F403", "F405"]  # Allow star imports in main
-"bdns/api/commands/__init__.py" = ["F401"]  # Allow unused imports (re-exports)
+"tests/*" = ["D"]

@@ -1,31 +1,33 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""
-Created on Sat May 17 16:23:45 2025
-Author: josemariacruzlorite@gmail.com
+"""Small helpers shared by the client and the CLI.
+
+Nothing here performs HTTP requests or knows about any specific endpoint.
 """
 
 import sys
 import threading
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, date
+from datetime import date
 from enum import Enum
-import functools
-import inspect
-import json
-from typing import Any, Dict, Generator
+from typing import IO, Any
 from urllib.parse import urlencode
-import requests
 
-import typer
-from typer.models import OptionInfo
-
-from bdns.fetch.exceptions import handle_api_response
+__all__ = [
+    "RateLimiter",
+    "format_date_for_api_request",
+    "format_url",
+    "smart_open",
+]
 
 
 class RateLimiter:
-    """Thread-safe token-bucket rate limiter shared across concurrent requests."""
+    """Thread-safe token bucket: at most `rate` acquisitions every `per` seconds.
+
+    Starts full, so a burst of up to `rate` calls goes through at once.
+    """
 
     def __init__(self, rate: float, per: float = 1.0):
         self.rate = rate
@@ -35,6 +37,7 @@ class RateLimiter:
         self._lock = threading.Lock()
 
     def acquire(self) -> None:
+        """Block until a token is available, then take it."""
         while True:
             with self._lock:
                 now = time.monotonic()
@@ -50,14 +53,18 @@ class RateLimiter:
             time.sleep(wait)
 
 
-def format_date_for_api_request(value: date, output_format: str = "%d/%m/%Y"):
-    """
-    Formats a date for API requests.
+def format_date_for_api_request(value: date | None, output_format: str = "%d/%m/%Y") -> str | None:
+    """Format a date the way the BDNS API expects it in query strings.
+
     Args:
-        date (datetime): The date to format.
-        output_format (str): The format to use for the date. Default is "%d/%m/%Y".
+        value: The date to format. `None` passes through.
+        output_format: A `strftime` format. The API uses `dd/mm/yyyy`.
+
     Returns:
-        str: The formatted date as a string.
+        The formatted date, or `None` if `value` was `None`.
+
+    Raises:
+        ValueError: If `value` is not a `date`.
     """
     if value is None:
         return None
@@ -66,111 +73,36 @@ def format_date_for_api_request(value: date, output_format: str = "%d/%m/%Y"):
     return value.strftime(output_format)
 
 
-def format_url(url: str, query_params: dict):
-    """
-    Formats a URL with query parameters.
-    Args:
-        url (str): The base URL.
-        query_params (dict): A dictionary containing the query parameters.
-    Returns:
-        str: The formatted URL with query parameters.
+def format_url(url: str, query_params: dict[str, Any]) -> str:
+    """Append `query_params` to `url` as a query string.
+
+    `None` values are dropped, enums are replaced by their value, and lists
+    become repeated keys (`organos=1&organos=2`).
     """
     if not url.endswith("?"):
         url += "?"
-
-    # Filter out None values and typer.OptionInfo objects, convert enums to values
-    filtered_params = {}
-    for key, value in query_params.items():
-        if value is not None and not isinstance(value, typer.models.OptionInfo):
-            # Convert enum values to their actual values
-            if isinstance(value, Enum):
-                filtered_params[key] = value.value
-            else:
-                filtered_params[key] = value
-
-    url += urlencode(filtered_params, doseq=True)
-    return url
-
-
-def api_request(url):
-    """
-    Fetches data from the BDNS API for concessions for a given date.
-    Args:
-        url (str): The URL to fetch data from.
-    Returns:
-        dict: A dictionary containing concessions data.
-    Raises:
-        BDNSAPIError: If the API request fails.
-    """
-    from bdns.fetch.exceptions import handle_api_error
-
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        result = response.json()
-        if not result or (isinstance(result, list) and len(result) == 0):
-            raise handle_api_response(200, url, response.text, dict(response.headers))
-        return result
-    else:
-        raise handle_api_response(
-            response.status_code, url, response.text, dict(response.headers)
-        )
+    params = {
+        key: value.value if isinstance(value, Enum) else value
+        for key, value in query_params.items()
+        if value is not None
+    }
+    return url + urlencode(params, doseq=True)
 
 
 @contextmanager
-def smart_open(file, *args, **kwargs):
-    """
-    Open a file, or use stdin/stdout if file is '-'.
-    Passes all additional args/kwargs to open().
+def smart_open(file: Any, *args: Any, **kwargs: Any) -> Iterator[IO]:
+    """Open `file`, or use standard output when it is `"-"`.
+
+    Extra arguments go to `open()`. In binary mode (`"wb"`), standard output
+    is its underlying byte stream.
     """
     if str(file) == "-":
-        sys.stdout.reconfigure(encoding="utf-8")
-        yield sys.stdout
+        mode = args[0] if args else kwargs.get("mode", "r")
+        if "b" in mode:
+            yield sys.stdout.buffer
+        else:
+            sys.stdout.reconfigure(encoding="utf-8")
+            yield sys.stdout
     else:
         with open(file, *args, **kwargs) as f:
             yield f
-
-
-def extract_option_values(func):
-    """
-    Decorator that automatically extracts actual values from OptionInfo parameters.
-
-    This allows methods to use options.* parameters in their signatures (for CLI help)
-    while getting the actual default values when called programmatically.
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        # Get the function signature
-        sig = inspect.signature(func)
-
-        # Bind arguments to get the full parameter mapping
-        bound_args = sig.bind(*args, **kwargs)
-        bound_args.apply_defaults()
-
-        # Extract values from all parameters
-        for param_name, value in bound_args.arguments.items():
-            if isinstance(value, OptionInfo):
-                bound_args.arguments[param_name] = value.default
-
-        return func(*bound_args.args, **bound_args.kwargs)
-
-    return wrapper
-
-
-def write_to_file(
-    data_generator: Generator[Dict[str, Any], None, None], output_file: str = None
-) -> None:
-    """
-    Streams data from a generator and writes each item to file as it comes.
-
-    Args:
-        data_generator: Generator that yields individual data items
-        output_file: The output file path. If None, uses global _output_file or stdout
-    """
-    file_to_use = output_file or "-"
-
-    with smart_open(file_to_use, "w", encoding="utf-8", buffering=1) as f:
-        for item in data_generator:
-            f.write(json.dumps(item, ensure_ascii=False) + "\n")
-            f.flush()

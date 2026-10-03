@@ -1,38 +1,41 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""BDNS Fetch - Base de Datos Nacional de Subvenciones (BDNS) Client."""
+"""BDNS Fetch: Python client and CLI for the BDNS API.
 
-__version__ = "1.3.0"
+The public API is what this module exports. Names elsewhere in the package
+may change in any release.
+"""
 
-from bdns.fetch.utils import smart_open, format_date_for_api_request, format_url
+from importlib.metadata import PackageNotFoundError, version
+
+from bdns.fetch.client import BDNSClient
+from bdns.fetch.exceptions import BDNSError, BDNSTransientError
 from bdns.fetch.types import (
-    Order,
-    Direccion,
-    TipoAdministracion,
+    Ambito,
     DescripcionTipoBusqueda,
+    Direccion,
+    Order,
+    TipoAdministracion,
 )
-from bdns.fetch.exceptions import BDNSError, BDNSWarning
+from bdns.fetch.utils import format_date_for_api_request, format_url, smart_open
 
-
-# Import BDNSClient only when needed to avoid runpy conflicts
-def __getattr__(name):
-    if name == "BDNSClient":
-        from bdns.fetch.client import BDNSClient
-
-        return BDNSClient
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
-
+try:
+    __version__ = version("bdns-fetch")
+except PackageNotFoundError:
+    # Running from a source tree that was never installed.
+    __version__ = "0.0.0+unknown"
 
 __all__ = [
+    "Ambito",
+    "BDNSClient",
+    "BDNSError",
+    "BDNSTransientError",
+    "DescripcionTipoBusqueda",
+    "Direccion",
+    "Order",
+    "TipoAdministracion",
     "__version__",
     "format_date_for_api_request",
     "format_url",
     "smart_open",
-    "Order",
-    "Direccion",
-    "TipoAdministracion",
-    "DescripcionTipoBusqueda",
-    "BDNSError",
-    "BDNSWarning",
-    "BDNSClient",
 ]

@@ -1,171 +1,237 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""
-BDNS Fetch CLI: Command-line interface for BDNS data fetching.
+"""The `bdns-fetch` command line.
+
+One command per `fetch_*` method of [`BDNSClient`][bdns.fetch.client.BDNSClient],
+generated from the method's signature: its parameters become the command's
+options, with flags and help from [`options`][bdns.fetch.options]. Adding an
+endpoint to the client adds the command; there is no second list to keep in
+sync.
+
+Command names are the method name without `fetch_`, with hyphens
+(`concesiones-busqueda`). The underscore spelling (`concesiones_busqueda`),
+which is how bdns-sync names the same endpoint, is accepted as a hidden
+alias.
+
+Records are written as JSON Lines; document endpoints write the raw bytes.
 """
 
-import typer
-import functools
+import inspect
+import json
 import logging
-import click
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
+from typing import Any
 
-from bdns.fetch.utils import write_to_file
+import click
+import typer
+
 from bdns.fetch.client import BDNSClient
-from bdns.fetch import options
-from bdns.fetch import __version__
+from bdns.fetch.exceptions import BDNSError
+from bdns.fetch.options import CLI_DEFAULTS, PARAMETERS
+from bdns.fetch.utils import smart_open
+
+__all__ = ["app"]
+
+try:
+    __version__ = version("bdns-fetch")
+except PackageNotFoundError:
+    __version__ = "0.0.0+unknown"
+
+app = typer.Typer(
+    name="bdns-fetch",
+    # Typer dumps every frame's local variables into the traceback by
+    # default, which would print request parameters (NIFs, names) into
+    # whatever log captures stderr. The traceback itself is kept.
+    pretty_exceptions_show_locals=False,
+)
 
 
-# Define a global BDNSClient instance with default parameters
-bnds_client = None
-app = typer.Typer()
+@dataclass
+class _State:
+    """What the global options configure, handed to every command."""
+
+    client: BDNSClient
+    output_file: Path
+    verbose: bool
+
+
+def _version_callback(value: bool) -> None:
+    """Print the version and exit, when `--version` was passed."""
+    if value:
+        typer.echo(f"bdns-fetch {__version__}")
+        raise typer.Exit()
+
+
+def _configure_logging(verbose: bool) -> None:
+    """Send log records to stderr: warnings always, HTTP detail with `--verbose`.
+
+    Done in the callback rather than under `__main__`, because the installed
+    `bdns-fetch` script calls `app` directly and never runs that guard.
+    """
+    logging.basicConfig(
+        level=logging.WARNING,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        force=True,
+    )
+    if verbose:
+        logging.getLogger("bdns.fetch").setLevel(logging.DEBUG)
+        logging.getLogger("urllib3.connectionpool").setLevel(logging.DEBUG)
 
 
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
-    output_file: Path = options.output_file,
-    max_retries: int = options.max_retries,
-    wait_time: int = options.wait_time,
-    max_workers: int = options.max_workers,
-    return_raw: bool = options.return_raw,
-    version: bool = options.version,
-    verbose_flag: bool = options.verbose_flag,
-):
-    """
-    BDNS Fetch - Base de Datos Nacional de Subvenciones (BDNS) CLI
-
-    Fetch data from the Base de Datos Nacional de Subvenciones (BDNS).
+    output_file: Path = typer.Option(
+        "-", "--output-file", "-o", help="File to write to. '-' is standard output."
+    ),
+    max_retries: int = typer.Option(
+        3, "--max-retries", "-mr", min=0, help="Retries for transient failures. 0 disables them."
+    ),
+    wait_time: float = typer.Option(
+        2,
+        "--wait-time",
+        "-wt",
+        min=0,
+        help="Initial seconds between retries. Doubles on each retry, up to 60.",
+    ),
+    max_workers: int = typer.Option(
+        5, "--max-workers", "-mw", min=1, max=20, help="Threads fetching pages concurrently."
+    ),
+    return_raw: bool = typer.Option(
+        False, "--return-raw", "-rr", help="Write whole page objects instead of records."
+    ),
+    progress: bool | None = typer.Option(
+        None,
+        "--progress/--no-progress",
+        help="Show a progress bar. By default, only when stderr is a terminal.",
+        show_default=False,
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Log every HTTP request and response."
+    ),
+    version: bool = typer.Option(
+        False,
+        "--version",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show the version and exit.",
+    ),
+) -> None:
+    r"""Fetch data from the Base de Datos Nacional de Subvenciones (BDNS).
 
     \b
     Examples:
-      bdns-fetch --output-file organos.jsonl organos
-      bdns-fetch --output-file convocatorias.jsonl convocatorias-busqueda --fechaDesde "2024-01-01"
-      bdns-fetch --max-retries 5 --wait-time 1 ayudasestado-busqueda --descripcion "innovation"
+      bdns-fetch -o organos.jsonl organos --idAdmon C
+      bdns-fetch convocatorias-busqueda --fechaDesde 2024-01-01 --num-pages 0
+      bdns-fetch --max-retries 5 ayudasestado-busqueda --descripcion innovación
 
     \b
     Official API: https://www.infosubvenciones.es/bdnstrans/api
     """
-    # Handle version flag
-    if version:
-        typer.echo(f"bdns-fetch version {__version__}")
-        raise typer.Exit()
-
-    # If no subcommand is provided and version is not requested, show help
     if ctx.invoked_subcommand is None:
         typer.echo(ctx.get_help())
         raise typer.Exit()
 
-    # Create configured client instance
-    global bnds_client
-    bnds_client = BDNSClient(
-        max_retries=max_retries,
-        wait_time=wait_time,
-        max_workers=max_workers,
-        return_raw=return_raw,
+    _configure_logging(verbose)
+    ctx.obj = _State(
+        client=BDNSClient(
+            max_retries=max_retries,
+            wait_time=wait_time,
+            max_workers=max_workers,
+            return_raw=return_raw,
+            progress=progress,
+        ),
+        output_file=output_file,
+        verbose=verbose,
     )
 
-    ctx.obj = {
-        "output_file": output_file,
-        "verbose": verbose_flag,
-        "client": bnds_client,  # Store configured client in context
-    }
 
-    # Configure logging based on verbose flag
-    if verbose_flag:
-        # Set detailed logging only for bdns-fetch related loggers
-        # Don't modify the root logger to avoid affecting other packages
-        logging.getLogger("bdns.fetch").setLevel(logging.DEBUG)
-        logging.getLogger("aiohttp.client").setLevel(logging.DEBUG)
-        # Enable urllib3 logging for even more HTTP details
-        logging.getLogger("urllib3.connectionpool").setLevel(logging.DEBUG)
-
-        # Only set up a console handler if none exists for bdns.fetch
-        bdns_logger = logging.getLogger("bdns.fetch")
-        if not bdns_logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            )
-            handler.setFormatter(formatter)
-            bdns_logger.addHandler(handler)
-            bdns_logger.propagate = False  # Don't propagate to root logger
-    else:
-        # Keep default level for bdns.fetch logger only
-        logging.getLogger("bdns.fetch").setLevel(logging.INFO)
+def _write_records(records: Iterable[Any], output_file: Path) -> None:
+    """Write `records` as JSON Lines, one per line, flushing as they arrive."""
+    with smart_open(output_file, "w", encoding="utf-8", buffering=1) as f:
+        for record in records:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def cli_wrapper(client_method_name):
+def _write_bytes(content: bytes, output_file: Path) -> None:
+    """Write a downloaded document as is."""
+    with smart_open(output_file, "wb") as f:
+        f.write(content)
+
+
+def _report_error(error: BDNSError, verbose: bool) -> None:
+    """Print a failed request as a short message on stderr."""
+    typer.secho(f"Error: {error.message}", fg=typer.colors.RED, err=True)
+    if error.suggestion:
+        typer.secho(f"Hint: {error.suggestion}", fg=typer.colors.YELLOW, err=True)
+    if error.technical_details:
+        if verbose:
+            typer.secho(error.technical_details, dim=True, err=True)
+        else:
+            typer.secho("Run with --verbose for the response details.", dim=True, err=True)
+
+
+def _summary(method: Callable) -> str:
+    """First paragraph of a docstring: the command's help."""
+    return inspect.cleandoc(method.__doc__ or "").split("\n\n")[0]
+
+
+def _build_command(method_name: str) -> Callable[..., None]:
+    """Make a Typer command that calls `BDNSClient.<method_name>`.
+
+    The command's signature is the method's, with each default replaced by
+    a `typer.Option` built from the parameter's spec. A parameter with no
+    default becomes a required option.
     """
-    Wrapper that executes a client method and writes the result to file.
+    method = getattr(BDNSClient, method_name)
+    signature = inspect.signature(method)
+    parameters = []
+    for param in list(signature.parameters.values())[1:]:  # skip self
+        spec = PARAMETERS[param.name]
+        default = CLI_DEFAULTS.get(param.name, param.default)
+        if default is inspect.Parameter.empty:
+            default = ...
+        option = typer.Option(
+            default,
+            *spec.decls,
+            help=spec.help,
+            show_default=default not in (None, ...),
+            **spec.extra,
+        )
+        parameters.append(param.replace(default=option, kind=inspect.Parameter.KEYWORD_ONLY))
 
-    Args:
-        client_method_name: The name of the client method to wrap
+    def command(**kwargs: Any) -> None:
+        state: _State = click.get_current_context().obj
+        try:
+            result = getattr(state.client, method_name)(**kwargs)
+            if isinstance(result, bytes):
+                _write_bytes(result, state.output_file)
+            else:
+                _write_records(result, state.output_file)
+        except BDNSError as error:
+            _report_error(error, state.verbose)
+            raise typer.Exit(code=1) from None
 
-    Returns:
-        A function that can be used as a Typer command
-    """
-    # Get the method signature from the global client instance
-    client = BDNSClient()
-    original_method = getattr(client, client_method_name)
-
-    @functools.wraps(original_method)
-    def wrapper(*args, **kwargs):
-        ctx = click.get_current_context()
-        output_file = ctx.obj["output_file"]
-
-        # Call the method on the selected client
-        client_method = getattr(bnds_client, client_method_name)
-        data_generator = client_method(*args, **kwargs)
-        write_to_file(data_generator, output_file)
-        return None
-
-    return wrapper
-
-
-# Register all commands using method names
-app.command("actividades")(cli_wrapper("fetch_actividades"))
-app.command("sectores")(cli_wrapper("fetch_sectores"))
-app.command("regiones")(cli_wrapper("fetch_regiones"))
-app.command("finalidades")(cli_wrapper("fetch_finalidades"))
-app.command("beneficiarios")(cli_wrapper("fetch_beneficiarios"))
-app.command("instrumentos")(cli_wrapper("fetch_instrumentos"))
-app.command("reglamentos")(cli_wrapper("fetch_reglamentos"))
-app.command("objetivos")(cli_wrapper("fetch_objetivos"))
-app.command("grandesbeneficiarios-anios")(
-    cli_wrapper("fetch_grandesbeneficiarios_anios")
-)
-app.command("planesestrategicos")(cli_wrapper("fetch_planesestrategicos"))
-app.command("organos")(cli_wrapper("fetch_organos"))
-app.command("organos-agrupacion")(cli_wrapper("fetch_organos_agrupacion"))
-app.command("organos-codigo")(cli_wrapper("fetch_organos_codigo"))
-app.command("organos-codigoadmin")(cli_wrapper("fetch_organos_codigoadmin"))
-app.command("convocatorias")(cli_wrapper("fetch_convocatorias"))
-app.command("concesiones-busqueda")(cli_wrapper("fetch_concesiones_busqueda"))
-app.command("ayudasestado-busqueda")(cli_wrapper("fetch_ayudasestado_busqueda"))
-app.command("terceros")(cli_wrapper("fetch_terceros"))
-app.command("convocatorias-busqueda")(cli_wrapper("fetch_convocatorias_busqueda"))
-app.command("convocatorias-ultimas")(cli_wrapper("fetch_convocatorias_ultimas"))
-app.command("convocatorias-documentos")(cli_wrapper("fetch_convocatorias_documentos"))
-app.command("convocatorias-pdf")(cli_wrapper("fetch_convocatorias_pdf"))
-app.command("grandesbeneficiarios-busqueda")(
-    cli_wrapper("fetch_grandesbeneficiarios_busqueda")
-)
-app.command("minimis-busqueda")(cli_wrapper("fetch_minimis_busqueda"))
-app.command("partidospoliticos-busqueda")(
-    cli_wrapper("fetch_partidospoliticos_busqueda")
-)
-app.command("planesestrategicos-busqueda")(
-    cli_wrapper("fetch_planesestrategicos_busqueda")
-)
-app.command("planesestrategicos-documentos")(
-    cli_wrapper("fetch_planesestrategicos_documentos")
-)
-app.command("planesestrategicos-vigencia")(
-    cli_wrapper("fetch_planesestrategicos_vigencia")
-)
-app.command("sanciones-busqueda")(cli_wrapper("fetch_sanciones_busqueda"))
+    command.__name__ = method_name
+    command.__doc__ = _summary(method)
+    command.__signature__ = signature.replace(  # type: ignore[attr-defined]
+        parameters=parameters, return_annotation=inspect.Signature.empty
+    )
+    return command
 
 
-if __name__ == "__main__":
-    app()
+def _register_commands() -> None:
+    """Add one command per `fetch_*` method, plus its underscore alias."""
+    method_names = sorted(name for name in dir(BDNSClient) if name.startswith("fetch_"))
+    for method_name in method_names:
+        command = _build_command(method_name)
+        endpoint = method_name.removeprefix("fetch_")
+        app.command(endpoint.replace("_", "-"))(command)
+        if "_" in endpoint:
+            app.command(endpoint, hidden=True)(command)
+
+
+_register_commands()

@@ -20,7 +20,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install Poetry
-        run: pipx install poetry
+        run: pipx install poetry==2.2.1
 
       - name: Check tag matches package version
         run: |

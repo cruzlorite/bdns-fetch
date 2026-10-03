@@ -42,13 +42,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install Poetry
-        run: pipx install poetry
+        run: pipx install poetry==2.2.1
 
       - name: Install dependencies
         run: poetry install
 
       - name: Lint
         run: poetry run ruff check .
+
+      - name: Check formatting
+        run: poetry run ruff format --check .
 
       - name: Check doc references
         run: poetry run python scripts/check_doc_refs.py

@@ -53,7 +53,10 @@ def documented_names() -> tuple[dict[str, set[str]], set[str]]:
 
     def walk(obj: griffe.Object) -> None:
         for member in obj.members.values():
-            if member.is_alias:
+            # CLI command functions share their names with the commands
+            # (`delta`, `backfill`...), which pages mention as commands;
+            # the CLI reference documents those, not the API reference.
+            if member.is_alias or member.path.startswith("bdns.fetch.cli."):
                 continue
             if (member.is_module or member.is_class or member.is_function) and member.docstring:
                 paths.add(member.path)
@@ -68,6 +71,9 @@ def documented_names() -> tuple[dict[str, set[str]], set[str]]:
         parts = path.split(".")
         for i in range(len(parts)):
             names[".".join(parts[i:])].add(path)
+    # The package's last name on its own (`sync`, `fetch`) is the tool's
+    # verb in running text, not a reference to the package.
+    names.pop(pkg.path.split(".")[-1], None)
     return names, params
 
 

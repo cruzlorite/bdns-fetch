@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   million is 0.1%, below any sane ratio, and still means the shape of what the source returns changed. Both are
   operational tolerances rather than statements about the data, so they are per run and carry no per-entity
   defaults. `--dry-run` prints them alongside the payload policy.
+- Documented that a rejected record on a full-replace entity closes its stored version as a withdrawal. A record with
+  no usable natural key cannot be matched to the row it belongs to, so "returned malformed" and "no longer served"
+  are indistinguishable. The reject ceiling is what bounds how many rows this can close.
+- `sync` accepts hyphenated endpoint names (`concesiones-busqueda`), the spelling bdns-fetch uses for its
+  commands.
+- The package ships `py.typed`.
 
 ### Fixed
 
@@ -21,11 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that failed *because* too much of the batch was rejected told the operator to go and read a table that had nothing
   in it, which is exactly the case where the reasons matter.
 
-### Added
+### Changed
 
-- Documented that a rejected record on a full-replace entity closes its stored version as a withdrawal. A record with
-  no usable natural key cannot be matched to the row it belongs to, so "returned malformed" and "no longer served"
-  are indistinguishable. The reject ceiling is what bounds how many rows this can close.
+- The license identifier is `GPL-3.0-or-later`, as the file headers always stated.
+- ruff targets Python 3.11 and CI checks formatting, with the same configuration as bdns-fetch.
+- The Docker image installs the locked dependency versions instead of resolving them at build time.
 
 ## [0.5.0] - 2026-09-06
 

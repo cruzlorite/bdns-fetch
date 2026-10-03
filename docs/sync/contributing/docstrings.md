@@ -202,15 +202,21 @@ a script that is not a link.
 ## Language
 
 - Code, comments, and docstrings: **English**, always.
-- Site: English is canonical. Guides get Spanish translations via the
-  `.es.md` suffix; the API reference and the evidence documents stay
-  English-only.
+- Site: Spanish is canonical. `foo.md` is the Spanish page and
+  `foo.en.md` its English translation; a page with no translation falls
+  back to the Spanish one (`mkdocs.yml`, `i18n` plugin). Docstrings are
+  English, so the generated API reference pages are English in both
+  languages, and so is this contributing guide.
 
 ## Enforcement
 
 `ruff` carries the shape so review can spend its attention on content:
 
 ```toml
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "D"]
 ignore = [
@@ -226,6 +232,9 @@ convention = "google"
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D"]
 ```
+
+The same configuration applies in bdns-fetch, and CI runs
+`ruff format --check` in both.
 
 CI additionally runs `mkdocs build --strict`, which fails on a broken
 internal link or an unresolvable reference target.

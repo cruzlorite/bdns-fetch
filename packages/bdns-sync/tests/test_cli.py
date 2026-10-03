@@ -215,3 +215,20 @@ def test_dry_run_rejects_an_unknown_endpoint():
         app, ["sync", "not_a_real_endpoint", "--target-url", "sqlite:///:memory:", "--dry-run"]
     )
     assert result.exit_code != 0
+
+
+def test_endpoint_accepts_the_hyphenated_name_bdns_fetch_uses():
+    result = runner.invoke(
+        app,
+        [
+            "sync",
+            "concesiones-busqueda",
+            "--window",
+            "daily",
+            "--dry-run",
+            "--target-url",
+            "sqlite://",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "concesiones_busqueda" in plain(result)

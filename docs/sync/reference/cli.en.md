@@ -79,4 +79,4 @@ Meant to run once before the day's cadence, not inside every sync.
     `minimis_busqueda` · `partidospoliticos_busqueda` ·
     `convocatorias_busqueda` · `convocatorias`
 
-The live list comes from `bdns-sync list`; this one is only for reading.
+The live list comes from `bdns-sync list`; this one is only for reading. Hyphens and underscores are interchangeable: `concesiones-busqueda`, the command name in `bdns-fetch`, works too.

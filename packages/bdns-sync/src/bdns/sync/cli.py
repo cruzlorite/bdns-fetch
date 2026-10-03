@@ -160,9 +160,23 @@ def _echo_plan(
     typer.echo("dry run     nothing fetched, nothing written")
 
 
+def _canonical_endpoint(value: str) -> str:
+    """Accept `concesiones-busqueda` for `concesiones_busqueda`.
+
+    bdns-fetch names its commands with hyphens; tables and this tool use
+    underscores. Taking either keeps a name copied from one tool valid in
+    the other.
+    """
+    return value.replace("-", "_")
+
+
 @app.command()
 def sync(
-    endpoint: str = typer.Argument(..., help="Endpoint/entity name to sync."),
+    endpoint: str = typer.Argument(
+        ...,
+        callback=_canonical_endpoint,
+        help="Endpoint/entity name to sync. Hyphens and underscores are interchangeable.",
+    ),
     target_url: str = TARGET_URL_OPTION,
     window: str = typer.Option(
         None,

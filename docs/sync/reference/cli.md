@@ -81,4 +81,4 @@ cada sincronización.
     `minimis_busqueda` · `partidospoliticos_busqueda` ·
     `convocatorias_busqueda` · `convocatorias`
 
-La lista viva la da `bdns-sync list`; esta es solo para leer.
+La lista viva la da `bdns-sync list`; esta es solo para leer. Guiones y guiones bajos son intercambiables: `concesiones-busqueda`, el nombre del comando en `bdns-fetch`, también vale.

@@ -22,17 +22,22 @@ from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime
 from typing import Any
 
-from sqlalchemy import and_, cast, exists, func, insert, literal, null, or_, select, update
+from sqlalchemy import and_, cast, exists, func, insert, literal, null, select, update
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql.schema import Table
 
 from bdns.sync.hashing import natural_key
 from bdns.sync.pipeline import chunked, prefetch
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
-from bdns.sync.sinks import DEFAULT_LIMITS, RejectLimits
+from bdns.sync.sinks import DEFAULT_LIMITS, RejectLimits, SyncStats
 from bdns.sync.sinks.sql.dialects import DialectAdapter, get_adapter
 
-__all__ = ["BatchRejected", "apply_full_reconciliation", "apply_incremental"]
+__all__ = [
+    "BatchRejected",
+    "NaturalKeyConflict",
+    "apply_full_reconciliation",
+    "apply_incremental",
+]
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -42,6 +47,18 @@ class BatchRejected(RuntimeError):
     """Too much of the batch could not be versioned to apply it safely."""
 
 
+class NaturalKeyConflict(BatchRejected):
+    """Two records in one batch share a natural key but differ in content.
+
+    Applying such a batch would write two current versions for one key,
+    and every later run would close and rewrite them, reporting changes
+    the source never made. It means the entity's key fields do not
+    identify its records, which is a definition to fix, not noise to
+    drop: the run fails and names the keys. Byte-identical duplicates,
+    the offset-pagination artifact, are not a conflict.
+    """
+
+
 def rejection_reason(
     payload: Any, key_fields: Sequence[str], reg_date_field: str | None
 ) -> str | None:
@@ -49,7 +66,7 @@ def rejection_reason(
 
     A record without a usable natural key has no identity, so there is
     nothing to version it as. Rejecting it here, in the sink, covers every
-    entity: [`syncers._skip_malformed`][bdns.sync.syncers._skip_malformed]
+    entity: [`entities._skip_malformed`][bdns.sync.entities._skip_malformed]
     only guards the two-step detail fetches, and it only catches responses
     that are not JSON objects at all.
 
@@ -91,16 +108,18 @@ def apply_full_reconciliation(
     limits: RejectLimits = DEFAULT_LIMITS,
     chunk_size: int = 5000,
     skipped: list[dict[str, str]] | None = None,
-) -> dict[str, int]:
+    run_id: int | None = None,
+) -> SyncStats:
     """Diff a complete batch against the table's current rows.
 
     Four cases, one bulk statement each:
 
     - Natural key not seen before: insert a new current row.
-    - Natural key seen, hash changed: close the old version, insert a new
-      current one.
+    - Natural key seen, hash changed: close the old version as
+      `superseded`, insert a new current one.
     - Natural key seen, hash unchanged: touch `_synced_at`.
-    - Natural key was current but absent from `rows`: close it out.
+    - Natural key was current but absent from `rows`: close it as
+      `removed`.
 
     The last case is what detects deletions, such as grants withdrawn or
     codes retired. Incremental passes cannot see removals; only a
@@ -118,13 +137,15 @@ def apply_full_reconciliation(
         chunk_size: Rows buffered per staging insert, before the
             dialect adapter gets to raise it.
         skipped: List that malformed-record descriptors are appended to.
+        run_id: The run writing this batch, recorded on every version it
+            creates or closes.
 
     Returns:
-        The run's counters: `fetched`, `inserted`, `updated`, `touched`,
-        `soft_deleted`.
+        The run's counters, `skipped` excluded (the caller owns that list).
 
     Raises:
         BatchRejected: If the share of unusable records crosses `limits`.
+        NaturalKeyConflict: If two records share a key but differ.
     """
     return _apply(
         conn,
@@ -137,6 +158,7 @@ def apply_full_reconciliation(
         chunk_size,
         detect_deletions=True,
         skipped=skipped,
+        run_id=run_id,
     )
 
 
@@ -153,7 +175,8 @@ def apply_incremental(
     window_start: date | None = None,
     window_end: date | None = None,
     skipped: list[dict[str, str]] | None = None,
-) -> dict[str, int]:
+    run_id: int | None = None,
+) -> SyncStats:
     """Apply a windowed batch: one reg-date window pass.
 
     Versioning of the keys present works exactly as in
@@ -185,13 +208,16 @@ def apply_incremental(
         window_end: Last day of the fetched range, inclusive. Must be the
             same bounds `rows` was fetched with.
         skipped: List that malformed-record descriptors are appended to.
+        run_id: The run writing this batch, recorded on every version it
+            creates or closes.
 
     Returns:
-        The run's counters. `soft_deleted` can only be non-zero when
+        The run's counters. `removed` can only be non-zero when
         `reg_date_field` was given.
 
     Raises:
         BatchRejected: If the share of unusable records crosses `limits`.
+        NaturalKeyConflict: If two records share a key but differ.
     """
     window = (reg_date_field, window_start, window_end) if reg_date_field else None
     return _apply(
@@ -206,6 +232,7 @@ def apply_incremental(
         detect_deletions=False,
         window=window,
         skipped=skipped,
+        run_id=run_id,
     )
 
 
@@ -221,11 +248,13 @@ def _apply(
     detect_deletions: bool,
     window: tuple | None = None,
     skipped: list[dict[str, str]] | None = None,
-) -> dict[str, int]:
+    run_id: int | None = None,
+) -> SyncStats:
     """Stage the batch, then apply the diff. The engine both entry points share.
 
-    The sequence is fixed: clear staging, load the batch into it, count
-    what the diff will do, then insert, touch and close in that order.
+    The sequence is fixed: clear staging, load the batch into it, refuse
+    it if keys conflict, count what the diff will do, then touch, close
+    and insert in that order.
     Counting first matters, because each statement changes what the next
     one would have counted.
 
@@ -243,12 +272,14 @@ def _apply(
         window: `(reg_date_field, start, end)` for window-scoped deletion
             detection, or None for no deletion detection at all.
         skipped: List that rejected records are appended to.
+        run_id: The run writing this batch.
 
     Returns:
         The run's counters.
 
     Raises:
         BatchRejected: If the rejects cross `limits`.
+        NaturalKeyConflict: If two staged records share a key but differ.
     """
     now = datetime.now(UTC)
     reg_date_field = window[0] if window else None
@@ -269,16 +300,16 @@ def _apply(
         rejected,
     )
     _check_rejects(table.name, fetched, len(rejected), limits)
+    _check_key_conflicts(conn, table.name, staging)
     logger.info("%s: fetch done, %d rows staged, applying diff", table.name, fetched)
-    stats = _diff_stats(conn, table, staging, detect_deletions, window)
-    stats["fetched"] = fetched
+    counts = _diff_stats(conn, table, staging, detect_deletions, window)
 
     _touch_unchanged(conn, table, staging, now)
-    _close_stale(conn, table, staging, now, detect_deletions, window)
-    _insert_new_versions(conn, table, staging, now)
+    _close_stale(conn, table, staging, now, detect_deletions, window, run_id)
+    _insert_new_versions(conn, table, staging, now, run_id)
 
     adapter.clear_table(conn, staging)
-    return stats
+    return SyncStats(fetched=fetched, **counts)
 
 
 def _load_staging(
@@ -358,6 +389,29 @@ def _check_rejects(table_name: str, fetched: int, rejected: int, limits: RejectL
         )
 
 
+def _check_key_conflicts(conn: Connection, table_name: str, staging: Table) -> None:
+    """Refuse a batch in which one natural key carries two different payloads.
+
+    Raises:
+        NaturalKeyConflict: Naming up to five of the conflicting keys.
+    """
+    conflicting = (
+        conn.execute(
+            select(staging.c._natural_key)
+            .group_by(staging.c._natural_key)
+            .having(func.count(func.distinct(staging.c._row_hash)) > 1)
+            .limit(5)
+        )
+        .scalars()
+        .all()
+    )
+    if conflicting:
+        raise NaturalKeyConflict(
+            f"{table_name}: natural key(s) {', '.join(conflicting)} carry different payloads "
+            f"within one batch; the key fields do not identify the records. Refusing to apply it."
+        )
+
+
 def _matches(table: Table, staging: Table):
     """Build the natural-key join predicate every diff statement shares."""
     return staging.c._natural_key == table.c._natural_key
@@ -422,7 +476,7 @@ def _diff_stats(
         .where(~exists(select(1).where(_matches(table, staging), table.c._is_current.is_(True))))
     ).scalar_one()
 
-    stats = {"inserted": inserted, "updated": updated, "touched": touched}
+    stats = {"new": inserted, "changed": updated, "unchanged": touched, "removed": 0}
 
     if detect_deletions:
         closed = conn.execute(
@@ -432,14 +486,14 @@ def _diff_stats(
                 table.c._is_current.is_(True), ~exists(select(1).where(_matches(table, staging)))
             )
         ).scalar_one()
-        stats["soft_deleted"] = closed
+        stats["removed"] = closed
     elif window:
         closed = conn.execute(
             select(func.count())
             .select_from(table)
             .where(table.c._is_current.is_(True), _missing_in_window(table, staging, window))
         ).scalar_one()
-        stats["soft_deleted"] = closed
+        stats["removed"] = closed
 
     return stats
 
@@ -469,32 +523,53 @@ def _close_stale(
     now: datetime,
     detect_deletions: bool,
     window: tuple | None = None,
+    run_id: int | None = None,
 ) -> None:
     """Close every current version this batch supersedes or proves gone.
 
-    A changed hash always closes the old version. Absence closes one only
-    when the batch is entitled to conclude removal: a full reconciliation
-    always is, a windowed run only for rows whose own `_reg_date` puts
-    them inside the window, and a plain windowed run never is.
+    A changed hash always closes the old version, as `superseded`.
+    Absence closes one, as `removed`, only when the batch is entitled to
+    conclude removal: a full reconciliation always is, a windowed run only
+    for rows whose own `_reg_date` puts them inside the window, and a
+    plain windowed run never is. The two conditions are disjoint (one
+    needs the key in staging, the other its absence), so the order of
+    the two statements does not matter.
     """
     changed = exists(
         select(1).where(_matches(table, staging), staging.c._row_hash != table.c._row_hash)
     )
-    condition = changed
-    if detect_deletions:
-        missing = ~exists(select(1).where(_matches(table, staging)))
-        condition = or_(changed, missing)
-    elif window:
-        condition = or_(changed, _missing_in_window(table, staging, window))
-
+    closed_by = _run_id_literal(table.c._closed_run_id, run_id)
     conn.execute(
         update(table)
-        .where(table.c._is_current.is_(True), condition)
-        .values(_valid_to=now, _is_current=False)
+        .where(table.c._is_current.is_(True), changed)
+        .values(
+            _valid_to=now, _is_current=False, _closed_run_id=closed_by, _closed_reason="superseded"
+        )
+    )
+
+    if detect_deletions:
+        missing = ~exists(select(1).where(_matches(table, staging)))
+    elif window:
+        missing = _missing_in_window(table, staging, window)
+    else:
+        return
+    conn.execute(
+        update(table)
+        .where(table.c._is_current.is_(True), missing)
+        .values(
+            _valid_to=now, _is_current=False, _closed_run_id=closed_by, _closed_reason="removed"
+        )
     )
 
 
-def _insert_new_versions(conn: Connection, table: Table, staging: Table, now: datetime) -> None:
+def _run_id_literal(column, run_id: int | None):
+    """A typed literal for a run-id column, or a typed NULL without a run."""
+    return cast(null(), column.type) if run_id is None else literal(run_id, column.type)
+
+
+def _insert_new_versions(
+    conn: Connection, table: Table, staging: Table, now: datetime, run_id: int | None = None
+) -> None:
     """Insert a current version for every staged key with no current row left.
 
     Runs after [`_close_stale`][], so it covers both cases at once: keys
@@ -523,6 +598,7 @@ def _insert_new_versions(conn: Connection, table: Table, staging: Table, now: da
             literal(now),
             staging.c._reg_date,
             staging.c.payload,
+            _run_id_literal(table.c._created_run_id, run_id),
         )
         .where(no_current_match)
         .distinct()
@@ -539,6 +615,7 @@ def _insert_new_versions(conn: Connection, table: Table, staging: Table, now: da
                 "_synced_at",
                 "_reg_date",
                 "payload",
+                "_created_run_id",
             ],
             select_new_versions,
         )

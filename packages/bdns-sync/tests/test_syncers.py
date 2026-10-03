@@ -2,14 +2,10 @@ from datetime import date, timedelta
 
 from sqlalchemy import MetaData, create_engine, select
 
+from bdns.sync.entities import sync_entity
+from bdns.sync.sinks import SyncStats
 from bdns.sync.sinks.sql import SQLSink
 from bdns.sync.sinks.sql.schema import build_sync_table
-from bdns.sync.syncers import (
-    sync_convocatorias,
-    sync_grandesbeneficiarios_busqueda,
-    sync_planesestrategicos,
-    sync_planesestrategicos_vigencia,
-)
 
 
 def current_rows(engine, name):
@@ -47,15 +43,8 @@ def test_convocatorias_discover_then_detail_end_to_end():
             "A2": {"codigoBDNS": "A2", "titulo": "two", "fechaRecepcion": yesterday},
         },
     )
-    stats = sync_convocatorias(SQLSink(engine), client, "daily")
-    assert stats == {
-        "fetched": 2,
-        "inserted": 2,
-        "updated": 0,
-        "touched": 0,
-        "soft_deleted": 0,
-        "skipped": 0,
-    }
+    stats = sync_entity("convocatorias", SQLSink(engine), client, "daily")
+    assert stats == SyncStats(fetched=2, new=2)
     assert sorted(client.detail_calls) == ["A1", "A2"]
 
     # daily covers just yesterday; convocatorias' fechaHasta is inclusive,
@@ -75,7 +64,7 @@ def test_convocatorias_one_detail_call_per_discovered_code_only():
         search_results=[{"numeroConvocatoria": "A1"}],
         details_by_code={"A1": {"codigoBDNS": "A1", "fechaRecepcion": yesterday}},
     )
-    sync_convocatorias(SQLSink(engine), client, "weekly")
+    sync_entity("convocatorias", SQLSink(engine), client, "weekly")
     assert client.detail_calls == ["A1"]
 
 
@@ -94,11 +83,11 @@ def test_convocatorias_closes_out_a_code_missing_from_the_same_window():
             "A2": {"codigoBDNS": "A2", "fechaRecepcion": yesterday},
         },
     )
-    sync_convocatorias(SQLSink(engine), client, "daily")
+    sync_entity("convocatorias", SQLSink(engine), client, "daily")
 
     client._search_results = [{"numeroConvocatoria": "A1"}]
-    stats = sync_convocatorias(SQLSink(engine), client, "daily")
-    assert stats["soft_deleted"] == 1
+    stats = sync_entity("convocatorias", SQLSink(engine), client, "daily")
+    assert stats.removed == 1
     assert len(current_rows(engine, "convocatorias")) == 1  # A2 closed out
 
 
@@ -125,9 +114,9 @@ def test_grandesbeneficiarios_sweeps_anios_dynamically():
         anios=[{"id": 2022}, {"id": 2023}],
         grandes=[{"idPersona": 1, "ejercicio": 2022}, {"idPersona": 1, "ejercicio": 2023}],
     )
-    stats = sync_grandesbeneficiarios_busqueda(SQLSink(engine), client)
+    stats = sync_entity("grandesbeneficiarios_busqueda", SQLSink(engine), client)
     assert client.anios_used == [2022, 2023]
-    assert stats["inserted"] == 2
+    assert stats.new == 2
 
     rows = current_rows(engine, "grandesbeneficiarios_busqueda")
     assert {r["_natural_key"] for r in rows} == {"[1,2022]", "[1,2023]"}
@@ -157,8 +146,8 @@ class FakePesClient:
 def test_planesestrategicos_detail_tags_idpes_since_api_does_not_echo_it():
     engine = create_engine("sqlite:///:memory:")
     client = FakePesClient(ids=[2078], details_by_id={2078: {"descripcion": "PES test"}})
-    stats = sync_planesestrategicos(SQLSink(engine), client)
-    assert stats["inserted"] == 1
+    stats = sync_entity("planesestrategicos", SQLSink(engine), client)
+    assert stats.new == 1
 
     rows = current_rows(engine, "planesestrategicos")
     assert rows[0]["_natural_key"] == "[2078]"
@@ -172,7 +161,7 @@ def test_planesestrategicos_vigencia_synced_as_separate_table():
         ids=[2078],
         vigencias_by_id={2078: {"vigDesde": [{"id": 2020}], "vigHasta": [{"id": 2028}]}},
     )
-    stats = sync_planesestrategicos_vigencia(SQLSink(engine), client)
-    assert stats["inserted"] == 1
+    stats = sync_entity("planesestrategicos_vigencia", SQLSink(engine), client)
+    assert stats.new == 1
     rows = current_rows(engine, "planesestrategicos_vigencia")
     assert rows[0]["_natural_key"] == "[2078]"

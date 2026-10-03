@@ -1707,6 +1707,18 @@ markers = {main = "extra == \"bigquery\""}
 six = ">=1.5"
 
 [[package]]
+name = "pytz"
+version = "2025.2"
+description = "World timezone definitions, modern and historical"
+optional = false
+python-versions = "*"
+groups = ["dev"]
+files = [
+    {file = "pytz-2025.2-py2.py3-none-any.whl", hash = "sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00"},
+    {file = "pytz-2025.2.tar.gz", hash = "sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3"},
+]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.3"
 description = "YAML parser and emitter for Python"
@@ -2157,4 +2169,4 @@ bigquery = ["google-cloud-bigquery-storage", "sqlalchemy-bigquery"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.15"
-content-hash = "bdc9cd9e49ecf93824d80bfc90d918ac5b21f4ac085fbc5abb42e59e902f2b82"
+content-hash = "3b50d2f0e539d9b0200525a62df1313390b0b1f3ee9a507d22044ad4360fdb79"

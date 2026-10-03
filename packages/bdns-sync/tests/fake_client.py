@@ -1,9 +1,9 @@
 """Duck-typed stand-in for `bdns.fetch.BDNSClient`, used by the timeline
 scenario tests instead of hitting the network.
 
-`bdns.sync.syncers` never imports or type-checks against the real
-`BDNSClient` class. Every `sync_*` function just calls `fetch_*` methods on
-whatever `client` object it's given, so a plain Python object exposing the
+`bdns.sync.entities` never type-checks against the real `BDNSClient`
+class. Every row source just calls `fetch_*` methods on whatever `client`
+object it is given, so a plain Python object exposing the
 same method names and keyword arguments is a complete substitute. No
 mocking library is required.
 
@@ -42,7 +42,7 @@ def load_fixture(name: str):
 
 
 # Maps each entity to the payload field that holds its own registration
-# date, confirmed live against the real API (see bdns/sync/syncers.py).
+# date, confirmed live against the real API (see src/bdns/sync/entities.py).
 # Fixture records store an offset (`reg_days_ago`) instead of this field's
 # value, so it has to be patched in dynamically. Otherwise it would be
 # whatever absolute date was true when the fixture was captured, which
@@ -191,15 +191,15 @@ class FakeBDNSClient:
 
         - The four `fechaRegFin` search endpoints use a HALF-OPEN range: the
           upper bound is exclusive, so a record on day `end` is NOT returned
-          (`upper_inclusive=False`). That's why those callers must pass
-          `generic.to_api_upper_bound(chunk_end)`; if they forget, this drops
+          (`upper_inclusive=False`). That's why those callers must go
+          through `bdns.fetch.dates.registration_range`; if they don't, this drops
           the boundary day exactly like the live API does, so the regression
           tests catch it instead of silently passing.
         - convocatorias' `fechaHasta` is INCLUSIVE (`upper_inclusive=True`):
           a record on day `end` IS returned, so its caller must NOT add a day.
 
-        Both behaviors confirmed live; see `generic.to_api_upper_bound` and
-        `syncers.discover_convocatoria_codes`.
+        Both behaviors confirmed live; see `bdns.fetch.dates` and
+        `bdns.sync.entities.convocatoria_details`.
         """
         self.calls.append((method, {"start": start, "end": end}))
         for rec in records:

@@ -11,23 +11,14 @@ incremental window entities in test_timeline_incremental_windows.py.
 """
 
 from copy import deepcopy
+from functools import partial
 
 import pytest
 from sqlalchemy import create_engine
 
+from bdns.sync.entities import sync_entity
+from bdns.sync.sinks import SyncStats
 from bdns.sync.sinks.sql import SQLSink
-from bdns.sync.syncers import (
-    sync_actividades,
-    sync_beneficiarios,
-    sync_finalidades,
-    sync_grandesbeneficiarios_anios,
-    sync_instrumentos,
-    sync_objetivos,
-    sync_planesestrategicos_busqueda,
-    sync_regiones,
-    sync_sanciones_busqueda,
-    sync_sectores,
-)
 from tests.fake_client import FakeBDNSClient
 from tests.timeline_helpers import all_rows, current_rows, fresh_copy_with_new_key
 
@@ -35,29 +26,35 @@ from tests.timeline_helpers import all_rows, current_rows, fresh_copy_with_new_k
 # fields matching the syncer's own key_fields, a non-key field safe to
 # mutate for the "rewrite" day)
 FULL_CATALOG_CASES = [
-    (sync_sectores, "sectores", "sectores", ("id",), "descripcion"),
-    (sync_actividades, "actividades", "actividades", ("id",), "descripcion"),
-    (sync_finalidades, "finalidades", "finalidades", ("id",), "descripcion"),
-    (sync_beneficiarios, "beneficiarios", "beneficiarios", ("id",), "descripcion"),
-    (sync_instrumentos, "instrumentos", "instrumentos", ("id",), "descripcion"),
-    (sync_objetivos, "objetivos", "objetivos", ("id",), "descripcion"),
-    (sync_regiones, "regiones", "regiones", ("id",), "descripcion"),
+    (partial(sync_entity, "sectores"), "sectores", "sectores", ("id",), "descripcion"),
+    (partial(sync_entity, "actividades"), "actividades", "actividades", ("id",), "descripcion"),
+    (partial(sync_entity, "finalidades"), "finalidades", "finalidades", ("id",), "descripcion"),
     (
-        sync_grandesbeneficiarios_anios,
+        partial(sync_entity, "beneficiarios"),
+        "beneficiarios",
+        "beneficiarios",
+        ("id",),
+        "descripcion",
+    ),
+    (partial(sync_entity, "instrumentos"), "instrumentos", "instrumentos", ("id",), "descripcion"),
+    (partial(sync_entity, "objetivos"), "objetivos", "objetivos", ("id",), "descripcion"),
+    (partial(sync_entity, "regiones"), "regiones", "regiones", ("id",), "descripcion"),
+    (
+        partial(sync_entity, "grandesbeneficiarios_anios"),
         "grandesbeneficiarios_anios",
         "grandesbeneficiarios_anios",
         ("id",),
         "descripcion",
     ),
     (
-        sync_planesestrategicos_busqueda,
+        partial(sync_entity, "planesestrategicos_busqueda"),
         "planesestrategicos_busqueda",
         "planesestrategicos_busqueda",
         ("id",),
         "descripcion",
     ),
     (
-        sync_sanciones_busqueda,
+        partial(sync_entity, "sanciones_busqueda"),
         "sanciones_busqueda",
         "sanciones_busqueda",
         ("numeroConvocatoria", "sancionado", "fechaSancion"),
@@ -79,29 +76,22 @@ def test_full_catalog_day_by_day_timeline(sync_fn, attr, table, key_fields, muta
 
     # Day 1: first run, every fetched row is new
     stats = sync_fn(SQLSink(engine), client)
-    assert stats["fetched"] == len(baseline)
-    assert stats["inserted"] == len(baseline)
-    assert stats["updated"] == 0
-    assert stats["soft_deleted"] == 0
+    assert stats.fetched == len(baseline)
+    assert stats.new == len(baseline)
+    assert stats.changed == 0
+    assert stats.removed == 0
     assert len(current_rows(engine, table)) == len(baseline)
 
     # Day 2: identical re-fetch, a pure no-op that only touches `_synced_at`
     stats = sync_fn(SQLSink(engine), client)
-    assert stats == {
-        "fetched": len(baseline),
-        "inserted": 0,
-        "updated": 0,
-        "touched": len(baseline),
-        "soft_deleted": 0,
-        "skipped": 0,
-    }
+    assert stats == SyncStats(fetched=len(baseline), unchanged=len(baseline))
 
     # Day 3: upstream edits one field on one row. SCD2 rewrite: the old
     # version is closed out and the new version becomes current.
     getattr(client, attr)[0][mutate_field] = "__MUTATED__"
     stats = sync_fn(SQLSink(engine), client)
-    assert stats["updated"] == 1
-    assert stats["inserted"] == 0
+    assert stats.changed == 1
+    assert stats.new == 0
     history = all_rows(engine, table)
     closed = [r for r in history if not r["_is_current"]]
     assert len(closed) == 1
@@ -116,12 +106,12 @@ def test_full_catalog_day_by_day_timeline(sync_fn, attr, table, key_fields, muta
     # detect it as a deletion; no incremental pass could see this.
     getattr(client, attr).pop()
     stats = sync_fn(SQLSink(engine), client)
-    assert stats["soft_deleted"] == 1
+    assert stats.removed == 1
     assert len(current_rows(engine, table)) == len(baseline) - 1
 
     # Day 5: a brand-new row is registered, a plain insert
     new_row = fresh_copy_with_new_key(baseline[1], key_fields)
     getattr(client, attr).append(new_row)
     stats = sync_fn(SQLSink(engine), client)
-    assert stats["inserted"] == 1
+    assert stats.new == 1
     assert len(current_rows(engine, table)) == len(baseline)

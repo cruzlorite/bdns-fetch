@@ -55,7 +55,7 @@ def test_sync_incremental_endpoint_requires_window_or_since():
         app, ["sync", "concesiones_busqueda", "--target-url", "sqlite:///:memory:"]
     )
     assert result.exit_code != 0
-    assert "requires --window or --since" in plain(result)
+    assert "needs --window or --since" in plain(result)
 
 
 def test_sync_rejects_window_and_since_together():
@@ -177,7 +177,7 @@ def test_dry_run_of_a_full_catalog_reports_no_date_range():
         app, ["sync", "sectores", "--target-url", "sqlite:///:memory:", "--dry-run"]
     )
     assert result.exit_code == 0
-    assert "complete replace, no date range" in plain(result)
+    assert "complete state, no date range" in plain(result)
 
 
 def test_dry_run_hides_the_target_password():
@@ -207,7 +207,7 @@ def test_dry_run_still_rejects_an_invalid_invocation():
         app, ["sync", "concesiones_busqueda", "--target-url", "sqlite:///:memory:", "--dry-run"]
     )
     assert result.exit_code != 0
-    assert "requires --window or --since" in plain(result)
+    assert "needs --window or --since" in plain(result)
 
 
 def test_dry_run_rejects_an_unknown_endpoint():
@@ -232,3 +232,95 @@ def test_endpoint_accepts_the_hyphenated_name_bdns_fetch_uses():
     )
     assert result.exit_code == 0, result.output
     assert "concesiones_busqueda" in plain(result)
+
+
+# --- delta / backfill ---------------------------------------------------------
+
+TARGET = ["--target-url", "sqlite:///:memory:"]
+
+
+def test_delta_dry_run_lists_every_entity():
+    result = runner.invoke(app, ["delta", "--dry-run", *TARGET])
+    assert result.exit_code == 0, result.output
+    assert "22 sync(s) planned" in plain(result)
+    assert "sectores: complete state" in plain(result)
+
+
+def test_delta_refuses_an_unknown_window():
+    assert runner.invoke(app, ["delta", "--window", "hourly", "--dry-run", *TARGET]).exit_code == 2
+
+
+def test_delta_syncs_nothing_when_the_api_changed(monkeypatch):
+    from bdns.fetch.contract import ContractReport
+
+    ran = []
+    monkeypatch.setattr(
+        "bdns.sync.cli.check_api_contract", lambda client: ContractReport("changed", ["moved"])
+    )
+    monkeypatch.setattr("bdns.sync.cli.run_plan", lambda *a: ran.append(a) or [])
+    result = runner.invoke(app, ["delta", *TARGET])
+    assert result.exit_code == 1
+    assert ran == []
+
+
+def test_delta_runs_the_plan_and_fails_if_any_step_failed(monkeypatch):
+    from bdns.fetch.contract import ContractReport
+    from bdns.sync.orchestration import StepResult
+
+    def fake_run(steps, sink, client):
+        return [StepResult(steps[0], error="boom")] + [
+            StepResult(s, stats=__import__("bdns.sync.sinks", fromlist=["SyncStats"]).SyncStats())
+            for s in steps[1:]
+        ]
+
+    monkeypatch.setattr(
+        "bdns.sync.cli.check_api_contract", lambda client: ContractReport("ok", ["fine"])
+    )
+    monkeypatch.setattr("bdns.sync.cli.run_plan", fake_run)
+    result = runner.invoke(app, ["delta", *TARGET])
+    assert result.exit_code == 1
+    assert "1 of 22 sync(s) failed" in plain(result)
+
+
+def test_delta_end_to_end_with_the_fake_api(monkeypatch, tmp_path):
+    from tests.fake_client import FakeBDNSClient
+
+    monkeypatch.setattr("bdns.sync.cli._client", lambda *a: FakeBDNSClient())
+    url = f"sqlite:///{tmp_path / 'bdns.db'}"
+    result = runner.invoke(
+        app, ["delta", "--skip-api-check", "--window", "daily", "--target-url", url]
+    )
+    assert result.exit_code == 0, result.output
+    assert "all 22 sync(s) succeeded" in plain(result)
+
+
+def test_backfill_dry_run_for_one_entity():
+    result = runner.invoke(app, ["backfill", "--entity", "convocatorias", "--dry-run", *TARGET])
+    assert result.exit_code == 0, result.output
+    assert "convocatorias: backfill [2013-01-01 .. 2013-12-31]" in plain(result)
+
+
+def test_backfill_rejects_an_unknown_entity():
+    assert runner.invoke(app, ["backfill", "--entity", "nope", "--dry-run", *TARGET]).exit_code == 2
+
+
+def test_sync_full_entity_rejects_a_range():
+    result = runner.invoke(app, ["sync", "sectores", "--window", "daily", "--dry-run", *TARGET])
+    assert result.exit_code == 2
+    assert "takes no range" in plain(result)
+
+
+def test_list_without_kind_lists_all_and_rejects_bad_kind():
+    assert len(runner.invoke(app, ["list"]).output.split()) == 22
+    assert runner.invoke(app, ["list", "--kind", "bogus"]).exit_code == 2
+
+
+def test_check_api_exit_code(monkeypatch):
+    from bdns.fetch.contract import ContractReport
+
+    for status, code in (("ok", 0), ("inconclusive", 0), ("changed", 1)):
+        monkeypatch.setattr(
+            "bdns.sync.cli.check_api_contract",
+            lambda client, day, s=status: ContractReport(s, ["m"]),
+        )
+        assert runner.invoke(app, ["check-api", "--day", "2024-01-31"]).exit_code == code

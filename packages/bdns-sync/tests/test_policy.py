@@ -17,8 +17,8 @@ import pathlib
 
 import pytest
 
+from bdns.sync.entities import ENTITIES
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
-from bdns.sync.syncers import policy_for
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures"
 
@@ -26,10 +26,10 @@ POLICIES = {
     "sectores": DEFAULT_POLICY,
     "regiones": DEFAULT_POLICY,
     "organos": DEFAULT_POLICY,
-    "concesiones_busqueda": policy_for("concesiones_busqueda"),
-    "ayudasestado_busqueda": policy_for("ayudasestado_busqueda"),
-    "minimis_busqueda": policy_for("minimis_busqueda"),
-    "grandesbeneficiarios_busqueda": policy_for("grandesbeneficiarios_busqueda"),
+    "concesiones_busqueda": ENTITIES["concesiones_busqueda"].policy,
+    "ayudasestado_busqueda": ENTITIES["ayudasestado_busqueda"].policy,
+    "minimis_busqueda": ENTITIES["minimis_busqueda"].policy,
+    "grandesbeneficiarios_busqueda": ENTITIES["grandesbeneficiarios_busqueda"].policy,
     "convocatorias_busqueda": DEFAULT_POLICY,
     "planesestrategicos_busqueda": DEFAULT_POLICY,
 }
@@ -150,7 +150,7 @@ def test_a_policy_may_not_drop_the_registration_date_field():
 
 
 def test_an_ordinary_policy_passes_the_identity_check():
-    policy_for("concesiones_busqueda").check_identity(("id",), "fechaAlta")
+    ENTITIES["concesiones_busqueda"].policy.check_identity(("id",), "fechaAlta")
 
 
 def test_turning_off_canonical_arrays_makes_array_order_count_again():
@@ -172,20 +172,7 @@ def test_describe_is_canonical_and_order_independent():
     assert "drop=['a', 'b']" in one.describe()
 
 
-def test_every_entity_named_in_the_policy_registry_actually_exists():
-    """A typo in a registry key does not fail, it silently stops the policy
-    applying: `policy_for` falls back to the default, and the entity starts
-    re-versioning on noise it used to ignore. For concesiones_busqueda that
-    is 58% of the table.
-    """
-    from bdns.sync.syncers import FULL_SYNCERS, POLICIES, SEARCH_SYNCERS
-
-    known = set(FULL_SYNCERS) | set(SEARCH_SYNCERS)
-    assert set(POLICIES) <= known, f"unknown entities in POLICIES: {set(POLICIES) - known}"
-
-
 def test_an_entity_without_declared_rules_gets_the_default():
-    from bdns.sync.syncers import policy_for
+    from bdns.sync.entities import ENTITIES
 
-    assert policy_for("sectores") is DEFAULT_POLICY
-    assert policy_for("no_such_entity") is DEFAULT_POLICY
+    assert ENTITIES["sectores"].policy is DEFAULT_POLICY

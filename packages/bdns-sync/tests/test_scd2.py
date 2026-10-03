@@ -4,6 +4,7 @@ import pytest
 from sqlalchemy import select
 
 from bdns.sync.policy import PayloadPolicy
+from bdns.sync.sinks import SyncStats
 from bdns.sync.sinks.sql.dialects import get_adapter
 from bdns.sync.sinks.sql.scd2 import apply_full_reconciliation, apply_incremental
 from bdns.sync.sinks.sql.schema import build_staging_table, build_sync_table
@@ -34,7 +35,7 @@ def test_first_pass_inserts_all_rows(table):
     rows = [{"id": 1, "name": "a"}, {"id": 2, "name": "b"}]
     with engine.begin() as conn:
         stats = apply_full_reconciliation(conn, tbl, staging, rows, ("id",))
-        assert stats == {"fetched": 2, "inserted": 2, "updated": 0, "touched": 0, "soft_deleted": 0}
+        assert stats == SyncStats(fetched=2, new=2)
         assert len(current_rows(conn, tbl)) == 2
 
 
@@ -45,7 +46,7 @@ def test_second_pass_with_no_changes_only_touches(table):
         apply_full_reconciliation(conn, tbl, staging, rows, ("id",))
     with engine.begin() as conn:
         stats = apply_full_reconciliation(conn, tbl, staging, rows, ("id",))
-        assert stats == {"fetched": 1, "inserted": 0, "updated": 0, "touched": 1, "soft_deleted": 0}
+        assert stats == SyncStats(fetched=1, unchanged=1)
         assert len(current_rows(conn, tbl)) == 1
 
 
@@ -55,7 +56,7 @@ def test_changed_row_closes_old_version_and_inserts_new(table):
         apply_full_reconciliation(conn, tbl, staging, [{"id": 1, "name": "a"}], ("id",))
     with engine.begin() as conn:
         stats = apply_full_reconciliation(conn, tbl, staging, [{"id": 1, "name": "b"}], ("id",))
-        assert stats == {"fetched": 1, "inserted": 0, "updated": 1, "touched": 0, "soft_deleted": 0}
+        assert stats == SyncStats(fetched=1, changed=1)
 
     with engine.begin() as conn:
         all_rows = conn.execute(select(tbl)).mappings().all()
@@ -74,7 +75,7 @@ def test_missing_row_is_closed_out_as_deletion(table):
         apply_full_reconciliation(conn, tbl, staging, [{"id": 1}, {"id": 2}], ("id",))
     with engine.begin() as conn:
         stats = apply_full_reconciliation(conn, tbl, staging, [{"id": 1}], ("id",))
-        assert stats == {"fetched": 1, "inserted": 0, "updated": 0, "touched": 1, "soft_deleted": 1}
+        assert stats == SyncStats(fetched=1, unchanged=1, removed=1)
         current = current_rows(conn, tbl)
         assert len(current) == 1
         assert current[0]["_natural_key"] == "[1]"
@@ -85,7 +86,7 @@ def test_composite_natural_key(table):
     rows = [{"ambito": "M", "id": 1}, {"ambito": "N", "id": 1}]
     with engine.begin() as conn:
         stats = apply_full_reconciliation(conn, tbl, staging, rows, ("ambito", "id"))
-        assert stats["inserted"] == 2
+        assert stats.new == 2
         assert len(current_rows(conn, tbl)) == 2
 
 
@@ -101,9 +102,9 @@ def test_excluded_field_changing_does_not_version_the_row(table):
         policy = PayloadPolicy(hash_exclude=("beneficiario",))
         apply_full_reconciliation(conn, tbl, staging, first, ("id",), policy)
         stats = apply_full_reconciliation(conn, tbl, staging, second, ("id",), policy)
-        assert stats["inserted"] == 0
-        assert stats["updated"] == 0
-        assert stats["touched"] == 1
+        assert stats.new == 0
+        assert stats.changed == 0
+        assert stats.unchanged == 1
         rows = current_rows(conn, tbl)
         assert len(rows) == 1
         # the payload is stored whole; only the hash ignores the field
@@ -118,7 +119,7 @@ def test_a_real_change_still_versions_a_row_with_exclusions(table):
         policy = PayloadPolicy(hash_exclude=("beneficiario",))
         apply_full_reconciliation(conn, tbl, staging, first, ("id",), policy)
         stats = apply_full_reconciliation(conn, tbl, staging, second, ("id",), policy)
-        assert stats["updated"] == 1
+        assert stats.changed == 1
         assert current_rows(conn, tbl)[0]["payload"]["importe"] == 250
 
 
@@ -129,7 +130,7 @@ def test_incremental_never_closes_out_absent_keys(table):
         apply_full_reconciliation(conn, tbl, staging, [{"id": 1}, {"id": 2}], ("id",))
     with engine.begin() as conn:
         stats = apply_incremental(conn, tbl, staging, [{"id": 1}], ("id",))
-        assert stats == {"fetched": 1, "inserted": 0, "updated": 0, "touched": 1}
+        assert stats == SyncStats(fetched=1, unchanged=1)
         assert len(current_rows(conn, tbl)) == 2  # id=2 untouched, not closed
 
 
@@ -137,10 +138,10 @@ def test_incremental_inserts_and_versions(table):
     engine, tbl, staging = table
     with engine.begin() as conn:
         stats = apply_incremental(conn, tbl, staging, [{"id": 1, "v": "a"}], ("id",))
-        assert stats == {"fetched": 1, "inserted": 1, "updated": 0, "touched": 0}
+        assert stats == SyncStats(fetched=1, new=1)
     with engine.begin() as conn:
         stats = apply_incremental(conn, tbl, staging, [{"id": 1, "v": "b"}], ("id",))
-        assert stats == {"fetched": 1, "inserted": 0, "updated": 1, "touched": 0}
+        assert stats == SyncStats(fetched=1, changed=1)
         current = current_rows(conn, tbl)
         assert len(current) == 1
         assert current[0]["payload"]["v"] == "b"
@@ -151,7 +152,7 @@ def test_incremental_respects_chunk_size_across_batches(table):
     rows = [{"id": i} for i in range(10)]
     with engine.begin() as conn:
         stats = apply_incremental(conn, tbl, staging, rows, ("id",), chunk_size=3)
-        assert stats == {"fetched": 10, "inserted": 10, "updated": 0, "touched": 0}
+        assert stats == SyncStats(fetched=10, new=10)
         assert len(current_rows(conn, tbl)) == 10
 
 
@@ -191,7 +192,7 @@ def test_window_scoped_deletion_closes_a_row_whose_reg_date_is_in_window(table):
             window_start=start,
             window_end=end,
         )
-        assert stats["soft_deleted"] == 1
+        assert stats.removed == 1
         assert len(current_rows(conn, tbl)) == 0
 
 
@@ -225,7 +226,7 @@ def test_window_scoped_deletion_ignores_a_row_whose_reg_date_is_outside_window(t
             window_start=date(2024, 1, 1),
             window_end=date(2024, 1, 31),
         )
-        assert stats.get("soft_deleted", 0) == 0
+        assert stats.removed == 0
         assert len(current_rows(conn, tbl)) == 1
 
 
@@ -258,8 +259,8 @@ def test_window_scoped_deletion_still_touches_and_versions_normally(table):
             window_start=start,
             window_end=end,
         )
-        assert stats["updated"] == 1
-        assert stats.get("soft_deleted", 0) == 0
+        assert stats.changed == 1
+        assert stats.removed == 0
         current = current_rows(conn, tbl)
         assert len(current) == 1
         assert current[0]["payload"]["v"] == "b"
@@ -274,5 +275,5 @@ def test_apply_incremental_without_reg_date_field_is_unchanged(table):
         apply_incremental(conn, tbl, staging, [{"id": 1}, {"id": 2}], ("id",))
     with engine.begin() as conn:
         stats = apply_incremental(conn, tbl, staging, [{"id": 1}], ("id",))
-        assert "soft_deleted" not in stats
+        assert stats.removed == 0
         assert len(current_rows(conn, tbl)) == 2

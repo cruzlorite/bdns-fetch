@@ -1,7 +1,7 @@
-# bdns-sync with the BigQuery extra, plus the orchestration scripts.
+# bdns-sync with the BigQuery extra.
 # The default command runs the daily delta; override it freely:
 #
-#   docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync            # delta_load.sh
+#   docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync            # bdns-sync delta
 #   docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync \
 #     bdns-sync sync sectores                                                      # any CLI command
 #
@@ -27,9 +27,7 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 RUN pip install --no-cache-dir --no-deps .
 
-COPY scripts ./scripts
-
 RUN useradd --create-home app
 USER app
 
-CMD ["/app/scripts/delta_load.sh"]
+CMD ["bdns-sync", "delta"]

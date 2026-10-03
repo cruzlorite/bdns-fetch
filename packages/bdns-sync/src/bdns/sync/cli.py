@@ -2,38 +2,41 @@
 
 """The `bdns-sync` command line.
 
-bdns-sync is a pure parameterized tool: one endpoint per invocation, no
-config file, no cadence knowledge. Which endpoints to sync and when is an
-orchestration concern that lives outside this package (see scripts/).
+`sync` runs one entity. `delta` and `backfill` run a plan of many, built
+from the entity registry ([`orchestration`][bdns.sync.orchestration]):
+the daily incremental run and the historical load. Every command that
+writes takes `--dry-run`, which prints what it would do without touching
+the API or the target, through the same code path as a real run.
+
+Configuration is flags, each with an environment variable for unattended
+use; there is no configuration file.
 """
 
 import logging
-import sys
 from datetime import date
 
 import typer
 from sqlalchemy.engine import make_url
 
-import bdns.fetch.client as _bdns_fetch_client
-from bdns.fetch import BDNSClient
+from bdns.fetch import BDNSClient, RateLimiter
+from bdns.fetch.contract import check_api_contract
+from bdns.fetch.dates import MAX_RANGE_DAYS, split_range
 from bdns.sync import __version__
-from bdns.sync.api_contract import check_api_contract
-from bdns.sync.generic import CHUNK_DAYS, WINDOWS, iter_date_chunks, resolve_when
-from bdns.sync.sinks import DEFAULT_LIMITS, RejectLimits, get_sink
-from bdns.sync.syncers import FULL_SYNCERS, SEARCH_SYNCERS, policy_for
+from bdns.sync.entities import ENTITIES, Entity, get_entity, sync_entity
+from bdns.sync.orchestration import Step, StepResult, backfill_plan, delta_plan, run_plan
+from bdns.sync.sinks import DEFAULT_LIMITS, RejectLimits, SyncStats, get_sink
+from bdns.sync.windows import WINDOWS, resolve_when
 
 __all__ = ["app"]
 
 app = typer.Typer(
     name="bdns-sync",
-    help="Sync one BDNS API endpoint into a target database in SCD2 form.",
+    help="Keep a target database in SCD2 form from the BDNS API.",
     add_completion=False,
     # Typer dumps every frame's local variables into the traceback by
-    # default. This tool runs unattended from cron and its locals hold
-    # payload fragments (beneficiary names, identifiers) and the target
-    # URL, password included for a Postgres target. That would land in
-    # whatever log the job writes to, readable by anyone with access to
-    # it. The traceback itself is kept; only the locals are dropped.
+    # default. This tool runs unattended and its locals hold payload
+    # fragments (beneficiary names, identifiers) and the target URL,
+    # password included. The traceback itself is kept.
     pretty_exceptions_show_locals=False,
 )
 
@@ -57,42 +60,80 @@ def main(
 ) -> None:
     """BDNS Sync command line interface.
 
-    Configures logging here, not in `__main__.py`'s `if __name__ ==
-    "__main__":` guard. The installed `bdns-sync` console script
-    (`pyproject.toml`) imports and calls this Typer `app` directly, so that
-    guard never runs. Typer always runs this callback before any
-    subcommand regardless of entry point, so this is the one place
-    guaranteed to run every time.
+    Configures logging here rather than in `__main__.py`: the installed
+    console script calls the Typer app directly, so this callback is the
+    one place guaranteed to run.
     """
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         force=True,
     )
-    if not sys.stderr.isatty():
-        # bdns-fetch's pagination progress bar writes bare `\r` updates with
-        # no trailing newline, meant for an interactive terminal. Piped to a
-        # log file (cron, background runs) that leaves a stale progress
-        # fragment glued to the front of the next log line. No public knob
-        # on BDNSClient to disable it, so silence it here instead. Only
-        # applies when output isn't a real terminal; interactive use keeps it.
-        _bdns_fetch_client.tqdm = lambda iterable, *args, **kwargs: iterable
 
 
-TARGET_URL_OPTION = typer.Option(
+# --- options shared by several commands -------------------------------------
+
+TARGET_URL = typer.Option(
     ...,
     "--target-url",
     envvar="BDNS_SYNC_TARGET_URL",
-    help="SQLAlchemy target DB URL (e.g. bigquery://project/dataset).",
+    help="SQLAlchemy URL of the target database (e.g. bigquery://project/dataset).",
+)
+MAX_RETRIES = typer.Option(
+    5,
+    "--max-retries",
+    envvar="BDNS_SYNC_MAX_RETRIES",
+    min=0,
+    help="Retries per request for transient API failures.",
+)
+WAIT_TIME = typer.Option(
+    10.0,
+    "--wait-time",
+    envvar="BDNS_SYNC_WAIT_TIME",
+    min=0,
+    help="Initial seconds between retries; doubles on each, up to 60. "
+    "With the defaults a request rides out about 3-4 minutes of trouble.",
+)
+RATE_LIMIT = typer.Option(
+    9.5,
+    "--rate-limit",
+    envvar="BDNS_SYNC_RATE_LIMIT",
+    min=0.1,
+    max=10,
+    help="API requests per second. The limit is per IP: lower it if other processes share yours.",
+)
+MAX_REJECT_RATIO = typer.Option(
+    DEFAULT_LIMITS.max_ratio,
+    "--max-reject-ratio",
+    min=0.0,
+    max=1.0,
+    help="Share of a batch that may be unusable before the run refuses it (0.10 = 10%).",
+)
+MAX_REJECTS = typer.Option(
+    None,
+    "--max-rejects",
+    min=0,
+    help="Absolute cap on unusable records per batch, whatever the share. Unset by default.",
+)
+DRY_RUN = typer.Option(
+    False,
+    "--dry-run",
+    help="Print what would be done, then stop. Touches neither the API nor the target.",
 )
 
 
+def _client(max_retries: int, wait_time: float, rate_limit: float) -> BDNSClient:
+    """Build the API client a run uses."""
+    return BDNSClient(
+        max_retries=max_retries, wait_time=wait_time, rate_limiter=RateLimiter(rate=rate_limit)
+    )
+
+
 def _parse_iso_date(value: str | None, flag: str) -> date | None:
-    """Parse an ISO date option, reporting a bad one as a CLI error.
+    """Parse an ISO date option, reporting a bad one as a usage error.
 
     Raises:
-        typer.BadParameter: If `value` is not an ISO date, so the user
-            sees a usage error rather than a traceback.
+        typer.BadParameter: If `value` is not an ISO date.
     """
     if value is None:
         return None
@@ -104,197 +145,251 @@ def _parse_iso_date(value: str | None, flag: str) -> date | None:
         ) from None
 
 
-def _resolve_plan(
-    endpoint: str, window: str | None, since: date | None, until: date | None
-) -> tuple[date | None, date | None, str]:
-    """Validate the invocation and work out what it would do.
+def _entity_option(value: str) -> Entity:
+    """Resolve an entity name, accepting hyphens, as a usage error if unknown."""
+    try:
+        return get_entity(value)
+    except KeyError:
+        raise typer.BadParameter(
+            f"unknown entity {value!r}; `bdns-sync list` shows them all"
+        ) from None
 
-    Shared by the real run and `--dry-run`, so a preview cannot disagree
-    with the run it previews: the same rejections happen, in the same
-    order, before either path goes anywhere.
-    """
-    if endpoint in SEARCH_SYNCERS:
-        if since is not None:
-            if window is not None:
-                raise typer.BadParameter("use either --window or --since, not both")
-            if until is not None and until < since:
-                raise typer.BadParameter("--until must not be before --since")
-        elif window is not None:
-            if window not in WINDOWS:
-                raise typer.BadParameter(f"window must be one of {', '.join(WINDOWS)}")
+
+def _safe_url(target_url: str) -> str:
+    """The target URL with its password hidden, for terminals and logs."""
+    return make_url(target_url).render_as_string(hide_password=True)
+
+
+def _summary(stats: SyncStats) -> str:
+    """One-line rendering of a run's counters."""
+    return (
+        f"fetched={stats.fetched} new={stats.new} changed={stats.changed} "
+        f"unchanged={stats.unchanged} removed={stats.removed} skipped={stats.skipped}"
+    )
+
+
+def _report(results: list[StepResult]) -> None:
+    """Print one line per step and exit 1 if any failed."""
+    failed = [r for r in results if not r.ok]
+    for result in results:
+        if result.ok:
+            typer.echo(f"ok      {result.step.entity.name:<32} {_summary(result.stats)}")
         else:
-            raise typer.BadParameter(f"{endpoint} requires --window or --since")
-        return resolve_when(window, since, until)
-    if endpoint in FULL_SYNCERS:
-        return None, None, "full"
-    raise typer.BadParameter(f"unknown endpoint: {endpoint}")
+            typer.echo(f"FAILED  {result.step.entity.name:<32} {result.error}", err=True)
+    if failed:
+        typer.echo(f"{len(failed)} of {len(results)} sync(s) failed", err=True)
+        raise typer.Exit(code=1)
+    typer.echo(f"all {len(results)} sync(s) succeeded")
 
 
-def _echo_plan(
-    endpoint: str,
-    target_url: str,
-    start: date | None,
-    end: date | None,
-    run_type: str,
-    limits: RejectLimits,
-) -> None:
-    """Print the resolved invocation without touching anything.
-
-    The URL is rendered with its password hidden: this output goes to a
-    terminal and, from a script, to a log.
-    """
-    safe_url = make_url(target_url).render_as_string(hide_password=True)
-    typer.echo(f"target      {safe_url}  ->  table {endpoint}")
-    if start is None:
-        typer.echo(f"run type    {run_type}  (complete replace, no date range)")
-    else:
-        chunks = sum(1 for _ in iter_date_chunks(start, end))
-        days = (end - start).days + 1
-        typer.echo(f"run type    {run_type}")
-        typer.echo(
-            f"range       {start} .. {end}  "
-            f"({days} day(s), {chunks} chunk(s) of at most {CHUNK_DAYS})"
-        )
-    typer.echo(f"policy      {policy_for(endpoint).describe()}")
+def _echo_steps(target_url: str, steps: list[Step], limits: RejectLimits) -> None:
+    """Print a plan without running it."""
+    typer.echo(f"target      {_safe_url(target_url)}")
     typer.echo(f"limits      {limits.describe()}")
-    typer.echo("dry run     nothing fetched, nothing written")
+    for step in steps:
+        typer.echo(f"  {step.describe()}")
+    typer.echo(f"dry run     {len(steps)} sync(s) planned; nothing fetched, nothing written")
 
 
-def _canonical_endpoint(value: str) -> str:
-    """Accept `concesiones-busqueda` for `concesiones_busqueda`.
-
-    bdns-fetch names its commands with hyphens; tables and this tool use
-    underscores. Taking either keeps a name copied from one tool valid in
-    the other.
-    """
-    return value.replace("-", "_")
+# --- commands ------------------------------------------------------------------
 
 
 @app.command()
 def sync(
-    endpoint: str = typer.Argument(
+    entity_name: str = typer.Argument(
         ...,
-        callback=_canonical_endpoint,
-        help="Endpoint/entity name to sync. Hyphens and underscores are interchangeable.",
+        metavar="ENTITY",
+        help="Entity to sync, as `bdns-sync list` names it. Hyphens and underscores are interchangeable.",
     ),
-    target_url: str = TARGET_URL_OPTION,
-    window: str = typer.Option(
-        None,
-        "--window",
-        help=f"Cascade window for incremental endpoints: one of {', '.join(WINDOWS)}.",
+    target_url: str = TARGET_URL,
+    window: str | None = typer.Option(
+        None, "--window", help=f"Window for a windowed entity: {', '.join(WINDOWS)}."
     ),
-    since: str = typer.Option(
-        None,
-        "--since",
-        help="Backfill start date (YYYY-MM-DD) for incremental endpoints. "
-        "Overrides --window; syncs [since, until]. See scripts/full_load.sh.",
+    since: str | None = typer.Option(
+        None, "--since", help="First day (YYYY-MM-DD) of an explicit range. Overrides --window."
     ),
-    until: str = typer.Option(
-        None,
-        "--until",
-        help="Backfill end date (YYYY-MM-DD). Defaults to yesterday. Only with --since.",
+    until: str | None = typer.Option(
+        None, "--until", help="Last day (YYYY-MM-DD) of that range. Defaults to yesterday."
     ),
-    max_reject_ratio: float = typer.Option(
-        DEFAULT_LIMITS.max_ratio,
-        "--max-reject-ratio",
-        min=0.0,
-        max=1.0,
-        help="Share of the batch that may be unusable before the run refuses it "
-        "(0.10 = 10%). Raise it for a source having a bad day; lower it to be told sooner.",
-    ),
-    max_rejects: int = typer.Option(
-        None,
-        "--max-rejects",
-        min=0,
-        help="Absolute cap on unusable records, whatever the share. Catches a shape "
-        "change in a batch large enough to hide it under the ratio. Unset by default.",
-    ),
-    dry_run: bool = typer.Option(
-        False,
-        "--dry-run",
-        help="Resolve and print what this invocation would do, then stop. "
-        "Touches neither the API nor the target.",
-    ),
+    max_retries: int = MAX_RETRIES,
+    wait_time: float = WAIT_TIME,
+    rate_limit: float = RATE_LIMIT,
+    max_reject_ratio: float = MAX_REJECT_RATIO,
+    max_rejects: int | None = MAX_REJECTS,
+    dry_run: bool = DRY_RUN,
 ) -> None:
-    """Sync one endpoint.
+    """Sync one entity.
 
-    Incremental endpoints (the big search endpoints plus convocatorias) need
-    a reg-date range: either a cascade `--window` (daily/weekly/monthly/annual)
-    or an explicit `--since [--until]` backfill range. Full-replace endpoints
-    ignore all of these.
+    A windowed entity needs a range: a named --window, or --since [--until]
+    for a historical load. A full entity takes neither.
     """
+    entity = _entity_option(entity_name)
     since_date = _parse_iso_date(since, "--since")
     until_date = _parse_iso_date(until, "--until")
-    start, end, run_type = _resolve_plan(endpoint, window, since_date, until_date)
+    if entity.kind == "windowed":
+        if since_date is not None:
+            if window is not None:
+                raise typer.BadParameter("use either --window or --since, not both")
+            if until_date is not None and until_date < since_date:
+                raise typer.BadParameter("--until must not be before --since")
+        elif window is None:
+            raise typer.BadParameter(f"{entity.name} needs --window or --since")
+        elif window not in WINDOWS:
+            raise typer.BadParameter(f"window must be one of {', '.join(WINDOWS)}")
+    elif window or since_date or until_date:
+        raise typer.BadParameter(f"{entity.name} is synced whole; it takes no range")
     limits = RejectLimits(max_ratio=max_reject_ratio, max_count=max_rejects)
 
     if dry_run:
-        _echo_plan(endpoint, target_url, start, end, run_type, limits)
+        typer.echo(f"target      {_safe_url(target_url)}  ->  table {entity.name}")
+        if entity.kind == "full":
+            typer.echo("run type    full  (complete state, no date range)")
+        else:
+            start, end, run_type = resolve_when(window, since_date, until_date)
+            chunks = sum(1 for _ in split_range(start, end))
+            typer.echo(f"run type    {run_type}")
+            typer.echo(
+                f"range       {start} .. {end}  ({(end - start).days + 1} day(s), "
+                f"{chunks} chunk(s) of at most {MAX_RANGE_DAYS})"
+            )
+        typer.echo(f"policy      {entity.policy.describe()}")
+        typer.echo(f"limits      {limits.describe()}")
+        typer.echo("dry run     nothing fetched, nothing written")
         return
 
-    sink = get_sink(target_url, limits)
-    # Defaults (3 retries, 2s fixed wait) give up after ~1 minute of server
-    # trouble; a real multi-hour backfill died live to one request timing
-    # out 3 times in a row. 8 x 15s rides out a ~2-minute server rough patch;
-    # the only cost is extra delay before a genuinely permanent failure.
-    client = BDNSClient(max_retries=8, wait_time=15)
+    stats = sync_entity(
+        entity,
+        get_sink(target_url, limits),
+        _client(max_retries, wait_time, rate_limit),
+        window,
+        since=since_date,
+        until=until_date,
+    )
+    typer.echo(f"ok      {entity.name:<32} {_summary(stats)}")
 
-    # Outcome (row counts, duration) is logged by bookkeeping.run_with_bookkeeping;
-    # no separate echo here to avoid printing the same summary twice.
-    if endpoint in SEARCH_SYNCERS:
-        sync_fn = SEARCH_SYNCERS[endpoint]
-        if since_date is not None:
-            sync_fn(sink, client, since=since_date, until=until_date)
-        else:
-            sync_fn(sink, client, window)
-    else:
-        FULL_SYNCERS[endpoint](sink, client)
+
+@app.command()
+def delta(
+    target_url: str = TARGET_URL,
+    window: str | None = typer.Option(
+        None,
+        "--window",
+        help=f"Window for the windowed entities ({', '.join(WINDOWS)}). "
+        "Defaults to the cadence: annual on 1 Jan, 1 May and 1 Sep, monthly on Mondays, weekly otherwise.",
+    ),
+    skip_api_check: bool = typer.Option(
+        False, "--skip-api-check", help="Do not check the API's date semantics first."
+    ),
+    max_retries: int = MAX_RETRIES,
+    wait_time: float = WAIT_TIME,
+    rate_limit: float = RATE_LIMIT,
+    max_reject_ratio: float = MAX_REJECT_RATIO,
+    max_rejects: int | None = MAX_REJECTS,
+    dry_run: bool = DRY_RUN,
+) -> None:
+    """Run the daily sync: every full entity, then every windowed one.
+
+    Meant to run once a day from a scheduler. It first checks that the
+    API's date semantics still hold, and syncs nothing if they changed.
+    One entity failing does not stop the others; the exit code is 1 if any
+    failed.
+    """
+    if window is not None and window not in WINDOWS:
+        raise typer.BadParameter(f"window must be one of {', '.join(WINDOWS)}")
+    limits = RejectLimits(max_ratio=max_reject_ratio, max_count=max_rejects)
+    steps = delta_plan(date.today(), window)
+    if dry_run:
+        _echo_steps(target_url, steps, limits)
+        return
+
+    client = _client(max_retries, wait_time, rate_limit)
+    if not skip_api_check:
+        report = check_api_contract(client)
+        for message in report.messages:
+            typer.echo(message)
+        if report.status == "changed":
+            typer.echo(
+                "The API no longer behaves as documented; syncing through a changed date "
+                "boundary loses or duplicates records silently, so nothing was synced.",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+    _report(run_plan(steps, get_sink(target_url, limits), client))
+
+
+@app.command()
+def backfill(
+    target_url: str = TARGET_URL,
+    entity_names: list[str] = typer.Option(
+        [],
+        "--entity",
+        help="Load only this entity. Repeatable. Defaults to all.",
+    ),
+    max_retries: int = MAX_RETRIES,
+    wait_time: float = WAIT_TIME,
+    rate_limit: float = RATE_LIMIT,
+    max_reject_ratio: float = MAX_REJECT_RATIO,
+    max_rejects: int | None = MAX_REJECTS,
+    dry_run: bool = DRY_RUN,
+) -> None:
+    """Load the history: full entities, then each windowed one year by year.
+
+    Each windowed entity is loaded from the start of its history in
+    one-year slices up to yesterday, each slice a run of its own. Safe to
+    repeat: a slice already loaded is reconciled again, not duplicated.
+    """
+    for name in entity_names:
+        _entity_option(name)
+    limits = RejectLimits(max_ratio=max_reject_ratio, max_count=max_rejects)
+    steps = backfill_plan(date.today(), entity_names or None)
+    if dry_run:
+        _echo_steps(target_url, steps, limits)
+        return
+    _report(
+        run_plan(steps, get_sink(target_url, limits), _client(max_retries, wait_time, rate_limit))
+    )
 
 
 @app.command(name="list")
-def list_endpoints(
-    kind: str = typer.Option("full", "--kind", help="one of: full, search"),
+def list_entities(
+    kind: str | None = typer.Option(
+        None, "--kind", help="Only this kind: full or windowed (`search` is accepted for windowed)."
+    ),
 ) -> None:
-    """List known endpoint names, one per line, for scripting (no hardcoded lists)."""
-    if kind == "full":
-        for name in FULL_SYNCERS:
-            typer.echo(name)
-    elif kind == "search":
-        for name in SEARCH_SYNCERS:
-            typer.echo(name)
-    else:
-        raise typer.BadParameter("kind must be one of: full, search")
+    """List the entities, one per line, for scripting."""
+    if kind == "search":
+        kind = "windowed"
+    if kind not in (None, "full", "windowed"):
+        raise typer.BadParameter("kind must be one of: full, windowed")
+    for entity in ENTITIES.values():
+        if kind is None or entity.kind == kind:
+            typer.echo(entity.name)
 
 
 @app.command(name="check-api")
 def check_api(
-    day: str = typer.Option(
+    day: str | None = typer.Option(
         None, "--day", help="Probe this day (YYYY-MM-DD) instead of one 30 days back."
     ),
+    max_retries: int = MAX_RETRIES,
+    wait_time: float = WAIT_TIME,
+    rate_limit: float = RATE_LIMIT,
 ) -> None:
-    """Check that the live API still behaves the way this engine assumes.
+    """Check that the live API still has the date semantics syncs rely on.
 
-    The date-window semantics this tool relies on were measured once and
-    frozen into tests, but the tests pin the assumption, not the API: the
-    fake client models the same semantics, so a change upstream would leave
-    CI green while production silently lost a day per chunk boundary. This
-    is the one command that asks the real service.
-
-    Exits non-zero ONLY when the API returned valid data contradicting an
-    invariant, which is the case worth stopping a sync for. Transient
-    trouble (an error page, a maintenance window, an empty probe day) is
-    reported and exits zero: blocking a whole day's cadence over a blip
-    would cost far more than it saves, and a genuinely unreachable API
-    makes the syncs themselves fail anyway.
+    The check itself is bdns-fetch's (`bdns-fetch check-api`); `delta` runs
+    it before syncing. Exits 1 only when the API returned valid data that
+    contradicts them; transient trouble or an empty probe day exits 0.
     """
-    client = BDNSClient(max_retries=8, wait_time=15)
-    status, messages = check_api_contract(client, day=_parse_iso_date(day, "--day"))
-    for message in messages:
+    report = check_api_contract(
+        _client(max_retries, wait_time, rate_limit), day=_parse_iso_date(day, "--day")
+    )
+    for message in report.messages:
         typer.echo(message)
-    if status == "changed":
+    if report.status == "changed":
         typer.echo(
-            "The API no longer behaves as this engine assumes. Syncing through a changed "
-            "date boundary loses or duplicates records silently, so nothing was synced.",
+            "The API no longer behaves as documented. Syncing through a changed date "
+            "boundary loses or duplicates records silently.",
             err=True,
         )
         raise typer.Exit(code=1)

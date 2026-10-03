@@ -10,11 +10,10 @@ codebase can produce, so the properties that prevent it are pinned here.
 """
 
 import threading
-import time
 
 import pytest
 
-from bdns.sync.pipeline import chunked, prefetch, rate_limited_map
+from bdns.sync.pipeline import bounded_map, chunked, prefetch
 
 # --- chunked ---------------------------------------------------------------
 
@@ -110,45 +109,32 @@ def test_prefetch_applies_backpressure_and_stops_when_the_consumer_leaves():
     assert produced <= 10
 
 
-# --- rate_limited_map ------------------------------------------------------
+# --- bounded_map ------------------------------------------------------
 
 
-def test_rate_limited_map_returns_every_key_exactly_once():
+def test_bounded_map_returns_every_key_exactly_once():
     keys = list(range(50))
-    pairs = list(rate_limited_map(keys, lambda k: k * 2, 0.0, 4))
+    pairs = list(bounded_map(keys, lambda k: k * 2, 4))
     assert sorted(pairs) == [(k, k * 2) for k in keys]
 
 
-def test_rate_limited_map_spaces_call_starts():
-    """Request starts are spaced because the BDNS server rejects bursts
-    even when the average rate is legal. Asserted as a floor on total
-    elapsed time: without spacing this finishes in about zero.
-    """
-    keys = list(range(10))
-    spacing = 0.02
-    started = time.monotonic()
-    list(rate_limited_map(keys, lambda k: k, spacing, max_workers=8))
-    elapsed = time.monotonic() - started
-    assert elapsed >= (len(keys) - 1) * spacing
-
-
-def test_rate_limited_map_propagates_an_exception_from_the_worker():
+def test_bounded_map_propagates_an_exception_from_the_worker():
     def boom(key):
         if key == 3:
             raise RuntimeError("detail fetch failed")
         return key
 
     with pytest.raises(RuntimeError, match="detail fetch failed"):
-        list(rate_limited_map(range(20), boom, 0.0, 4))
+        list(bounded_map(range(20), boom, 4))
 
 
-def test_rate_limited_map_does_not_submit_the_whole_key_set_upfront():
+def test_bounded_map_does_not_submit_the_whole_key_set_upfront():
     """convocatorias hands this hundreds of thousands of codes. Submitting
     them all would pile every result up in memory before the consumer sees
     the first one.
     """
     calls = []
-    gen = rate_limited_map(range(500), lambda k: calls.append(k) or k, 0.0, 4)
+    gen = bounded_map(range(500), lambda k: calls.append(k) or k, 4)
     try:
         next(gen)
         assert len(calls) < 100

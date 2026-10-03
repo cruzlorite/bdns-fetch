@@ -56,6 +56,13 @@ def build_sync_table(name: str, metadata: MetaData) -> Table:
     window-scoped deletion detection; everything else leaves it NULL
     forever.
 
+    Every version names the run that wrote it (`_created_run_id`) and,
+    once closed, the run that closed it and why (`_closed_run_id`,
+    `_closed_reason`: `superseded` by a changed payload, or `removed`
+    because the source stopped serving the key). That makes "what did run
+    X change" and "which grants were withdrawn" plain queries. The three
+    are nullable: versions written before they existed have no value.
+
     Args:
         name: Table name, which is also the endpoint name.
         metadata: MetaData the table is attached to.
@@ -77,6 +84,9 @@ def build_sync_table(name: str, metadata: MetaData) -> Table:
         Column("_synced_at", DateTime(timezone=True), nullable=False),
         Column("_reg_date", Date, nullable=True),
         Column("payload", PortableJSON, nullable=False),
+        Column("_created_run_id", BigInteger, nullable=True),
+        Column("_closed_run_id", BigInteger, nullable=True),
+        Column("_closed_reason", String, nullable=True),
         extend_existing=True,
         # No-op outside BigQuery (dialect-namespaced kwarg, silently ignored
         # elsewhere). Every SCD2 diff query equality-joins on `_natural_key`
@@ -121,7 +131,8 @@ def build_control_tables(metadata: MetaData) -> tuple[Table, Table, Table]:
     run's state is its latest event, so a `started` with no terminal
     event means the process died mid-run. A mutable status column could
     never record that, since a dead process cannot update its own row.
-    Row counters travel on the terminal event.
+    Row counters travel on the terminal event, and so does the
+    registration-date range of a windowed run.
 
     `_sync_errors` is separate from the synced tables on purpose: a
     malformed record has no natural key and no real payload, so it cannot
@@ -161,6 +172,14 @@ def build_control_tables(metadata: MetaData) -> tuple[Table, Table, Table]:
         Column("rows_soft_deleted", Integer, nullable=True),
         Column("rows_skipped", Integer, nullable=True),
         Column("error", String, nullable=True),
+        # Added after the first releases, hence last and nullable: what
+        # the run changed and left unchanged (rows_inserted counts new and
+        # changed versions together), and the registration-date range a
+        # windowed run covered, so coverage can be audited from the log.
+        Column("rows_changed", Integer, nullable=True),
+        Column("rows_unchanged", Integer, nullable=True),
+        Column("window_start", Date, nullable=True),
+        Column("window_end", Date, nullable=True),
         extend_existing=True,
     )
     sync_errors = Table(

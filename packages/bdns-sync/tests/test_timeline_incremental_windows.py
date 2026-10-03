@@ -28,13 +28,15 @@ monthly.
 
 from copy import deepcopy
 from datetime import date, timedelta
+from functools import partial
 
 import pytest
 from sqlalchemy import create_engine
 
-from bdns.sync.generic import CHUNK_DAYS, WINDOWS
+from bdns.fetch.dates import MAX_RANGE_DAYS as CHUNK_DAYS
+from bdns.sync.entities import sync_entity, windowed_entities
 from bdns.sync.sinks.sql import SQLSink
-from bdns.sync.syncers import SEARCH_SYNCERS
+from bdns.sync.windows import WINDOWS
 from tests.fake_client import FakeBDNSClient
 from tests.timeline_helpers import current_rows
 
@@ -71,22 +73,22 @@ def test_cascade_progressively_reveals_older_registrations(endpoint, key_fields)
     sync_fn = SEARCH_SYNCERS[endpoint]
 
     stats = sync_fn(SQLSink(engine), client, "daily")
-    assert stats["inserted"] == 1  # only reg_days_ago=0
+    assert stats.new == 1  # only reg_days_ago=0
     assert len(current_rows(engine, endpoint)) == 1
 
     stats = sync_fn(SQLSink(engine), client, "weekly")
-    assert stats["inserted"] == 1  # reg_days_ago=5 newly in range
-    assert stats["touched"] == 1  # reg_days_ago=0 re-seen, unchanged
+    assert stats.new == 1  # reg_days_ago=5 newly in range
+    assert stats.unchanged == 1  # reg_days_ago=0 re-seen, unchanged
     assert len(current_rows(engine, endpoint)) == 2
 
     stats = sync_fn(SQLSink(engine), client, "monthly")
-    assert stats["inserted"] == 1  # reg_days_ago=20
-    assert stats["touched"] == 2
+    assert stats.new == 1  # reg_days_ago=20
+    assert stats.unchanged == 2
     assert len(current_rows(engine, endpoint)) == 3
 
     stats = sync_fn(SQLSink(engine), client, "annual")
-    assert stats["inserted"] == 1  # reg_days_ago=100
-    assert stats["touched"] == 3
+    assert stats.new == 1  # reg_days_ago=100
+    assert stats.unchanged == 3
     assert len(current_rows(engine, endpoint)) == 4
 
 
@@ -116,17 +118,20 @@ def test_daily_and_weekly_miss_a_correction_only_monthly_catches(endpoint, key_f
     target["payload"][payload_field] = "__CORRECTED__"
 
     stats = sync_fn(SQLSink(engine), client, "daily")
-    assert stats.get("updated", 0) == 0  # correction is 20 days back, daily can't see it
+    assert stats.changed == 0  # correction is 20 days back, daily can't see it
 
     stats = sync_fn(SQLSink(engine), client, "weekly")
-    assert stats.get("updated", 0) == 0  # still can't see it, 20 > 7
+    assert stats.changed == 0  # still can't see it, 20 > 7
 
     stats = sync_fn(SQLSink(engine), client, "monthly")
-    assert stats["updated"] == 1  # 20 <= 30, caught
+    assert stats.changed == 1  # 20 <= 30, caught
 
     current = current_rows(engine, endpoint)
     updated_row = next(r for r in current if r["payload"].get(payload_field) == "__CORRECTED__")
     assert updated_row is not None
+
+
+SEARCH_SYNCERS = {e.name: partial(sync_entity, e.name) for e in windowed_entities()}
 
 
 def test_partidospoliticos_never_reports_or_applies_deletions():
@@ -145,7 +150,7 @@ def test_partidospoliticos_never_reports_or_applies_deletions():
     records.remove(next(r for r in records if r["reg_days_ago"] == 0))
 
     stats = sync_fn(SQLSink(engine), client, "daily")
-    assert "soft_deleted" not in stats
+    assert stats.removed == 0
     assert len(current_rows(engine, "partidospoliticos_busqueda")) == before
 
 
@@ -166,7 +171,7 @@ def test_scoped_entities_detect_a_real_deletion_within_the_current_window(endpoi
     records.remove(next(r for r in records if r["reg_days_ago"] == 0))
 
     stats = sync_fn(SQLSink(engine), client, "daily")
-    assert stats["soft_deleted"] == 1
+    assert stats.removed == 1
     assert len(current_rows(engine, endpoint)) == before - 1
 
 
@@ -188,7 +193,7 @@ def test_scoped_entities_ignore_records_outside_the_current_window(endpoint, key
     records.remove(next(r for r in records if r["reg_days_ago"] == 20))
 
     stats = sync_fn(SQLSink(engine), client, "daily")  # only covers reg_days_ago=0
-    assert stats.get("soft_deleted", 0) == 0
+    assert stats.removed == 0
     assert len(current_rows(engine, endpoint)) == before
 
 
@@ -210,7 +215,7 @@ def test_new_registration_is_caught_by_the_next_daily_run(endpoint, key_fields):
     records.append(new_record)
 
     stats = sync_fn(SQLSink(engine), client, "daily")
-    assert stats["inserted"] == 1
+    assert stats.new == 1
 
 
 @pytest.mark.parametrize("endpoint,key_fields", INCREMENTAL_CASES, ids=CASE_IDS)
@@ -221,11 +226,11 @@ def test_window_date_bounds_match_the_declared_cadence(endpoint, key_fields, win
     days back. This is the "does the CLI option actually change API request
     behavior" check.
 
-    The fetch is chunked into `CHUNK_DAYS`-wide pieces (see generic.py), so
+    The fetch is chunked into `CHUNK_DAYS`-wide pieces (see bdns.fetch.dates.split_range), so
     for `monthly`/`annual` this is several calls, not one. For the four
     `fechaRegFin` endpoints, each call's `end` in the log is the API's
     *exclusive* upper bound (inclusive chunk end + 1, see
-    `to_api_upper_bound`), so a chunk covering days [s, e] is recorded as
+    `registration_range`), so a chunk covering days [s, e] is recorded as
     (s, e + 1). `convocatorias_busqueda` is the opposite family
     (`fechaHasta`, inclusive, see `sync_search_range_inclusive`): its `end`
     is recorded as the inclusive chunk end itself, with no +1. What matters
@@ -279,7 +284,7 @@ def test_no_day_is_dropped_at_chunk_boundaries(endpoint, key_fields):
         records.append({"reg_days_ago": days_ago, "payload": payload})
 
     stats = sync_fn(SQLSink(engine), client, "monthly")
-    assert stats["inserted"] == 30  # not one day lost at any chunk boundary
+    assert stats.new == 30  # not one day lost at any chunk boundary
     assert len(current_rows(engine, endpoint)) == 30
 
 
@@ -309,7 +314,7 @@ def test_backfill_since_until_range_fetches_the_whole_span(endpoint, key_fields)
     since = reg_date(40)  # 40 days back, covers all four records
     stats = sync_fn(SQLSink(engine), client, since=since, until=until)
 
-    assert stats["inserted"] == 4
+    assert stats.new == 4
     assert len(current_rows(engine, endpoint)) == 4
     assert last_sync_run(engine, endpoint)["run_type"] == "backfill"
 

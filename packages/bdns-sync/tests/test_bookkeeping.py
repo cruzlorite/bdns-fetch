@@ -37,7 +37,7 @@ def test_failed_run_records_a_failed_event_and_reraises(engine, metadata, table_
     so that the data rollback cannot erase the record of the failure.
     """
 
-    def boom(conn, table, staging):
+    def boom(conn, table, staging, run_id):
         raise RuntimeError("upstream exploded")
 
     with pytest.raises(RuntimeError, match="upstream exploded"):
@@ -53,7 +53,7 @@ def test_failed_run_leaves_no_success_event_and_no_rows(engine, metadata, table_
     re-run. The synced table must hold nothing from the failed attempt.
     """
 
-    def boom(conn, table, staging):
+    def boom(conn, table, staging, run_id):
         raise RuntimeError("nope")
 
     with pytest.raises(RuntimeError):
@@ -69,7 +69,7 @@ def test_failed_run_leaves_no_success_event_and_no_rows(engine, metadata, table_
 def test_successful_run_records_counters_on_the_terminal_event(engine, metadata, table_name):
     sink = SQLSink(engine)
     stats = sink.sync_full(table_name, [{"id": 1}, {"id": 2}], ("id",))
-    assert stats["inserted"] == 2
+    assert stats.new == 2
 
     _, sync_runs, _ = build_control_tables(metadata)
     with engine.begin() as conn:
@@ -120,6 +120,6 @@ def test_leftover_staging_rows_do_not_leak_into_the_next_run(engine, metadata, t
     assert staging_count(engine, staging) == 1
 
     stats = sink.sync_full(table_name, [{"id": 1}], ("id",))
-    assert stats["fetched"] == 1  # only the real batch, not the leftover
-    assert stats["inserted"] == 0
+    assert stats.fetched == 1  # only the real batch, not the leftover
+    assert stats.new == 0
     assert staging_count(engine, staging) == 0

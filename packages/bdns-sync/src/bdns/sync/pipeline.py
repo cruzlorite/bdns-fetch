@@ -10,11 +10,10 @@ import concurrent.futures
 import itertools
 import queue
 import threading
-import time
 from collections.abc import Callable, Iterable, Iterator
 from typing import Any
 
-__all__ = ["chunked", "prefetch", "rate_limited_map"]
+__all__ = ["bounded_map", "chunked", "prefetch"]
 
 
 def chunked(items: Iterable[Any], chunk_size: int) -> Iterator[list[Any]]:
@@ -90,28 +89,22 @@ def prefetch(iterable: Iterable[Any]) -> Iterator[Any]:
         helper.join()
 
 
-def rate_limited_map(
+def bounded_map(
     keys: Iterable[Any],
     fn: Callable[[Any], Any],
-    spacing_seconds: float,
     max_workers: int,
 ) -> Iterator[tuple[Any, Any]]:
     """Run `fn(key)` on a thread pool, yielding `(key, result)` as calls finish.
 
-    Rate-limited servers reject bursts, not averages: a fresh pool firing
-    all its workers at once gets 429s even when the average rate is fine.
-    Spacing the call starts fixes that, and leaves `max_workers` only
-    needing to be large enough to cover call latency. Measured figures
-    are in [the performance notes](../../explanation/bdns-api-behavior.md#performance).
+    At most `2 * max_workers` calls are submitted ahead of the consumer,
+    so a large key set never piles results up in memory. Pacing requests
+    is not this function's job: the BDNS client already spaces every
+    request it sends, across threads.
 
     Args:
         keys: Work items. Pulled lazily.
         fn: Called once per key, on a worker thread.
-        spacing_seconds: Minimum gap between call starts, across all
-            workers.
-        max_workers: Pool size. At most `2 * max_workers` calls are
-            submitted ahead of the consumer, so a large key set never
-            piles up results in memory.
+        max_workers: Pool size.
 
     Yields:
         `(key, result)` pairs in completion order, not key order.
@@ -119,29 +112,17 @@ def rate_limited_map(
     Raises:
         Exception: Whatever `fn` raised, which stops the iteration.
     """
-    lock = threading.Lock()
-    next_start = 0.0
-
-    def run_one(key):
-        nonlocal next_start
-        with lock:
-            now = time.monotonic()
-            wait = max(0.0, next_start - now)
-            next_start = now + wait + spacing_seconds
-        if wait:
-            time.sleep(wait)
-        return key, fn(key)
-
     keys_iter = iter(keys)
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         pending = {
-            executor.submit(run_one, key) for key in itertools.islice(keys_iter, max_workers * 2)
+            executor.submit(lambda key=key: (key, fn(key)))
+            for key in itertools.islice(keys_iter, max_workers * 2)
         }
         while pending:
             finished, pending = concurrent.futures.wait(
                 pending, return_when=concurrent.futures.FIRST_COMPLETED
             )
             for key in itertools.islice(keys_iter, len(finished)):
-                pending.add(executor.submit(run_one, key))
+                pending.add(executor.submit(lambda key=key: (key, fn(key))))
             for future in finished:
                 yield future.result()

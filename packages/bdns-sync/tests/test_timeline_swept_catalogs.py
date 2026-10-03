@@ -8,21 +8,29 @@ as "missing".
 """
 
 from copy import deepcopy
+from functools import partial
 
 import pytest
 from sqlalchemy import create_engine
 
+from bdns.sync.entities import sync_entity
 from bdns.sync.sinks.sql import SQLSink
-from bdns.sync.syncers import sync_organos, sync_organos_agrupacion, sync_reglamentos
 from tests.fake_client import FakeBDNSClient
 from tests.timeline_helpers import all_rows, current_rows
 
 # (sync_fn, client dict attribute, table name, sweep value populated by the
 # fixture, a second sweep value that starts empty, a field safe to mutate)
 SWEPT_CASES = [
-    (sync_organos, "organos", "organos", "C", "A", "descripcion"),
-    (sync_organos_agrupacion, "organos_agrupacion", "organos_agrupacion", "C", "A", "descripcion"),
-    (sync_reglamentos, "reglamentos", "reglamentos", "C", "A", "descripcion"),
+    (partial(sync_entity, "organos"), "organos", "organos", "C", "A", "descripcion"),
+    (
+        partial(sync_entity, "organos_agrupacion"),
+        "organos_agrupacion",
+        "organos_agrupacion",
+        "C",
+        "A",
+        "descripcion",
+    ),
+    (partial(sync_entity, "reglamentos"), "reglamentos", "reglamentos", "C", "A", "descripcion"),
 ]
 
 CASE_IDS = [case[2] for case in SWEPT_CASES]
@@ -42,19 +50,19 @@ def test_swept_catalog_day_by_day_timeline(
     # Day 1: first run. Every sweep value is fetched (asserted below), but
     # only the populated one contributes rows.
     stats = sync_fn(SQLSink(engine), client)
-    assert stats["inserted"] == len(baseline)
+    assert stats.new == len(baseline)
     assert len(current_rows(engine, table)) == len(baseline)
 
     # Day 2: no change, touch only
     stats = sync_fn(SQLSink(engine), client)
-    assert stats["inserted"] == 0
-    assert stats["updated"] == 0
-    assert stats["touched"] == len(baseline)
+    assert stats.new == 0
+    assert stats.changed == 0
+    assert stats.unchanged == len(baseline)
 
     # Day 3: rewrite, one field changes on one row in the populated value
     getattr(client, attr)[populated_value][0][mutate_field] = "__MUTATED__"
     stats = sync_fn(SQLSink(engine), client)
-    assert stats["updated"] == 1
+    assert stats.changed == 1
     closed = [r for r in all_rows(engine, table) if not r["_is_current"]]
     assert len(closed) == 1
 
@@ -62,7 +70,7 @@ def test_swept_catalog_day_by_day_timeline(
     # full-reconciliation deletion like any other full-catalog entity.
     getattr(client, attr)[populated_value].pop()
     stats = sync_fn(SQLSink(engine), client)
-    assert stats["soft_deleted"] == 1
+    assert stats.removed == 1
     assert len(current_rows(engine, table)) == len(baseline) - 1
 
     # Day 5: a previously-empty sweep value gets its first row, which is
@@ -72,8 +80,8 @@ def test_swept_catalog_day_by_day_timeline(
     new_row["id"] = new_row["id"] + 999000
     getattr(client, attr)[empty_value].append(new_row)
     stats = sync_fn(SQLSink(engine), client)
-    assert stats["inserted"] == 1
-    assert stats["soft_deleted"] == 0  # the populated value's rows must be untouched
+    assert stats.new == 1
+    assert stats.removed == 0  # the populated value's rows must be untouched
     assert len(current_rows(engine, table)) == before + 1
 
 

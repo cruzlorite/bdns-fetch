@@ -1,25 +1,29 @@
-"""Cheap smoke test across every registered sync function: catches typos in
-endpoint names, broken imports, or a sync function not actually being
-callable, without needing one dedicated test per one-liner wrapper.
-"""
+"""Smoke test across the entity registry: names, kinds and wiring."""
 
-from bdns.sync.syncers import FULL_SYNCERS, SEARCH_SYNCERS
+import pytest
 
-
-def test_full_syncers_cover_every_expected_table():
-    assert len(FULL_SYNCERS) == 16
-    for name, fn in FULL_SYNCERS.items():
-        assert isinstance(name, str) and name
-        assert callable(fn)
+from bdns.sync.entities import ENTITIES, full_entities, get_entity, windowed_entities
 
 
-def test_search_syncers_cover_every_expected_table():
-    assert len(SEARCH_SYNCERS) == 6
-    assert "convocatorias" in SEARCH_SYNCERS
-    for name, fn in SEARCH_SYNCERS.items():
-        assert isinstance(name, str) and name
-        assert callable(fn)
+def test_registry_holds_every_synced_entity():
+    assert len(full_entities()) == 16
+    assert len(windowed_entities()) == 6
+    assert len(ENTITIES) == 22
 
 
-def test_no_endpoint_name_collisions_across_full_and_search():
-    assert set(FULL_SYNCERS) & set(SEARCH_SYNCERS) == set()
+def test_every_entity_is_consistent():
+    for name, entity in ENTITIES.items():
+        assert entity.name == name
+        assert entity.kind in ("full", "windowed")
+        assert entity.key_fields and callable(entity.rows)
+        entity.policy.check_identity(entity.key_fields, entity.reg_date_field)
+        if entity.kind == "windowed":
+            assert entity.history_start is not None
+        else:
+            assert entity.reg_date_field is None and entity.history_start is None
+
+
+def test_lookup_accepts_hyphens_and_rejects_unknown_names():
+    assert get_entity("concesiones-busqueda") is ENTITIES["concesiones_busqueda"]
+    with pytest.raises(KeyError):
+        get_entity("nope")

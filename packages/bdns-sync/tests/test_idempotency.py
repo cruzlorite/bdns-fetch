@@ -48,9 +48,9 @@ def test_repeating_a_full_sync_never_changes_the_history(engine, metadata, table
 
     for _ in range(2):
         stats = sink.sync_full(table_name, list(CATALOG), ("id",))
-        assert stats["inserted"] == 0
-        assert stats["updated"] == 0
-        assert stats["soft_deleted"] == 0
+        assert stats.new == 0
+        assert stats.changed == 0
+        assert stats.removed == 0
         assert history(engine, metadata, table_name) == after_first
 
     assert len(after_first) == 3
@@ -81,13 +81,13 @@ def test_repeating_a_sync_after_a_deletion_does_not_reclose_or_resurrect(
 
     remaining = [row for row in CATALOG if row["id"] != 3]
     stats = sink.sync_full(table_name, list(remaining), ("id",))
-    assert stats["soft_deleted"] == 1
+    assert stats.removed == 1
     after_deletion = history(engine, metadata, table_name)
 
     for _ in range(2):
         stats = sink.sync_full(table_name, list(remaining), ("id",))
-        assert stats["soft_deleted"] == 0
-        assert stats["inserted"] == 0
+        assert stats.removed == 0
+        assert stats.new == 0
         assert history(engine, metadata, table_name) == after_deletion
 
 
@@ -111,8 +111,8 @@ def test_repeating_a_windowed_sync_never_changes_the_history(engine, metadata, t
         stats = sink.sync_window(
             table_name, list(WINDOW_ROWS), ("id",), reg_date_field="fecha", **WINDOW
         )
-        assert stats["inserted"] == 0
-        assert stats["soft_deleted"] == 0
+        assert stats.new == 0
+        assert stats.removed == 0
         assert history(engine, metadata, table_name) == after_first
 
 
@@ -122,14 +122,14 @@ def test_rerunning_a_window_that_closed_a_row_stays_settled(engine, metadata, ta
 
     withdrawn = WINDOW_ROWS[:1]
     stats = sink.sync_window(table_name, list(withdrawn), ("id",), reg_date_field="fecha", **WINDOW)
-    assert stats["soft_deleted"] == 1
+    assert stats.removed == 1
     after_deletion = history(engine, metadata, table_name)
 
     for _ in range(2):
         stats = sink.sync_window(
             table_name, list(withdrawn), ("id",), reg_date_field="fecha", **WINDOW
         )
-        assert stats["soft_deleted"] == 0
+        assert stats.removed == 0
         assert history(engine, metadata, table_name) == after_deletion
 
 
@@ -151,7 +151,7 @@ def test_a_wider_window_over_the_same_data_adds_nothing(engine, metadata, table_
         run_type="annual",
         reg_date_field="fecha",
     )
-    assert stats["inserted"] == 0
-    assert stats["updated"] == 0
-    assert stats["soft_deleted"] == 0
+    assert stats.new == 0
+    assert stats.changed == 0
+    assert stats.removed == 0
     assert history(engine, metadata, table_name) == after_narrow

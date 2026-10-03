@@ -24,7 +24,7 @@ from typing import Any
 
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
 
-__all__ = ["DEFAULT_LIMITS", "RejectLimits", "Sink", "get_sink"]
+__all__ = ["DEFAULT_LIMITS", "RejectLimits", "Sink", "SyncStats", "get_sink"]
 
 
 @dataclass(frozen=True)
@@ -102,6 +102,41 @@ class RejectLimits:
 DEFAULT_LIMITS = RejectLimits()
 
 
+@dataclass(frozen=True)
+class SyncStats:
+    """What one run did, counted before the diff was applied.
+
+    The counts partition the batch's keys: every fetched key is exactly
+    one of `new`, `changed` or `unchanged`, and `removed` counts stored
+    keys the batch proved gone.
+
+    Attributes:
+        fetched: Records staged from the batch.
+        new: Keys seen for the first time, each written as a current
+            version.
+        changed: Keys whose payload changed: the previous version is
+            closed as `superseded` and a new current one written.
+        unchanged: Keys seen again with the same payload; only their
+            last-seen time moves.
+        removed: Current versions closed as `removed` because the batch
+            proved the key is no longer served.
+        skipped: Records that could not be versioned (malformed, or
+            without a usable key) and were recorded in the error log.
+    """
+
+    fetched: int = 0
+    new: int = 0
+    changed: int = 0
+    unchanged: int = 0
+    removed: int = 0
+    skipped: int = 0
+
+    @property
+    def versions_written(self) -> int:
+        """Versions the run inserted: new keys plus changed ones."""
+        return self.new + self.changed
+
+
 class Sink(ABC):
     """One sync target (a database, a file store, ...) in SCD2 form.
 
@@ -130,21 +165,7 @@ class Sink(ABC):
       successful run, and one record per skipped malformed row. How that
       log is stored is the sink's business; callers never see it.
 
-    Stats contract: both methods return a dict with at least these keys,
-    all counted before the diff is applied:
-
-    - `fetched`: rows consumed from `rows`.
-    - `inserted`: keys seen for the first time, each written as a new
-      current version.
-    - `updated`: keys whose payload changed. Each closes its previous
-      version and writes a new current one. Disjoint from `inserted`, so
-      the new versions a run wrote are `inserted + updated`, which is
-      what `_sync_runs.rows_inserted` records.
-    - `touched`: unchanged keys seen again.
-    - `soft_deleted`: versions closed because the batch proved the key
-      gone.
-
-    `skipped` is present when a `skipped` list was passed.
+    Both methods return a [`SyncStats`][bdns.sync.sinks.SyncStats].
     """
 
     @abstractmethod
@@ -156,7 +177,7 @@ class Sink(ABC):
         *,
         policy: PayloadPolicy = DEFAULT_POLICY,
         skipped: list[dict[str, str]] | None = None,
-    ) -> dict[str, int]:
+    ) -> SyncStats:
         """Reconcile `endpoint` against `rows` as its COMPLETE current state.
 
         Args:
@@ -184,9 +205,8 @@ class Sink(ABC):
                 count as `skipped` in the returned stats.
 
         Returns:
-            Stats dict (see class docstring). Because `rows` is the complete
-            state, keys absent from it are closed and counted in
-            `soft_deleted`.
+            What the run did. Because `rows` is the complete state, keys
+            absent from it are closed and counted in `removed`.
         """
 
     @abstractmethod
@@ -202,7 +222,7 @@ class Sink(ABC):
         reg_date_field: str | None = None,
         policy: PayloadPolicy = DEFAULT_POLICY,
         skipped: list[dict[str, str]] | None = None,
-    ) -> dict[str, int]:
+    ) -> SyncStats:
         """Apply `rows` as the slice of `endpoint` registered in a date range.
 
         Unlike [`sync_full`][], absence from `rows` proves nothing on its own:
@@ -236,8 +256,8 @@ class Sink(ABC):
             skipped: Same contract as in [`sync_full`][].
 
         Returns:
-            Stats dict (see class docstring). `soft_deleted` can only be
-            non-zero when `reg_date_field` was given.
+            What the run did. `removed` can only be non-zero when
+            `reg_date_field` was given.
         """
 
 

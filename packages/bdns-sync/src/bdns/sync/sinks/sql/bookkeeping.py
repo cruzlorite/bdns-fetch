@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Shared plumbing every `sync_*` function runs through.
+"""Shared plumbing every sync runs through.
 
-Create the tables, log the run in `_sync_runs`, apply the entity's own
-fetch and SCD2 logic, record the outcome, and bump the `_sync_state`
-watermark.
+Bring the tables up to date (create them, or add the columns an older
+version did not have), log the run in `_sync_runs`, apply the entity's
+SCD2 diff, record the outcome, and bump the `_sync_state` watermark.
 
 Bookkeeping events are committed in their own short transactions, separate
 from the data transaction. Inside the data transaction they would inherit
@@ -30,12 +30,14 @@ rule is the same: no `success` event => re-run.
 import logging
 import time
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import MetaData, insert, update
 from sqlalchemy.engine import Engine
 
+from bdns.sync.sinks import SyncStats
 from bdns.sync.sinks.sql.dialects import get_adapter
+from bdns.sync.sinks.sql.migrate import add_missing_columns
 from bdns.sync.sinks.sql.schema import build_control_tables, build_staging_table, build_sync_table
 
 __all__ = ["run_with_bookkeeping"]
@@ -50,7 +52,8 @@ def run_with_bookkeeping(
     run_type: str,
     apply_fn: Callable,
     skipped: list[dict[str, str]] | None = None,
-) -> dict[str, int]:
+    window: tuple[date, date] | None = None,
+) -> SyncStats:
     """Run `apply_fn` inside the tables, transaction and run log it needs.
 
     Args:
@@ -60,11 +63,13 @@ def run_with_bookkeeping(
             for full-catalog, swept and discover-then-detail syncs, or a
             reg-date window name ("daily", "weekly", "monthly",
             "annual", "backfill") for the incremental ones.
-        apply_fn: Called as `apply_fn(conn, table, staging)` inside the
-            data transaction. Returns the run's stats.
+        apply_fn: Called as `apply_fn(conn, table, staging, run_id)`
+            inside the data transaction. Returns the run's stats.
         skipped: Malformed-record descriptors to persist to
             `_sync_errors`, linked to this run. Read after `apply_fn`
             returns, so the caller may keep appending while it runs.
+        window: `(start, end)` of a windowed run's registration-date
+            range, recorded on its events.
 
     Returns:
         The stats `apply_fn` returned.
@@ -78,6 +83,7 @@ def run_with_bookkeeping(
     staging = build_staging_table(endpoint_name, metadata)
     sync_state, sync_runs, sync_errors = build_control_tables(metadata)
     get_adapter(engine).prepare_metadata(metadata)
+    add_missing_columns(engine, [table, sync_runs])
     metadata.create_all(engine, checkfirst=True)
 
     started_at = datetime.now(UTC)
@@ -97,6 +103,8 @@ def run_with_bookkeeping(
                     run_type=run_type,
                     event=event,
                     occurred_at=datetime.now(UTC),
+                    window_start=window[0] if window else None,
+                    window_end=window[1] if window else None,
                     **extra,
                 )
             )
@@ -132,7 +140,7 @@ def run_with_bookkeeping(
 
     try:
         with engine.begin() as conn:
-            stats = apply_fn(conn, table, staging)
+            stats = apply_fn(conn, table, staging, run_id)
     except Exception as exc:
         logger.error(
             "%s: run %s failed after %.1fs: %s",
@@ -151,25 +159,27 @@ def run_with_bookkeeping(
     record_skips()
     record_event(
         "success",
-        rows_fetched=stats["fetched"],
-        rows_inserted=stats["inserted"] + stats["updated"],
-        rows_soft_deleted=stats.get("soft_deleted", 0),
-        rows_skipped=stats.get("skipped", 0),
+        rows_fetched=stats.fetched,
+        rows_inserted=stats.versions_written,
+        rows_changed=stats.changed,
+        rows_unchanged=stats.unchanged,
+        rows_soft_deleted=stats.removed,
+        rows_skipped=stats.skipped,
     )
     with engine.begin() as conn:
         _upsert_sync_state(conn, sync_state, endpoint_name, finished_at, run_id)
 
     logger.info(
-        "%s: run %s done in %.1fs (fetched=%d inserted=%d updated=%d touched=%d soft_deleted=%d skipped=%d)",
+        "%s: run %s done in %.1fs (fetched=%d new=%d changed=%d unchanged=%d removed=%d skipped=%d)",
         endpoint_name,
         run_id,
         (finished_at - started_at).total_seconds(),
-        stats["fetched"],
-        stats["inserted"],
-        stats["updated"],
-        stats["touched"],
-        stats.get("soft_deleted", 0),
-        stats.get("skipped", 0),
+        stats.fetched,
+        stats.new,
+        stats.changed,
+        stats.unchanged,
+        stats.removed,
+        stats.skipped,
     )
     return stats
 

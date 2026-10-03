@@ -1,7 +1,7 @@
 """Record validation in the sink: what happens when the source sends
 something that cannot be versioned.
 
-The sink is the backstop for every entity. `syncers._skip_malformed` only
+The sink is the backstop for every entity. `entities._skip_malformed` only
 guards the two-step detail fetches and only catches responses that are not
 JSON objects, so the twenty entities that go through a plain search or
 catalog fetch had nothing at all before this.
@@ -44,9 +44,9 @@ GOOD = [{"id": i, "v": "x"} for i in range(1, 12)]
 
 def test_a_record_missing_the_key_field_is_rejected_not_raised(engine, metadata, table_name):
     stats = SQLSink(engine).sync_full(table_name, GOOD + [{"v": "no key"}], ("id",))
-    assert stats["fetched"] == 11
-    assert stats["inserted"] == 11
-    assert stats["skipped"] == 1
+    assert stats.fetched == 11
+    assert stats.new == 11
+    assert stats.skipped == 1
     assert len(current(engine, metadata, table_name)) == 11
 
     [err] = errors(engine, metadata, table_name)
@@ -61,7 +61,7 @@ def test_a_null_key_is_rejected_instead_of_collapsing_onto_one_key(engine, metad
     rows = GOOD + [{"id": None, "v": "a"}, {"id": None, "v": "b"}]
     stats = SQLSink(engine).sync_full(table_name, rows, ("id",))
 
-    assert stats["skipped"] == 2
+    assert stats.skipped == 2
     stored = current(engine, metadata, table_name)
     assert len(stored) == 11
     assert "[null]" not in {row["_natural_key"] for row in stored}
@@ -73,8 +73,8 @@ def test_a_response_that_is_not_a_json_object_is_rejected(engine, metadata, tabl
     `TypeError: string indices must be integers` and kill the run.
     """
     stats = SQLSink(engine).sync_full(table_name, GOOD + ["<html>error</html>"], ("id",))
-    assert stats["fetched"] == 11
-    assert stats["skipped"] == 1
+    assert stats.fetched == 11
+    assert stats.skipped == 1
     [err] = errors(engine, metadata, table_name)
     assert err["context"] == "record is not a JSON object"
 
@@ -82,7 +82,7 @@ def test_a_response_that_is_not_a_json_object_is_rejected(engine, metadata, tabl
 def test_a_composite_key_is_rejected_when_any_part_is_missing(engine, metadata, table_name):
     rows = [{"a": i, "b": i} for i in range(11)] + [{"a": 99}]
     stats = SQLSink(engine).sync_full(table_name, rows, ("a", "b"))
-    assert stats["skipped"] == 1
+    assert stats.skipped == 1
     assert errors(engine, metadata, table_name)[0]["context"] == "missing key field b"
 
 
@@ -106,7 +106,7 @@ def test_a_missing_registration_date_is_rejected_where_the_entity_uses_one(
 ):
     rows = [{"id": i, "fecha": "2026-03-02"} for i in range(11)] + [{"id": 99}]
     stats = windowed(engine, table_name, rows, reg_date_field="fecha")
-    assert stats["skipped"] == 1
+    assert stats.skipped == 1
     assert errors(engine, metadata, table_name)[0]["context"] == (
         "missing or null registration date fecha"
     )
@@ -120,7 +120,7 @@ def test_a_registration_date_carrying_a_time_is_rejected(engine, metadata, table
     rows = [{"id": i, "fecha": "2026-03-02"} for i in range(11)]
     rows.append({"id": 99, "fecha": "2026-03-02T00:00:00"})
     stats = windowed(engine, table_name, rows, reg_date_field="fecha")
-    assert stats["skipped"] == 1
+    assert stats.skipped == 1
     assert "unparseable registration date" in errors(engine, metadata, table_name)[0]["context"]
 
 
@@ -129,8 +129,8 @@ def test_a_missing_date_field_is_fine_where_the_entity_declares_none(engine, met
     nothing about dates may be required of it.
     """
     stats = windowed(engine, table_name, [{"id": 1}, {"id": 2}])
-    assert stats["skipped"] == 0
-    assert stats["inserted"] == 2
+    assert stats.skipped == 0
+    assert stats.new == 2
 
 
 # --- the ceiling -----------------------------------------------------------
@@ -165,8 +165,8 @@ def test_a_few_rejects_in_a_small_batch_do_not_fail_the_run(engine, metadata, ta
     holds few records. The ratio only bites once there are several.
     """
     stats = SQLSink(engine).sync_full(table_name, [{"id": 1}, {"id": 2}, {"v": "bad"}], ("id",))
-    assert stats["inserted"] == 2
-    assert stats["skipped"] == 1
+    assert stats.new == 2
+    assert stats.skipped == 1
 
 
 def test_a_low_share_of_rejects_in_a_large_batch_does_not_fail_the_run(
@@ -177,8 +177,8 @@ def test_a_low_share_of_rejects_in_a_large_batch_does_not_fail_the_run(
     """
     rows = [{"id": i} for i in range(200)] + [{"v": "bad"} for _ in range(11)]
     stats = SQLSink(engine).sync_full(table_name, rows, ("id",))
-    assert stats["inserted"] == 200
-    assert stats["skipped"] == 11
+    assert stats.new == 200
+    assert stats.skipped == 11
     assert len(errors(engine, metadata, table_name)) == 11
 
 
@@ -232,8 +232,8 @@ def test_a_rejected_record_closes_its_stored_version_on_a_full_catalog(
     broken = [row for row in good if row["id"] != 3] + [{"v": "no key"}]
     stats = sink.sync_full(table_name, broken, ("id",))
 
-    assert stats["skipped"] == 1
-    assert stats["soft_deleted"] == 1
+    assert stats.skipped == 1
+    assert stats.removed == 1
     keys = {row["_natural_key"] for row in current(engine, metadata, table_name)}
     assert "[3]" not in keys
 
@@ -251,13 +251,13 @@ def test_the_ratio_can_be_raised_to_tolerate_a_bad_day(engine, table_name):
 
     tolerant = SQLSink(engine, RejectLimits(max_ratio=0.60))
     stats = tolerant.sync_full(table_name, rows, ("id",))
-    assert stats["inserted"] == 20
-    assert stats["skipped"] == 20
+    assert stats.new == 20
+    assert stats.skipped == 20
 
 
 def test_the_ratio_can_be_lowered_to_be_told_sooner(engine, table_name):
     rows = [{"id": i} for i in range(95)] + [{"v": "bad"} for _ in range(5)]
-    assert SQLSink(engine).sync_full(table_name, rows, ("id",))["inserted"] == 95
+    assert SQLSink(engine).sync_full(table_name, rows, ("id",)).new == 95
 
     strict = SQLSink(engine, RejectLimits(max_ratio=0.01))
     with pytest.raises(BatchRejected, match="over the limit of 1%"):
@@ -270,7 +270,7 @@ def test_an_absolute_cap_catches_what_the_ratio_hides(engine, table_name):
     broke.
     """
     rows = [{"id": i} for i in range(2000)] + [{"v": "bad"} for _ in range(20)]
-    assert SQLSink(engine).sync_full(table_name, rows, ("id",))["skipped"] == 20  # 1%, passes
+    assert SQLSink(engine).sync_full(table_name, rows, ("id",)).skipped == 20  # 1%, passes
 
     capped = SQLSink(engine, RejectLimits(max_count=10))
     with pytest.raises(BatchRejected, match="over the limit of 10"):

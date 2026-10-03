@@ -12,6 +12,7 @@ code allowed to branch on dialect name).
 """
 
 from collections.abc import Iterable, Sequence
+from dataclasses import replace
 from datetime import date
 from typing import Any
 
@@ -19,7 +20,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
-from bdns.sync.sinks import DEFAULT_LIMITS, RejectLimits, Sink
+from bdns.sync.sinks import DEFAULT_LIMITS, RejectLimits, Sink, SyncStats
 from bdns.sync.sinks.sql.bookkeeping import run_with_bookkeeping
 from bdns.sync.sinks.sql.scd2 import apply_full_reconciliation, apply_incremental
 
@@ -66,7 +67,7 @@ class SQLSink(Sink):
         *,
         policy: PayloadPolicy = DEFAULT_POLICY,
         skipped: list[dict[str, str]] | None = None,
-    ) -> dict[str, int]:
+    ) -> SyncStats:
         """Reconcile `endpoint` against `rows` as its complete current state.
 
         See [`bdns.sync.sinks.Sink.sync_full`][] for the contract this
@@ -77,9 +78,17 @@ class SQLSink(Sink):
         # sink's own rejections.
         skips = skipped if skipped is not None else []
 
-        def apply_fn(conn, table, staging):
+        def apply_fn(conn, table, staging, run_id):
             stats = apply_full_reconciliation(
-                conn, table, staging, rows, key_fields, policy, self.limits, skipped=skips
+                conn,
+                table,
+                staging,
+                rows,
+                key_fields,
+                policy,
+                self.limits,
+                skipped=skips,
+                run_id=run_id,
             )
             return _attach_skips(stats, skips)
 
@@ -99,7 +108,7 @@ class SQLSink(Sink):
         reg_date_field: str | None = None,
         policy: PayloadPolicy = DEFAULT_POLICY,
         skipped: list[dict[str, str]] | None = None,
-    ) -> dict[str, int]:
+    ) -> SyncStats:
         """Apply `rows` as the slice of `endpoint` registered in a date range.
 
         See [`bdns.sync.sinks.Sink.sync_window`][] for the contract this
@@ -107,7 +116,7 @@ class SQLSink(Sink):
         """
         skips = skipped if skipped is not None else []
 
-        def apply_fn(conn, table, staging):
+        def apply_fn(conn, table, staging, run_id):
             stats = apply_incremental(
                 conn,
                 table,
@@ -120,15 +129,21 @@ class SQLSink(Sink):
                 window_start=window_start,
                 window_end=window_end,
                 skipped=skips,
+                run_id=run_id,
             )
             return _attach_skips(stats, skips)
 
         return run_with_bookkeeping(
-            self.engine, endpoint, run_type=run_type, apply_fn=apply_fn, skipped=skips
+            self.engine,
+            endpoint,
+            run_type=run_type,
+            apply_fn=apply_fn,
+            skipped=skips,
+            window=(window_start, window_end),
         )
 
 
-def _attach_skips(stats: dict[str, int], skipped: list[dict[str, str]]) -> dict[str, int]:
+def _attach_skips(stats: SyncStats, skipped: list[dict[str, str]]) -> SyncStats:
     """Count the skipped records into `stats`.
 
     Called only after the rows generator is fully consumed, since that is
@@ -139,5 +154,4 @@ def _attach_skips(stats: dict[str, int], skipped: list[dict[str, str]]) -> dict[
     list. The records themselves go to `_sync_errors`, written by the
     bookkeeping, which holds the same list.
     """
-    stats["skipped"] = len(skipped)
-    return stats
+    return replace(stats, skipped=len(skipped))

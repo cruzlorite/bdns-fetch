@@ -1,0 +1,32 @@
+name: Fallo / Bug
+description: Algo no funciona como dice la documentación. / Something does not work as documented.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Qué ha pasado / What happened
+      description: Qué hiciste, qué esperabas y qué ocurrió. / What you did, what you expected, what happened.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Cómo reproducirlo / How to reproduce
+      description: El comando o el código mínimo. Quita datos personales y credenciales. / The minimal command or code. Remove personal data and credentials.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Salida / Output
+      description: Mensaje de error o log (con --verbose si aplica). / Error message or log (with --verbose if relevant).
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Versión / Version
+      description: "`bdns-fetch --version` y versión de Python. / and Python version."
+    validations:
+      required: true

@@ -29,8 +29,8 @@ class RateLimiter:
     With the default `burst=1` it spaces requests evenly, `per / rate`
     apart. That is deliberate: the BDNS API answers 429 to a burst even when
     the average stays under its limit, and accepts a sustained 9.8 requests
-    per second when their starts are spaced (measured; see the API
-    behaviour notes).
+    per second when their starts are spaced
+    ([measurements](../../explanation/api-behavior.md#rate-limit)).
 
     Args:
         rate: Acquisitions allowed per `per` seconds.

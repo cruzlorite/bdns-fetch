@@ -42,6 +42,12 @@ pytest-mock = "^3.15.0"
 ruff = "^0.12.12"
 responses = "^0.25"
 
+
+[tool.poetry.group.docs.dependencies]
+mkdocs-material = "^9.7.7"
+mkdocstrings = {version = "^1.0.6", extras = ["python"]}
+mkdocs-static-i18n = "^1.3.1"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

@@ -24,8 +24,8 @@ Three policies apply to every request:
   order, and at most `2 * max_workers` are held in memory at a time, so a
   slow consumer slows the download rather than growing memory.
 
-The reasoning behind each is recorded in the project's architecture
-decision records.
+Each is explained in [how the client works](../../explanation/policies.md),
+and recorded with its alternatives in the [ADRs](../../adr/index.md).
 """
 
 import collections
@@ -71,19 +71,17 @@ __all__ = [
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-#: HTTP statuses retried as transient.
 RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
+"""HTTP statuses retried as transient."""
 
-#: BDNS `codigo` values retried as transient, whatever the HTTP status.
 TRANSIENT_API_ERROR_CODES = frozenset({"ERR_MANTENIMIENTO_BBDD"})
+"""BDNS `codigo` values retried as transient, whatever the HTTP status."""
 
-#: Upper bound, in seconds, for a single wait between retries.
 MAX_RETRY_WAIT = 60.0
+"""Upper bound, in seconds, for a single wait between retries."""
 
-#: Shared by every client that is not given its own limiter. The API allows
-#: 10 GET requests per second per IP and rejects bursts, so requests are
-#: spaced evenly, with a margin: 9.5 per second, one every ~105 ms.
 DEFAULT_RATE_LIMITER = RateLimiter(rate=9.5)
+"""Shared by every client that is not given its own limiter. The API allows 10 GET requests per second per IP and rejects bursts, so requests are spaced evenly, with a margin: 9.5 per second, one every ~105 ms."""
 
 try:
     _VERSION = version("bdns-fetch")
@@ -201,7 +199,7 @@ class BDNSClient:
 
         Args:
             path: Endpoint path under `base_url`.
-            params: Query parameters, encoded as in `get`.
+            params: Query parameters, encoded as in [`get`][bdns.fetch.client.BDNSClient.get].
 
         Returns:
             The response body. `b""` if the API answered 204.
@@ -278,6 +276,7 @@ class BDNSClient:
     # ------------------------------------------------------------------ #
 
     def _url(self, path: str, params: Mapping[str, Any] | None) -> str:
+        """Build the full URL for `path` with `params` encoded."""
         return format_url(f"{self.base_url}/{path.lstrip('/')}", _query(params or {}))
 
     def _session(self) -> requests.Session:
@@ -303,6 +302,7 @@ class BDNSClient:
         return self._backoff(retry_state)
 
     def _log_retry(self, retry_state: RetryCallState) -> None:
+        """Log a failed attempt that is about to be retried."""
         exc = retry_state.outcome.exception() if retry_state.outcome else None
         logger.warning(
             'Retrying after %s: "%s". Attempt %d of %d failed; waiting %.1fs.',
@@ -838,7 +838,8 @@ class BDNSClient:
         """Search third parties (`/terceros`).
 
         The official good-practice guide calls this endpoint redundant:
-        `fetch_concesiones_busqueda` already returns the beneficiary data.
+        [`fetch_concesiones_busqueda`][bdns.fetch.client.BDNSClient.fetch_concesiones_busqueda]
+        already returns the beneficiary data.
         """
         yield from self._list(
             endpoints.TERCEROS,

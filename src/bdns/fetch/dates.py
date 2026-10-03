@@ -15,14 +15,17 @@ bound:
 Getting this wrong loses or duplicates one day at every range boundary,
 silently. The helpers here take an inclusive `[first, last]`, the natural
 way to say it, and return the keyword arguments each family needs. The
-measurements behind both rules are in the API behaviour notes, and
+measurements behind both rules are in
+[the API behaviour notes](../../explanation/api-behavior.md#upper-bound), and
 [`check_api_contract`][bdns.fetch.contract.check_api_contract] re-checks
 them against the live service.
 
 Long ranges also fail: a multi-year registration-date range returns
 `ERR_MANTENIMIENTO_BBDD` intermittently, at any page depth, while the same
-dates fetched a week at a time do not. [`split_range`][bdns.fetch.dates.split_range]
-cuts a range into `MAX_RANGE_DAYS` pieces.
+dates fetched a week at a time do not
+([measurements](../../explanation/api-behavior.md#range-reliability)).
+[`split_range`][bdns.fetch.dates.split_range] cuts a range into
+`MAX_RANGE_DAYS` pieces.
 """
 
 from collections.abc import Iterator
@@ -30,8 +33,8 @@ from datetime import date, timedelta
 
 __all__ = ["MAX_RANGE_DAYS", "period_range", "registration_range", "split_range"]
 
-#: Widest range known to be fetched reliably in one go.
 MAX_RANGE_DAYS = 7
+"""Widest range known to be fetched reliably in one go."""
 
 
 def registration_range(first: date, last: date) -> dict[str, date]:

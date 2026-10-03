@@ -46,9 +46,20 @@ Planned as 2.0.0: the client's signatures change (see *Changed*).
 - A warning when a paginated call returns fewer pages than exist.
 - `timeout` on `BDNSClient`.
 - Underscore aliases for CLI commands (`concesiones_busqueda`), the spelling bdns-sync uses.
-- Dates on the CLI are tried as ISO first, then in natural language with day-first ordering
-  (`01/02/2024` is the 1st of February).
-- `Ambito` is exported from `bdns.fetch`.
+- Structured errors: `BDNSError` carries `status_code`, `code` (the API's `codigo`), `url` and
+  `details`, so a program can react without parsing text.
+- `get()`, `get_bytes()` and `pages()` request any path under the same retries, rate limit and
+  parameter encoding, covering endpoints without a method of their own; `bdns-fetch get` does the
+  same from the CLI.
+- `bdns.fetch.dates`: `registration_range` and `period_range` turn an inclusive range into each
+  date family's arguments (`fechaRegFin` is exclusive, `fechaHasta` inclusive), and `split_range`
+  cuts long ranges into the 7-day pieces the API serves reliably. Moved here from bdns-sync.
+- `bdns.fetch.contract` and `bdns-fetch check-api`: check those date semantics against the live
+  API. Moved here from bdns-sync.
+- `rate_limiter` and `base_url` on `BDNSClient`; `--rate-limit` on the CLI.
+- A documentation site, with the measured behaviour of the API, architecture decision records and a
+  compatibility policy.
+- `Ambito` and `RateLimiter` are exported from `bdns.fetch`.
 - Type information (`py.typed`), and support for Python 3.13 and 3.14.
 
 ### Changed
@@ -65,17 +76,30 @@ Planned as 2.0.0: the client's signatures change (see *Changed*).
   `OptionInfo` objects, so signatures, type hints and editor help are accurate. The CLI builds its
   commands from the client's signatures.
 - `wait_time` is the initial backoff rather than a fixed wait.
+- Requests are spaced evenly, 9.5 per second, instead of allowing bursts of ten: the API answers 429
+  to bursts even when the average is under its limit.
+- **Breaking.** `BDNSError` takes its fields as keywords; `suggestion` is gone (advice is the CLI's
+  job) and `technical_details` is now `details`.
+- **Breaking.** `BDNSClient`'s constructor is keyword-only.
+- **Breaking.** `bdns.fetch.endpoints` holds paths relative to `BDNS_API_BASE_URL`, with shorter
+  names (`CONCESIONES_BUSQUEDA`).
+- **Breaking.** CLI flags have no multi-letter short forms (`-mr`, `-np`, `-iddoc`...); `-o` and `-v`
+  remain. CLI dates accept `YYYY-MM-DD` or `DD/MM/YYYY` only.
 - The package moved to a `src/` layout. The license identifier is `GPL-3.0-or-later`, as the file
   headers always stated.
 
 ### Removed
 
 - **Breaking.** `BDNSWarning`, no longer raised by anything.
+- **Breaking.** `return_raw` and `--return-raw`, a client-wide flag that changed the return type of
+  every method. Use `pages()` for whole page documents.
+- **Breaking.** `format_url`, `format_date_for_api_request` and `smart_open` are no longer exported
+  from `bdns.fetch`.
 - **Breaking.** The `anio` alias of `fetch_grandesbeneficiarios_busqueda`. Use `anios=[...]`.
 - Internal helpers that were never part of the public API: `utils.api_request`,
   `utils.extract_option_values`, `utils.write_to_file`, `exceptions.show_error`,
   `exceptions.handle_api_error`.
-- Unused dependencies: `aiohttp`, `pytest-asyncio`, and Typer's `all` extra.
+- Dependencies: `aiohttp` and `pytest-asyncio` (unused), Typer's `all` extra, and `dateparser`.
 
 ## Earlier releases
 

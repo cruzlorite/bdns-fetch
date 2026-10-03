@@ -6,7 +6,41 @@ Only the endpoints that have a `fetch_*` method are listed. Any other path
 can be requested with [`BDNSClient.get`][bdns.fetch.client.BDNSClient.get].
 """
 
+__all__ = [
+    "ACTIVIDADES",
+    "AYUDASESTADO_BUSQUEDA",
+    "BDNS_API_BASE_URL",
+    "BENEFICIARIOS",
+    "CONCESIONES_BUSQUEDA",
+    "CONVOCATORIAS",
+    "CONVOCATORIAS_BUSQUEDA",
+    "CONVOCATORIAS_DOCUMENTOS",
+    "CONVOCATORIAS_PDF",
+    "CONVOCATORIAS_ULTIMAS",
+    "FINALIDADES",
+    "GRANDESBENEFICIARIOS_ANIOS",
+    "GRANDESBENEFICIARIOS_BUSQUEDA",
+    "INSTRUMENTOS",
+    "MINIMIS_BUSQUEDA",
+    "OBJETIVOS",
+    "ORGANOS",
+    "ORGANOS_AGRUPACION",
+    "ORGANOS_CODIGO",
+    "ORGANOS_CODIGOADMIN",
+    "PARTIDOSPOLITICOS_BUSQUEDA",
+    "PLANESESTRATEGICOS",
+    "PLANESESTRATEGICOS_BUSQUEDA",
+    "PLANESESTRATEGICOS_DOCUMENTOS",
+    "PLANESESTRATEGICOS_VIGENCIA",
+    "REGIONES",
+    "REGLAMENTOS",
+    "SANCIONES_BUSQUEDA",
+    "SECTORES",
+    "TERCEROS",
+]
+
 BDNS_API_BASE_URL = "https://www.infosubvenciones.es/bdnstrans/api"
+"""Root of the API; every path below is relative to it."""
 
 # Catalogs
 ACTIVIDADES = "/actividades"

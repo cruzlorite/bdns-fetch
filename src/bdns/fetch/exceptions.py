@@ -95,6 +95,7 @@ _STATUS_TEXT = {
 
 
 def _message(status_code: int, code: str | None, messages: list[str], body: str) -> str:
+    """Compose the one-line (or numbered) message an error is known by."""
     prefix = f"Error ({code})" if code else f"HTTP {status_code}"
     if len(messages) == 1:
         return f"{prefix}: {messages[0]}"
@@ -139,7 +140,7 @@ def error_from_response(
             the status.
 
     Returns:
-        A `BDNSTransientError` if either rule matches, else a `BDNSError`.
+        A [`BDNSTransientError`][bdns.fetch.exceptions.BDNSTransientError] if either rule matches, else a [`BDNSError`][bdns.fetch.exceptions.BDNSError].
         Returned rather than raised, so the caller raises it in context.
     """
     code, messages = _parse_body(body)

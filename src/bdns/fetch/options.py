@@ -53,6 +53,7 @@ class DateParamType(click.ParamType):
 
 
 DATE = DateParamType()
+"""The parser every date option uses."""
 _DATE_HELP = " YYYY-MM-DD or DD/MM/YYYY."
 
 
@@ -72,17 +73,17 @@ class ParameterSpec:
 
 
 def _spec(flag: str, help: str, **extra: Any) -> ParameterSpec:
+    """Build a spec; shorthand that keeps the catalog readable."""
     return ParameterSpec(flag, help, extra)
 
 
 def _date_spec(flag: str, help: str) -> ParameterSpec:
+    """Build the spec of a date parameter, parsed by [`DATE`][bdns.fetch.options.DATE]."""
     return _spec(flag, help + _DATE_HELP, click_type=DATE, metavar="DATE")
 
 
-#: CLI defaults that differ from the library's. Fetching every page is the
-#: right default for a program; typed at a prompt against an endpoint with
-#: millions of rows, it is not. The client warns when it stops early.
 CLI_DEFAULTS: dict[str, Any] = {"num_pages": 1}
+"""CLI defaults that differ from the library's. Fetching every page is the right default for a program; typed at a prompt against an endpoint with millions of rows, it is not. The client warns when it stops early."""
 
 PARAMETERS: dict[str, ParameterSpec] = {
     # Pagination

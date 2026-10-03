@@ -14,7 +14,7 @@ which is how bdns-sync names the same endpoint, is accepted as a hidden
 alias.
 
 Records are written as JSON Lines; document endpoints write the raw bytes.
-Two commands are not endpoints: `get` requests any path, and `check-api`
+Two commands are not endpoints: [`get`][bdns.fetch.cli.get] requests any path, and `check-api`
 verifies the documented date semantics against the live service.
 """
 
@@ -266,6 +266,7 @@ def _register_endpoint_commands() -> None:
 
 
 def _parse_param(value: str) -> tuple[str, str]:
+    """Split a `KEY=VALUE` option, rejecting anything else as a usage error."""
     key, sep, val = value.partition("=")
     if not sep or not key:
         raise typer.BadParameter(f"expected KEY=VALUE, got {value!r}")

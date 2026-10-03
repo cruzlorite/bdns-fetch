@@ -3,7 +3,8 @@
 """Live check that the API still behaves the way this package documents.
 
 [`dates`][bdns.fetch.dates] encodes two measured facts: `fechaRegFin` is
-exclusive and `fechaHasta` inclusive. Unit tests can only pin our model of
+exclusive and `fechaHasta` inclusive
+([evidence](../../explanation/api-behavior.md#upper-bound)). Unit tests can only pin our model of
 the API, not the API, so a change upstream would leave every test green
 while callers lose or duplicate a day at every range boundary. This module
 asks the real service, at a cost of a dozen requests.
@@ -25,12 +26,11 @@ __all__ = ["ContractReport", "check_api_contract"]
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-#: Default probe day, this many days back: recent enough that the API still
-#: serves it, old enough that the day is closed and its records stable.
 LOOKBACK_DAYS = 30
+"""Default probe day, this many days back: recent enough that the API still serves it, old enough that the day is closed and its records stable."""
 
-#: Earlier days tried when a probe day is empty or the API errors.
 MAX_ATTEMPTS = 5
+"""Earlier days tried when a probe day is empty or the API errors."""
 
 # One endpoint per date family, chosen because a single day is one page and
 # the whole check runs in seconds; concesiones would pull ~58,000 rows per
@@ -61,6 +61,7 @@ class ContractReport:
 
 
 def _keys(records: list, key_field: str) -> set:
+    """Collect the key values of the records that have one."""
     return {r[key_field] for r in records if isinstance(r, dict) and key_field in r}
 
 

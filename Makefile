@@ -1,6 +1,6 @@
 # Makefile for BDNS Fetch project
 
-.PHONY: help install dev-install test test-integration lint format clean all
+.PHONY: help install dev-install test test-integration lint format check-docs docs clean all
 
 .DEFAULT_GOAL := help
 
@@ -27,6 +27,15 @@ lint: ## Run code linting with ruff
 format: ## Format code with ruff formatter
 	poetry run ruff format .
 
+check-docs: ## Verify doc references, docstring conventions, and the site build
+	poetry run python scripts/check_doc_refs.py
+	poetry run python scripts/check_docstrings.py
+	poetry run mkdocs build --strict
+	poetry run python scripts/check_site_links.py
+
+docs: ## Serve the documentation site locally
+	poetry run mkdocs serve
+
 clean: ## Remove build artifacts and cache files
 	rm -rf dist/
 	rm -rf build/
@@ -38,4 +47,4 @@ clean: ## Remove build artifacts and cache files
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 
-all: dev-install lint format test ## Install, lint, format, and test everything
+all: dev-install lint format check-docs test ## Install, lint, format, check docs, and test everything

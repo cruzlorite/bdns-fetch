@@ -7,9 +7,11 @@
 
 [🇬🇧 English version](./README.en.md)
 
-Cliente Python y CLI para la [API REST de la Base de Datos Nacional de Subvenciones (BDNS)](https://www.infosubvenciones.es/bdnstrans/api). Cubre los 29 endpoints de consulta, con paginación, reintentos y el límite de peticiones de la API aplicados por defecto.
+Cliente Python y CLI para la [API REST de la Base de Datos Nacional de Subvenciones (BDNS)](https://www.infosubvenciones.es/bdnstrans/api). Cubre los 29 endpoints de consulta, con paginación, reintentos y el límite de peticiones de la API aplicados por defecto, y documenta cómo se comporta de verdad la API.
 
 Es la capa de extracción de la familia: [`bdns-sync`](https://github.com/cruzlorite/bdns-sync) se apoya en ella para mantener una copia local versionada de los mismos datos.
+
+**Documentación:** <https://cruzlorite.github.io/bdns-fetch/>
 
 ## Instalación
 
@@ -19,136 +21,34 @@ Python 3.11 a 3.14.
 pip install bdns-fetch
 ```
 
-## Cliente Python
+## Uso
 
-```python
-from bdns.fetch import BDNSClient, TipoAdministracion
-
-client = BDNSClient()
-
-for organo in client.fetch_organos(idAdmon=TipoAdministracion.C):
-    print(organo["id"], organo["descripcion"])
+```bash
+bdns-fetch -o organos.jsonl organos --idAdmon C
+bdns-fetch concesiones-busqueda --fechaDesde 2024-01-01 --fechaHasta 2024-01-31 --num-pages 0 > enero.jsonl
+bdns-fetch check-api
 ```
-
-Los parámetros de cada método son los de la API, con su misma grafía (`fechaDesde`, `nifCif`...), y se pasan siempre por nombre. Las fechas son objetos `date`; las listas, listas de Python.
-
-Los endpoints de búsqueda están paginados. Por defecto se descargan **todas** las páginas; `num_pages` y `from_page` acotan el rango:
 
 ```python
 from datetime import date
 
-for concesion in client.fetch_concesiones_busqueda(
-    fechaRegInicio=date(2024, 1, 1),
-    fechaRegFin=date(2024, 1, 31),
-):
-    ...
+from bdns.fetch import BDNSClient
+from bdns.fetch.dates import registration_range
 
-primeras = client.fetch_ayudasestado_busqueda(descripcion="investigación", num_pages=2)
+client = BDNSClient()
+for concesion in client.fetch_concesiones_busqueda(**registration_range(date(2024, 1, 1), date(2024, 1, 31))):
+    print(concesion["beneficiario"], concesion["importe"])
 ```
 
-Los endpoints de documentos devuelven `bytes`:
+De cero a la primera consulta en cinco minutos: [Empezar](https://cruzlorite.github.io/bdns-fetch/getting-started/).
 
-```python
-pdf = client.fetch_convocatorias_pdf(id=608268, vpd="GE")
-```
+## Documentación
 
-Configuración:
-
-```python
-client = BDNSClient(
-    max_retries=3,     # reintentos tras el primer intento, solo para fallos transitorios
-    wait_time=2,       # espera inicial entre reintentos (s); se duplica en cada uno, hasta 60
-    max_workers=5,     # hilos descargando páginas en paralelo
-    return_raw=False,  # True: páginas completas en vez de registros
-    progress=None,     # barra de progreso; None = solo si stderr es una terminal
-    timeout=30,        # segundos por respuesta HTTP
-)
-```
-
-### Comportamiento
-
-- **Límite de peticiones.** Como máximo 10 peticiones por segundo por proceso, compartidas entre todas las instancias e hilos. Es el límite por IP que fijan las [buenas prácticas oficiales](https://www.infosubvenciones.es/bdnstrans/estaticos/ayuda/Buenas%20pr%C3%A1cticas%20API%20SNPSAP.pdf).
-- **Reintentos.** Se reintentan los errores de red, HTTP 429 y 5xx, y el código `ERR_MANTENIMIENTO_BBDD`, con espera exponencial y aleatoria, respetando `Retry-After`. Cualquier otro error se lanza al momento: repetir una petición incorrecta no la arregla.
-- **Paginación.** Las páginas se piden en paralelo pero se entregan en orden, y nunca hay más de `2 × max_workers` en memoria. Si se deja de iterar, no se descargan las restantes.
-- **Errores.** Todo fallo es un `BDNSError` (`message`, `suggestion`, `technical_details`). Los transitorios, una vez agotados los reintentos, son su subclase `BDNSTransientError`.
-
-## CLI
-
-```bash
-bdns-fetch --help
-bdns-fetch <comando> --help
-
-bdns-fetch -o organos.jsonl organos --idAdmon C
-bdns-fetch convocatorias-busqueda --fechaDesde 2024-01-01 --fechaHasta 2024-12-31 --num-pages 0
-bdns-fetch -o convocatoria.pdf convocatorias-pdf --id 608268 --vpd GE
-bdns-fetch convocatorias-ultimas | jq .descripcion
-```
-
-Los registros se escriben en [JSON Lines](https://jsonlines.org/), uno por línea; los documentos, tal cual. Por defecto el CLI descarga **una** página y avisa si hay más; `--num-pages 0` las descarga todas.
-
-Las opciones de la herramienta van en kebab-case (`--max-retries`) y las que corresponden a un parámetro de la API conservan su grafía (`--fechaDesde`). Las fechas admiten ISO (`2024-01-31`), día primero (`31/01/2024`) o lenguaje natural (`hace 2 semanas`).
-
-Opciones globales:
-
-| Opción | Alias | Por defecto | Descripción |
-|---|---|---|---|
-| `--output-file` | `-o` | `-` (stdout) | Fichero de salida |
-| `--max-retries` | `-mr` | `3` | Reintentos para fallos transitorios; 0 los desactiva |
-| `--wait-time` | `-wt` | `2` | Espera inicial entre reintentos (s) |
-| `--max-workers` | `-mw` | `5` | Hilos descargando páginas |
-| `--return-raw` | `-rr` | no | Páginas completas en vez de registros |
-| `--progress/--no-progress` | | automático | Barra de progreso |
-| `--verbose` | `-v` | no | Log de cada petición HTTP |
-
-Ante un error de la API, el CLI muestra el mensaje y sale con código 1.
-
-### Comandos
-
-Un comando por endpoint. El nombre es el del método sin `fetch_`, con guiones; la forma con guiones bajos (`concesiones_busqueda`), que es como lo llama `bdns-sync`, también se acepta.
-
-| Comando | Método | Paginado |
-|---|---|---|
-| `actividades` | `fetch_actividades` | |
-| `sectores` | `fetch_sectores` | |
-| `regiones` | `fetch_regiones` | |
-| `finalidades` | `fetch_finalidades` | |
-| `beneficiarios` | `fetch_beneficiarios` | |
-| `instrumentos` | `fetch_instrumentos` | |
-| `reglamentos` | `fetch_reglamentos` | |
-| `objetivos` | `fetch_objetivos` | |
-| `organos` | `fetch_organos` | |
-| `organos-agrupacion` | `fetch_organos_agrupacion` | |
-| `organos-codigo` | `fetch_organos_codigo` | |
-| `organos-codigoadmin` | `fetch_organos_codigoadmin` | |
-| `convocatorias` | `fetch_convocatorias` | |
-| `convocatorias-busqueda` | `fetch_convocatorias_busqueda` | sí |
-| `convocatorias-ultimas` | `fetch_convocatorias_ultimas` | |
-| `convocatorias-documentos` | `fetch_convocatorias_documentos` | documento |
-| `convocatorias-pdf` | `fetch_convocatorias_pdf` | documento |
-| `concesiones-busqueda` | `fetch_concesiones_busqueda` | sí |
-| `ayudasestado-busqueda` | `fetch_ayudasestado_busqueda` | sí |
-| `minimis-busqueda` | `fetch_minimis_busqueda` | sí |
-| `partidospoliticos-busqueda` | `fetch_partidospoliticos_busqueda` | sí |
-| `grandesbeneficiarios-anios` | `fetch_grandesbeneficiarios_anios` | |
-| `grandesbeneficiarios-busqueda` | `fetch_grandesbeneficiarios_busqueda` | sí |
-| `sanciones-busqueda` | `fetch_sanciones_busqueda` | sí |
-| `planesestrategicos` | `fetch_planesestrategicos` | |
-| `planesestrategicos-busqueda` | `fetch_planesestrategicos_busqueda` | sí |
-| `planesestrategicos-documentos` | `fetch_planesestrategicos_documentos` | documento |
-| `planesestrategicos-vigencia` | `fetch_planesestrategicos_vigencia` | |
-| `terceros` | `fetch_terceros` | |
-
-## Buenas prácticas oficiales
-
-Según ["Buenas prácticas API SNPSAP"](https://www.infosubvenciones.es/bdnstrans/estaticos/ayuda/Buenas%20pr%C3%A1cticas%20API%20SNPSAP.pdf):
-
-- **Límite de peticiones:** 10 GET por segundo por IP. `bdns-fetch` lo aplica por proceso; varios procesos desde la misma IP lo comparten y deben repartírselo.
-- **Sincronización incremental:** usa `fechaRegInicio`/`fechaRegFin` (fecha de registro) para detectar altas y cambios, no `fechaDesde`/`fechaHasta` (fecha de concesión): son filtros independientes. Disponible en `concesiones-busqueda`, `ayudasestado-busqueda`, `minimis-busqueda` y `partidospoliticos-busqueda`.
-- **`terceros`:** el documento lo considera redundante; `concesiones-busqueda` ya trae los datos del beneficiario.
-
-## Limitaciones
-
-- No implementa los endpoints de exportación (CSV/XLSX) ni los de configuración del portal.
+- **[Empezar](https://cruzlorite.github.io/bdns-fetch/getting-started/)**: tutorial, terminal y Python.
+- **Guías**: [descargas incrementales](https://cruzlorite.github.io/bdns-fetch/guides/incremental/) · [errores y reintentos](https://cruzlorite.github.io/bdns-fetch/guides/errors/) · [endpoints sin método propio](https://cruzlorite.github.io/bdns-fetch/guides/other-endpoints/)
+- **Explicación**: [comportamiento de la API](https://cruzlorite.github.io/bdns-fetch/explanation/api-behavior/) · [cómo trabaja el cliente](https://cruzlorite.github.io/bdns-fetch/explanation/policies/)
+- **Referencia**: [CLI](https://cruzlorite.github.io/bdns-fetch/reference/cli/) · [API Python](https://cruzlorite.github.io/bdns-fetch/reference/api/)
+- **[Decisiones de arquitectura](https://cruzlorite.github.io/bdns-fetch/adr/)** · **[Compatibilidad](https://cruzlorite.github.io/bdns-fetch/compatibility/)** · **[Changelog](CHANGELOG.md)**
 
 ## Desarrollo
 
@@ -158,10 +58,11 @@ cd bdns-fetch
 poetry install
 make test               # tests unitarios, sin red
 make test-integration   # contra la API real
-make lint
+make check-docs         # referencias, docstrings y build del sitio
+make docs               # sirve la documentación en local
 ```
 
-Los tests unitarios simulan HTTP y son los que corren en cada push. Los de integración llaman a la API real y corren cada noche en [Integration](.github/workflows/integration.yml). Los cambios se registran en el [CHANGELOG](CHANGELOG.md).
+Cómo contribuir: [CONTRIBUTING.md](CONTRIBUTING.md). Vulnerabilidades: [SECURITY.md](SECURITY.md).
 
 ## Aviso legal
 

@@ -35,5 +35,17 @@ jobs:
       - name: Check formatting
         run: poetry run ruff format --check .
 
+      - name: Check doc references
+        run: poetry run python scripts/check_doc_refs.py
+
+      - name: Check docstring conventions
+        run: poetry run python scripts/check_docstrings.py
+
+      - name: Build docs
+        run: poetry run mkdocs build --strict
+
+      - name: Check site links
+        run: poetry run python scripts/check_site_links.py
+
       - name: Test
         run: poetry run pytest

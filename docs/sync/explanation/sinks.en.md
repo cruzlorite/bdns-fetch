@@ -13,7 +13,7 @@ All sync logic uses portable SQL (correlated `EXISTS`/`NOT EXISTS` subqueries, n
 
 Storage sits behind a [`Sink`][bdns.sync.sinks.Sink] interface ([`bdns.sync.sinks`](../reference/api/sinks.md)): the fetch layer hands over batches of records and the sink owns everything else (SCD2 versioning, deletion detection, run logging). The current implementation is [`SQLSink`](../reference/api/sinks.sql.md), covering any engine with a SQLAlchemy dialect; per-engine differences are confined to its internal adapters ([`bdns.sync.sinks.sql.dialects`](../reference/api/sinks.sql.dialects.md)). A future non-SQL target (e.g. Parquet) would be another [`Sink`][bdns.sync.sinks.Sink] implementation, leaving the fetch layer untouched.
 
-The staging load overlaps the fetch of the next batch with the write of the current one through a generic producer/consumer pipeline ([`pipeline.py`](../reference/api/pipeline.md)), with a bounded queue as backpressure. Figures and rationale in [measured performance](bdns-api-behavior.md#performance).
+The staging load overlaps the fetch of the next batch with the write of the current one through a generic producer/consumer pipeline ([`pipeline.py`](../reference/api/pipeline.md)), with a bounded queue as backpressure. Figures and rationale in [measured performance](sync-behavior.md#performance).
 
 ## BigQuery
 

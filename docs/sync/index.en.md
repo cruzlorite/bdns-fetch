@@ -4,14 +4,20 @@ Sync engine that keeps target databases in **SCD2** form from the
 [Base de Datos Nacional de Subvenciones](https://www.infosubvenciones.es/)
 API — Spain's national subsidies database.
 
-One invocation syncs one endpoint. No configuration file, no knowledge of
-cadence: what to sync and when belongs to whoever orchestrates it.
+One command a day keeps the target up to date: it checks that the API has
+not changed, syncs the 22 entities with the window that day calls for,
+and records every run. No configuration file.
 
 ```console
 $ pip install bdns-sync
 $ export BDNS_SYNC_TARGET_URL=sqlite:///bdns.db
-$ bdns-sync sync concesiones_busqueda --window daily
+$ bdns-sync backfill        # once: the history
+$ bdns-sync delta           # daily
 ```
+
+It builds on [`bdns-fetch`](https://cruzlorite.github.io/bdns-fetch/en/),
+which knows everything there is to know about the API; `bdns-sync` adds
+versioned history, deletion detection and the run log.
 
 ## Where to start
 
@@ -69,3 +75,5 @@ versions are never deleted — history is append-only.
 | `_synced_at` | Last time the record was seen |
 | `_reg_date` | The record's own registration date, where the entity exposes one |
 | `payload` | The record exactly as the API returned it |
+| `_created_run_id` / `_closed_run_id` | The run that wrote the version and the one that closed it |
+| `_closed_reason` | Why it was closed: `superseded` or `removed` |

@@ -1,78 +1,81 @@
-# Docstring and documentation conventions
+# Convenciones de docstrings y documentación
 
-Docstrings in this project are read twice: in the editor, by whoever is
-changing the code, and on the documentation site, where `mkdocstrings`
-renders them as the API reference. One text has to serve both. That is
-the constraint this convention exists to satisfy.
+Los docstrings de este proyecto se leen dos veces: en el editor, por quien
+está cambiando el código, y en la web de documentación, donde
+`mkdocstrings` los convierte en la referencia de la API. Un mismo texto
+tiene que servir a los dos. Esa es la restricción que esta convención
+existe para cumplir.
 
-## The one rule
+## La regla
 
-**A fact has one home. Code links to it, never copies it.**
+**Un hecho tiene un solo sitio. El código enlaza a él, nunca lo copia.**
 
-| The thing you want to write down | Where it lives |
+| Lo que quieres dejar escrito | Dónde vive |
 | --- | --- |
-| What a function does, and what it promises the caller | Its docstring |
-| A design decision spanning several functions | The module docstring |
-| A measured fact about the BDNS API | [API behaviour](../explanation/bdns-api-behavior.md) |
-| A warning for whoever consumes the resulting tables | [Before querying the data](../explanation/data-caveats.md) |
-| How to run, deploy, or schedule the tool | The guides |
+| Qué hace una función y qué promete a quien la llama | Su docstring |
+| Una decisión de diseño que abarca varias funciones | El docstring del módulo |
+| Un hecho medido sobre la API de la BDNS | El [comportamiento de la API](https://cruzlorite.github.io/bdns-fetch/explanation/api-behavior/) de bdns-fetch |
+| Lo que este motor decide a partir de ello | [Cómo sincroniza](../explanation/sync-behavior.md) |
+| Un aviso para quien consulta las tablas resultantes | [Antes de consultar los datos](../explanation/data-caveats.md) |
+| Cómo ejecutar, desplegar o programar la herramienta | Las guías |
 
-Duplication is not a style problem here, it is a correctness problem:
-two copies of a measurement diverge, and nothing tells you which one is
-stale.
+Aquí la duplicación no es un problema de estilo, es un problema de
+corrección: dos copias de una medición divergen, y nada te dice cuál está
+desactualizada.
 
-## Function and method docstrings
+## Docstrings de funciones y métodos
 
-Sections in this order, always:
+Secciones en este orden, siempre:
 
-1. **Summary line.** Imperative mood, one line, ends with a period.
-2. **Why paragraph** (optional). Three to six lines. See the three-way
-   test below for what belongs here.
-3. **`Args` / `Returns` / `Yields` / `Raises`**, Google style.
+1. **Línea de resumen.** En imperativo, una línea, terminada en punto.
+2. **Párrafo del porqué** (opcional). De tres a seis líneas. Ver más
+   abajo la prueba de los tres destinos para saber qué va aquí.
+3. **`Args` / `Returns` / `Yields` / `Raises`**, estilo Google.
 
-Rules:
+Reglas:
 
-- Imperative mood: "Group `items` into lists", not "Groups items" and
-  not "This function groups items".
-- Do not restate types in prose. The type hints carry them, and
-  `mkdocstrings` renders the signature above the text.
-- Document every parameter, or omit `Args` entirely. Half a list reads
-  as an oversight.
-- `Raises` is for exceptions a caller is expected to handle, not for
-  every exception that can physically escape.
-- A genuinely obvious one-liner stays a one-liner. [`chunked`][bdns.sync.pipeline.chunked] needs no
-  `Args` block; forcing one adds noise, not information.
+- Imperativo: "Group `items` into lists", no "Groups items" ni "This
+  function groups items".
+- No repitas los tipos en el texto. Ya los llevan las anotaciones, y
+  `mkdocstrings` muestra la firma encima del texto.
+- Documenta todos los parámetros, o ninguno. Una lista a medias parece un
+  descuido.
+- `Raises` es para las excepciones que se espera que maneje quien llama,
+  no para toda excepción que físicamente pueda escapar.
+- Una función de una línea realmente obvia sigue siendo de una línea.
+  [`chunked`][bdns.sync.pipeline.chunked] no necesita bloque `Args`;
+  forzarlo añade ruido, no información.
 
-## Where the "why" goes: the three-way test
+## Dónde va el porqué: la prueba de los tres destinos
 
-Long rationale is the most valuable thing in this codebase and the
-easiest to put in the wrong place. For each paragraph, ask what it is
-actually about:
+Las justificaciones largas son lo más valioso de este código y lo más
+fácil de colocar mal. Para cada párrafo, pregúntate de qué trata en
+realidad:
 
-- **This function's own implementation choice** → it stays, trimmed to
-  three to six lines.
-- **A decision that spans the module** → it moves to the module
-  docstring.
-- **An empirical measurement of the API** → it moves to `docs/`, and the
-  docstring links to it.
+- **Una decisión de implementación de esta función** → se queda, recortada
+  a entre tres y seis líneas.
+- **Una decisión que abarca el módulo** → pasa al docstring del módulo.
+- **Una medición empírica de la API** → pasa a la documentación, y el
+  docstring enlaza a ella.
 
-Nothing gets deleted. It gets filed.
+No se borra nada. Se archiva en su sitio.
 
-### Worked example
+### Ejemplo
 
-`bdns/sync/hashing.py::sorted_delimited_list` currently carries
-twenty-five lines mixing all three categories. Split:
+`bdns/sync/hashing.py::sorted_delimited_list` llegó a tener veinticinco
+líneas que mezclaban las tres categorías. Repartidas:
 
-- Which fields shuffle their order (`sectorActividad` in minimis,
-  `sectores` in ayudasestado) — **measurement**, belongs in
-  [the API behaviour notes](../explanation/bdns-api-behavior.md).
-- Why the separator is a regex and not a plain character (CNAE names
-  contain their own semicolons) — **this function's choice**, stays.
-- Why hashing may be coarser than storage but never finer — **module
-  scope**, belongs in the `policy.py` module docstring, which already
-  makes that argument well.
+- Qué campos llegan barajados (`sectorActividad` en minimis, `sectores`
+  en ayudasestado): **medición**, va en
+  [el comportamiento de la API](https://cruzlorite.github.io/bdns-fetch/explanation/api-behavior/#shuffled-lists).
+- Por qué el separador es una expresión regular y no un carácter (los
+  nombres CNAE llevan sus propios puntos y coma): **decisión de esta
+  función**, se queda.
+- Por qué el hash puede ser más grueso que lo almacenado pero nunca más
+  fino: **alcance de módulo**, va en el docstring de `policy.py`, que ya
+  lo argumenta bien.
 
-### Before
+### Antes
 
 ```python
 def prefetch(iterable: Iterable[Any]) -> Iterator[Any]:
@@ -92,7 +95,7 @@ def prefetch(iterable: Iterable[Any]) -> Iterator[Any]:
     """
 ```
 
-### After
+### Después
 
 ```python
 def prefetch(iterable: Iterable[Any]) -> Iterator[Any]:
@@ -116,101 +119,104 @@ def prefetch(iterable: Iterable[Any]) -> Iterator[Any]:
     """
 ```
 
-Same facts, three fewer lines, and the signature is no longer buried.
+Los mismos hechos, tres líneas menos, y la firma ya no queda enterrada.
 
-## Module docstrings
+## Docstrings de módulo
 
-Every module has one. Shape:
+Todo módulo tiene uno, con esta forma:
 
-1. A summary line naming what lives here.
-2. The design argument that makes the module cohere.
+1. Una línea de resumen que dice qué vive ahí.
+2. El argumento de diseño que da coherencia al módulo.
 
-This is where essays belong. `bdns/sync/policy.py` is the model: it
-explains why hash-only rules are safe and stored-payload rules are not,
-which is a claim no single function could carry. Leave it as it is.
+Aquí es donde caben los ensayos. `bdns/sync/policy.py` es el modelo:
+explica por qué las reglas que solo afectan al hash son seguras y las que
+afectan a lo almacenado no, que es algo que ninguna función por sí sola
+podría sostener.
 
-## Class docstrings
+## Docstrings de clase
 
-Summary line, then `Attributes:` for dataclasses and value objects. Do
-not write a separate `__init__` docstring — the class docstring covers
-construction.
+Línea de resumen y, en dataclasses y objetos de valor, `Attributes:`. No
+escribas un docstring aparte para `__init__`: el de la clase cubre la
+construcción.
 
-## Public surface: `__all__`
+## Superficie pública: `__all__`
 
-Every module declares `__all__`, and it is the contract: names in
-`__all__` cannot change without a breaking-change note in the changelog.
+Todo módulo declara `__all__`, y es el contrato: los nombres de `__all__`
+no cambian sin una nota de ruptura en el changelog.
 
-Module-private helpers keep the underscore prefix, and they stay
-documented. The reference renders them next to the public names, one
-page per module; the underscore is what tells a reader a name may change
-without notice. [`_order_independent`][bdns.sync.hashing._order_independent] is private, and its docstring is
-still one of the more useful ones in the package.
+Los helpers privados de un módulo llevan guion bajo, y siguen
+documentados. La referencia los muestra junto a los públicos, una página
+por módulo; el guion bajo es lo que avisa de que un nombre puede cambiar
+sin aviso. [`_order_independent`][bdns.sync.hashing._order_independent]
+es privado, y su docstring sigue siendo de los más útiles del paquete.
 
-## Links from code
+## Enlaces desde el código
 
-Keep references to the documentation rather than copying evidence into
-docstrings: copies go stale. How to write one depends on whether it gets
-rendered.
+Enlaza a la documentación en vez de copiar la evidencia en los
+docstrings: las copias se quedan desactualizadas. Cómo se escribe el
+enlace depende de si se renderiza.
 
-**In a docstring**, write a Markdown link. It is relative to the page the
-docstring renders on, and every module's page lives in
+**En un docstring**, un enlace Markdown. Es relativo a la página donde se
+renderiza el docstring, y la página de cada módulo vive en
 `docs/reference/api/`:
 
 ```python
 """...
 
 Evidence that the order varies is in
-[the spurious-changes measurements](../../explanation/bdns-api-behavior.md#spurious-changes).
+[the spurious-changes measurements](../../explanation/sync-behavior.md#spurious-changes).
 """
 ```
 
-In the editor the path still says which file to open; on the site it is a
-link.
+En el editor la ruta sigue diciendo qué fichero abrir; en la web es un
+enlace.
 
-**To another object**, use a cross-reference. A name in the docstring's
-scope needs no target, and anything else takes its full path:
+**A otro objeto**, una referencia cruzada. Un nombre en el ámbito del
+docstring no necesita destino, y cualquier otro lleva su ruta completa:
 
 ```python
-"""Same shape as [`sync_search_range`][], for the other date family.
+"""Same shape as [`registration_window`][], for the other date family.
 
 Serialized through [`PortableJSON`][bdns.sync.sinks.sql.schema.PortableJSON].
 """
 ```
 
-A name between plain backticks renders as code, not as a link.
+Un nombre entre comillas invertidas sin más se ve como código, no como
+enlace.
 
-**In a comment, a script, a test or the Dockerfile**, nothing renders, so
-write the path from the repository root:
+**En un comentario, un script, un test o el Dockerfile** no se renderiza
+nada, así que se escribe la ruta desde la raíz del repositorio:
 
 ```python
-# See docs/explanation/bdns-api-behavior.md#spurious-changes.
+# See docs/explanation/sync-behavior.md#spurious-changes.
 ```
 
-In every case:
+En todos los casos:
 
-- Link an **anchor**, never a section number. Section numbers move every
-  time a section is inserted.
-- The anchors are the explicit `<a id="…">` ids in the evidence
-  documents. They are language-independent: a Spanish page and its
-  translation use the same ones.
+- Se enlaza un **ancla**, nunca un número de sección. Los números de
+  sección se mueven cada vez que se inserta una sección.
+- Las anclas son los `<a id="…">` explícitos de los documentos. No
+  dependen del idioma: una página en español y su traducción usan las
+  mismas.
 
-`scripts/check_doc_refs.py` resolves every such link, rendered or not, and
-fails on a missing file or anchor. `scripts/check_site_links.py` reads the
-built site and fails on any mention of a documented object, a document or
-a script that is not a link.
+`scripts/check_doc_refs.py` resuelve todos esos enlaces, se rendericen o
+no, y falla si falta un fichero o un ancla. `scripts/check_site_links.py`
+lee la web generada y falla ante cualquier mención de un objeto
+documentado, un documento o un script que no sea un enlace.
 
-## Language
+## Idioma
 
-- Code, comments, and docstrings: **English**, always.
-- Site: Spanish is canonical. `foo.md` is the Spanish page and
-  `foo.en.md` its English translation; a page with no translation falls
-  back to the Spanish one (`mkdocs.yml`, `i18n` plugin). Docstrings are
-  English, so the generated API reference pages are English in both
-  languages, and so is this contributing guide.
+- Código, comentarios y docstrings: **en inglés**, siempre.
+- Web: el español es el idioma canónico. `foo.md` es la página en
+  español y `foo.en.md` su traducción al inglés; una página sin
+  traducción muestra la española (`mkdocs.yml`, plugin `i18n`). Los
+  docstrings están en inglés, así que la referencia de la API generada
+  está en inglés en los dos idiomas.
 
-## Enforcement
+## Cómo se comprueba
 
-`ruff` carries the shape so review can spend its attention on content:
+`ruff` se ocupa de la forma, para que la revisión pueda dedicarse al
+contenido:
 
 ```toml
 [tool.ruff]
@@ -233,8 +239,8 @@ convention = "google"
 "tests/*" = ["D"]
 ```
 
-The same configuration applies in bdns-fetch, and CI runs
-`ruff format --check` in both.
+La misma configuración se aplica en bdns-fetch, y el CI ejecuta
+`ruff format --check` en los dos.
 
-CI additionally runs `mkdocs build --strict`, which fails on a broken
-internal link or an unresolvable reference target.
+El CI ejecuta además `mkdocs build --strict`, que falla ante un enlace
+interno roto o una referencia que no se resuelve.

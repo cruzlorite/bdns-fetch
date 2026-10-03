@@ -64,7 +64,7 @@ no lo es.
 
 Qué reglas están declaradas hoy, para qué entidad, y qué se midió para
 justificar cada una, está en
-[el comportamiento de la API](bdns-api-behavior.md#spurious-changes).
+[el comportamiento de la API](sync-behavior.md#spurious-changes).
 Ninguna es una preferencia; todas son un hallazgo.
 
 ## La identidad no es política
@@ -87,10 +87,10 @@ Sin la clave natural un registro no se puede versionar en absoluto. Sin
 su fecha de registro, un run por ventana no puede distinguir una baja
 real de una fila que simplemente salió de la ventana — la distinción
 está en
-[la detección de bajas](bdns-api-behavior.md#windowed-deletions).
+[la detección de bajas](sync-behavior.md#windowed-deletions).
 
 ## Dónde vive esto en el código
 
 - [`bdns.sync.policy`][bdns.sync.policy] — [`PayloadPolicy`][bdns.sync.policy.PayloadPolicy], [`prepare`][bdns.sync.policy.PayloadPolicy.prepare], [`check_identity`][bdns.sync.policy.PayloadPolicy.check_identity].
 - [`bdns.sync.hashing`][bdns.sync.hashing] — el JSON canónico y las normalizaciones.
-- [`bdns.sync.syncers`][bdns.sync.syncers] — el mapa `POLICIES`, una entrada por entidad.
+- [`bdns.sync.entities`][bdns.sync.entities] — la política de cada entidad, en su entrada del registro.

@@ -9,7 +9,7 @@ file.
 ```console
 $ pip install bdns-sync
 $ bdns-sync --version
-bdns-sync 0.5.0
+bdns-sync 0.6.0
 ```
 
 ## 2. Pick a target
@@ -71,19 +71,19 @@ Run exactly the same command again:
 $ bdns-sync sync sectores
 ```
 
-Compare the counters in the log. The first time:
+Compare the counters. The first time:
 
 ```text
-fetched=24 inserted=24 updated=0 touched=0 soft_deleted=0 skipped=0
+ok      sectores                         fetched=24 new=24 changed=0 unchanged=0 removed=0 skipped=0
 ```
 
 The second:
 
 ```text
-fetched=24 inserted=0 updated=0 touched=24 soft_deleted=0 skipped=0
+ok      sectores                         fetched=24 new=0 changed=0 unchanged=24 removed=0 skipped=0
 ```
 
-Everything landed in `touched`: the records were seen again and had not
+Everything landed in `unchanged`: the records were seen again and had not
 changed, so **no new version was created**. Only the last-seen timestamp
 moved.
 
@@ -139,6 +139,23 @@ for row in db.execute(
 Two rows per run: a `started` and a `success`. If you ever see a lone
 `started`, that process died halfway through — exactly the information a
 mutable status column could never give you.
+
+## 8. Everything at once
+
+In production you do not run entity by entity: one command syncs all 22,
+with the window each day calls for. See what it would do today:
+
+```console
+$ bdns-sync delta --dry-run
+target      sqlite:///bdns.db
+limits      max_ratio=10% max_count=none min_to_enforce_ratio=5
+  sectores: complete state
+  actividades: complete state
+  ...
+  concesiones_busqueda: weekly [2026-09-26 .. 2026-10-02]
+  ...
+dry run     22 sync(s) planned; nothing fetched, nothing written
+```
 
 ## What next
 

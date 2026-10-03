@@ -119,6 +119,7 @@ plugins:
             Decisiones: Decisions
             Contribuir: Contributing
             Hoja de ruta: Roadmap
+            Compatibilidad: Compatibility
   # The reference is built once per locale, so every symbol has one URL per
   # language and autorefs sees competing targets. `resolve_closest` picks
   # the one in the same subtree as the linking page, which is the right
@@ -157,7 +158,7 @@ nav:
   - Explicación:
       - explanation/endpoint-types.md
       - explanation/payload-policy.md
-      - explanation/bdns-api-behavior.md
+      - explanation/sync-behavior.md
       - explanation/official-practices.md
       - explanation/data-caveats.md
       - explanation/limitations.md
@@ -167,18 +168,19 @@ nav:
       - reference/data-model.md
       - API Python:
           - reference/api/index.md
+          - reference/api/entities.md
+          - reference/api/windows.md
+          - reference/api/orchestration.md
           - reference/api/policy.md
           - reference/api/hashing.md
-          - reference/api/generic.md
-          - reference/api/syncers.md
           - reference/api/pipeline.md
-          - reference/api/api_contract.md
           - reference/api/sinks.md
           - reference/api/cli.md
           - reference/api/sinks.sql.md
           - reference/api/sinks.sql.scd2.md
           - reference/api/sinks.sql.schema.md
           - reference/api/sinks.sql.bookkeeping.md
+          - reference/api/sinks.sql.migrate.md
           - reference/api/sinks.sql.dialects.md
   - Decisiones:
       - adr/index.md
@@ -187,6 +189,12 @@ nav:
       - adr/0003-run-event-log.md
       - adr/0004-beneficiario-out-of-hash.md
       - adr/0005-per-run-reject-tolerance.md
+      - adr/0006-entity-registry.md
+      - adr/0007-cadence-in-the-cli.md
+      - adr/0008-run-linked-versions-additive-migrations.md
+      - adr/0009-natural-key-conflicts-fail-the-run.md
+      - adr/0010-api-semantics-from-bdns-fetch.md
   - Contribuir:
       - contributing/docstrings.md
+  - Compatibilidad: compatibility.md
   - Hoja de ruta: roadmap.md

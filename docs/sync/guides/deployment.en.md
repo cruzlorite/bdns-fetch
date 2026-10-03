@@ -6,13 +6,13 @@ How to keep a target synced without a machine of your own. `bdns-sync` is a CLI 
 
 ## The image
 
-Every release publishes an image to GitHub Container Registry with the BigQuery extra and the orchestration scripts included:
+Every release publishes an image to GitHub Container Registry with the BigQuery extra:
 
 ```bash
-docker pull ghcr.io/cruzlorite/bdns-sync:latest    # or :0.5.0
+docker pull ghcr.io/cruzlorite/bdns-sync:latest    # or a given version, :0.6.0
 ```
 
-- The default command is [`scripts/delta_load.sh`](https://github.com/cruzlorite/bdns-sync/blob/main/scripts/delta_load.sh) (the daily delta; it picks the window by itself).
+- The default command is `bdns-sync delta`: the daily load, which picks the window by itself and carries on when an entity fails ([scheduled operation](scheduling.md)).
 - Any other command passes through as-is: `docker run ... ghcr.io/cruzlorite/bdns-sync bdns-sync sync sectores`.
 - A Cloud Function-style deployment does not fit: timeout limits (15-60 min) cannot cover the wide windows (an `annual` run of `convocatorias` is ~3 h) or the bootstrap (~24 h, see [initial loads and backfills](backfill.md)).
 
@@ -87,11 +87,11 @@ A one-off ~24 h operation (see the table in [initial loads and backfills](backfi
 - **A second job** with the full-load command and the timeout at its maximum (24 h on Cloud Run Jobs — a tight fit; if an outage cuts it, re-running heals: the one-year slices commit independently):
 
   ```bash
-  gcloud run jobs create bdns-sync-full ... --command /app/scripts/full_load.sh --task-timeout 24h
+  gcloud run jobs create bdns-sync-full ... --command bdns-sync --args backfill --task-timeout 24h
   gcloud run jobs execute bdns-sync-full --project $PROJECT --region $REGION
   ```
 
-- **Any machine with Docker**: `docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync /app/scripts/full_load.sh`
+- **Any machine with Docker**: `docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync bdns-sync backfill`
 
 ## Other clouds
 

@@ -7,8 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Planned as 0.6.0, on bdns-fetch 2.0.
+
 ### Added
 
+- `bdns-sync delta`: the daily run as one command. It checks the API's date semantics (and syncs nothing if they
+  changed), syncs every full entity, then every windowed one with the window the cadence picks: annual on 1 January,
+  1 May and 1 September, monthly on Mondays, weekly otherwise. One entity failing does not stop the others; the exit
+  code is 1 if any failed. `--window` forces a window, `--dry-run` prints the plan with its dates.
+- `bdns-sync backfill`: the historical load as one command, each windowed entity loaded year by year from the start
+  of its history, each year a run of its own. `--entity` limits it.
+- Every version records the run that created it and, once closed, the run that closed it and why: `_created_run_id`,
+  `_closed_run_id`, `_closed_reason` (`superseded` or `removed`). "What did run X change" and "what was withdrawn"
+  become plain queries.
+- `_sync_runs` records `rows_changed`, `rows_unchanged` and, for windowed runs, `window_start` and `window_end`, so the
+  coverage of the history can be audited from the log.
+- Targets written by earlier versions are upgraded in place: each run adds the nullable columns a table lacks. The
+  schema only ever grows that way.
+- `--max-retries`, `--wait-time` and `--rate-limit`, each with an environment variable (`BDNS_SYNC_MAX_RETRIES`...).
+  The defaults (5 retries from 10 s) ride out about 3-4 minutes of server trouble per request.
+- A CI job runs the suite against bdns-fetch's main branch, to catch a break before it is released.
 - `--max-reject-ratio` and `--max-rejects` set how much of a batch may be unusable before the run refuses it. The
   first was a constant; the second is new, and covers what a share cannot see: 20,000 broken records out of 20
   million is 0.1%, below any sane ratio, and still means the shape of what the source returns changed. Both are
@@ -23,13 +41,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A batch in which one natural key carries two different payloads fails the run, naming the keys. It used to write
+  two current versions for one key, which every later run closed and rewrote, reporting changes the source never
+  made. Byte-identical duplicates are still tolerated.
+- Retries now cover server errors. With bdns-fetch 1.x the configured 8 retries only applied to network errors; HTTP
+  429, 5xx and `ERR_MANTENIMIENTO_BBDD` failed the run at the first attempt.
 - Rejected records reach `_sync_errors` on a failed run too. They were only written on the success path, so a run
   that failed *because* too much of the batch was rejected told the operator to go and read a table that had nothing
   in it, which is exactly the case where the reasons matter.
 
 ### Changed
 
-- The license identifier is `GPL-3.0-or-later`, as the file headers always stated.
+- **Breaking.** Entities are declared once, in `bdns.sync.entities.ENTITIES`, and run with `sync_entity`. The 22
+  `sync_*` functions, `FULL_SYNCERS`, `SEARCH_SYNCERS`, `POLICIES`, `policy_for` and the `generic`, `syncers` and
+  `api_contract` modules are gone.
+- **Breaking.** Sinks return a `SyncStats` (`fetched`, `new`, `changed`, `unchanged`, `removed`, `skipped`) instead of
+  a dict with `inserted`, `updated`, `touched` and `soft_deleted`. Run logs print the new names.
+- `list --kind windowed` replaces `search`, which is still accepted.
+- Requires bdns-fetch 2.0, which now owns the API's date semantics (`bdns.fetch.dates`), the contract check
+  (`bdns.fetch.contract`) and request spacing. The tqdm patch, the all-pages wrapper and the per-call spacing are gone.
+- The scripts are one-line wrappers around `delta` and `backfill`, kept for existing crontabs, and the image runs
+  `bdns-sync delta`.
+- The docs site is deployed on release tags instead of on every push, so it documents the latest release. The API
+  behaviour notes moved to bdns-fetch's site; this site keeps what the engine decides because of them.
 - ruff targets Python 3.11 and CI checks formatting, with the same configuration as bdns-fetch.
 - The Docker image installs the locked dependency versions instead of resolving them at build time.
 

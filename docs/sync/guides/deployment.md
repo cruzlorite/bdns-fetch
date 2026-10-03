@@ -6,13 +6,13 @@ Cómo mantener un destino sincronizado sin tener una máquina propia. `bdns-sync
 
 ## La imagen
 
-Cada release publica una imagen en GitHub Container Registry con el extra de BigQuery y los scripts de orquestación dentro:
+Cada release publica una imagen en GitHub Container Registry con el extra de BigQuery:
 
 ```bash
-docker pull ghcr.io/cruzlorite/bdns-sync:latest    # o :0.5.0
+docker pull ghcr.io/cruzlorite/bdns-sync:latest    # o una versión concreta, :0.6.0
 ```
 
-- El comando por defecto es [`scripts/delta_load.sh`](https://github.com/cruzlorite/bdns-sync/blob/main/scripts/delta_load.sh) (la carga diaria; la ventana la decide él solo).
+- El comando por defecto es `bdns-sync delta`: la carga diaria, que decide sola la ventana y sigue aunque falle una entidad ([operación programada](scheduling.md)).
 - Cualquier otro comando se pasa tal cual: `docker run ... ghcr.io/cruzlorite/bdns-sync bdns-sync sync sectores`.
 - El modelo tipo Cloud Function no encaja: sus timeouts (de 15 a 60 min) no dan para las ventanas anchas (una `annual` de `convocatorias` son unas 3 h) ni para la carga inicial (~24 h, ver [cargas iniciales y backfills](backfill.md)).
 
@@ -87,11 +87,11 @@ Es una operación de unas 24 h (ver la tabla de [cargas iniciales y backfills](b
 - **Un segundo job** con el comando de la carga completa y el timeout al máximo (24 h en Cloud Run Jobs, justo; si un corte lo interrumpe, basta con volver a lanzarlo, porque los tramos de un año se confirman por separado):
 
   ```bash
-  gcloud run jobs create bdns-sync-full ... --command /app/scripts/full_load.sh --task-timeout 24h
+  gcloud run jobs create bdns-sync-full ... --command bdns-sync --args backfill --task-timeout 24h
   gcloud run jobs execute bdns-sync-full --project $PROJECT --region $REGION
   ```
 
-- **Cualquier máquina con Docker**: `docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync /app/scripts/full_load.sh`
+- **Cualquier máquina con Docker**: `docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync bdns-sync backfill`
 
 ## Otras nubes
 

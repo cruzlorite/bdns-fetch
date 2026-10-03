@@ -9,7 +9,7 @@ fichero.
 ```console
 $ pip install bdns-sync
 $ bdns-sync --version
-bdns-sync 0.5.0
+bdns-sync 0.6.0
 ```
 
 ## 2. Elegir un destino
@@ -70,19 +70,19 @@ Lanza exactamente el mismo comando otra vez:
 $ bdns-sync sync sectores
 ```
 
-Compara los contadores del log. La primera vez:
+Compara los contadores. La primera vez:
 
 ```text
-fetched=24 inserted=24 updated=0 touched=0 soft_deleted=0 skipped=0
+ok      sectores                         fetched=24 new=24 changed=0 unchanged=0 removed=0 skipped=0
 ```
 
 La segunda:
 
 ```text
-fetched=24 inserted=0 updated=0 touched=24 soft_deleted=0 skipped=0
+ok      sectores                         fetched=24 new=0 changed=0 unchanged=24 removed=0 skipped=0
 ```
 
-Todo cayó en `touched`: los registros se volvieron a ver y no habían
+Todo cayó en `unchanged`: los registros se volvieron a ver y no habían
 cambiado, así que **no se creó ninguna versión nueva**. Solo se refrescó
 la marca de última visita.
 
@@ -137,6 +137,23 @@ for row in db.execute(
 Dos filas por ejecución: un `started` y un `success`. Si alguna vez
 ves un `started` suelto, ese proceso murió a mitad — es exactamente la
 información que un campo de estado mutable no podría darte.
+
+## 8. Todo de una vez
+
+En producción no se lanza entidad a entidad: un solo comando sincroniza
+las 22, con la ventana que toca cada día. Mira qué haría hoy:
+
+```console
+$ bdns-sync delta --dry-run
+target      sqlite:///bdns.db
+limits      max_ratio=10% max_count=none min_to_enforce_ratio=5
+  sectores: complete state
+  actividades: complete state
+  ...
+  concesiones_busqueda: weekly [2026-09-26 .. 2026-10-02]
+  ...
+dry run     22 sync(s) planned; nothing fetched, nothing written
+```
 
 ## Qué hacer después
 

@@ -62,7 +62,7 @@ turns out to be wrong, is recoverable.** A storage rule's is not.
 
 Which rules are declared today, for which entity, and what was measured
 to justify each one, is in
-[the API's behaviour](bdns-api-behavior.md#spurious-changes). None of
+[the API's behaviour](sync-behavior.md#spurious-changes). None of
 them is a preference; every one is a finding.
 
 ## Identity is not policy
@@ -83,10 +83,10 @@ The asymmetry of cost explains it:
 Without the natural key a record cannot be versioned at all. Without its
 registration date, a windowed run cannot tell a real withdrawal from a
 row that simply aged out of the window — that distinction is in
-[deletion detection](bdns-api-behavior.md#windowed-deletions).
+[deletion detection](sync-behavior.md#windowed-deletions).
 
 ## Where this lives in the code
 
 - [`bdns.sync.policy`][bdns.sync.policy] — [`PayloadPolicy`][bdns.sync.policy.PayloadPolicy], [`prepare`][bdns.sync.policy.PayloadPolicy.prepare], [`check_identity`][bdns.sync.policy.PayloadPolicy.check_identity].
 - [`bdns.sync.hashing`][bdns.sync.hashing] — the canonical JSON and the normalizations.
-- [`bdns.sync.syncers`][bdns.sync.syncers] — the `POLICIES` map, one entry per entity.
+- [`bdns.sync.entities`][bdns.sync.entities] — each entity's policy, in its registry entry.

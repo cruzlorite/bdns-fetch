@@ -4,15 +4,20 @@ Motor de sincronización que mantiene bases de datos de destino en forma
 **SCD2** a partir de la API de la [Base de Datos Nacional de
 Subvenciones](https://www.infosubvenciones.es/).
 
-Una invocación sincroniza un endpoint. Ni fichero de configuración, ni
-conocimiento de cadencia: qué sincronizar y cuándo es cosa de quien
-orquesta.
+Un comando al día mantiene el destino al día: comprueba que la API no ha
+cambiado, sincroniza las 22 entidades con la ventana que toca y registra
+cada ejecución. Sin fichero de configuración.
 
 ```console
 $ pip install bdns-sync
 $ export BDNS_SYNC_TARGET_URL=sqlite:///bdns.db
-$ bdns-sync sync concesiones_busqueda --window daily
+$ bdns-sync backfill        # una vez: el histórico
+$ bdns-sync delta           # a diario
 ```
+
+Se apoya en [`bdns-fetch`](https://cruzlorite.github.io/bdns-fetch/), que
+sabe todo lo que hay que saber de la API; `bdns-sync` pone el histórico
+versionado, la detección de bajas y el registro de ejecuciones.
 
 ## Por dónde empezar
 
@@ -71,3 +76,5 @@ Las versiones cerradas no se borran nunca — el histórico es
 | `_synced_at` | Última vez que se vio el registro |
 | `_reg_date` | Fecha de registro propia, cuando la entidad la expone |
 | `payload` | El registro tal como lo devolvió la API |
+| `_created_run_id` / `_closed_run_id` | Ejecución que escribió la versión y la que la cerró |
+| `_closed_reason` | Por qué se cerró: `superseded` o `removed` |

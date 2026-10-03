@@ -32,9 +32,11 @@ def current(engine, metadata, name):
 def errors(engine, metadata, name):
     _, _, sync_errors = build_control_tables(metadata)
     with engine.begin() as conn:
-        return conn.execute(
-            select(sync_errors).where(sync_errors.c.table_name == name)
-        ).mappings().all()
+        return (
+            conn.execute(select(sync_errors).where(sync_errors.c.table_name == name))
+            .mappings()
+            .all()
+        )
 
 
 GOOD = [{"id": i, "v": "x"} for i in range(1, 12)]

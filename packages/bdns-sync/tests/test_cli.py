@@ -44,7 +44,9 @@ def test_list_rejects_unknown_kind():
 
 
 def test_sync_rejects_unknown_endpoint():
-    result = runner.invoke(app, ["sync", "not_a_real_endpoint", "--target-url", "sqlite:///:memory:"])
+    result = runner.invoke(
+        app, ["sync", "not_a_real_endpoint", "--target-url", "sqlite:///:memory:"]
+    )
     assert result.exit_code != 0
 
 
@@ -60,8 +62,14 @@ def test_sync_rejects_window_and_since_together():
     result = runner.invoke(
         app,
         [
-            "sync", "concesiones_busqueda", "--target-url", "sqlite:///:memory:",
-            "--window", "daily", "--since", "2020-01-01",
+            "sync",
+            "concesiones_busqueda",
+            "--target-url",
+            "sqlite:///:memory:",
+            "--window",
+            "daily",
+            "--since",
+            "2020-01-01",
         ],
     )
     assert result.exit_code != 0
@@ -71,7 +79,14 @@ def test_sync_rejects_window_and_since_together():
 def test_sync_rejects_non_iso_since():
     result = runner.invoke(
         app,
-        ["sync", "concesiones_busqueda", "--target-url", "sqlite:///:memory:", "--since", "01/01/2020"],
+        [
+            "sync",
+            "concesiones_busqueda",
+            "--target-url",
+            "sqlite:///:memory:",
+            "--since",
+            "01/01/2020",
+        ],
     )
     assert result.exit_code != 0
     assert "ISO date" in plain(result)
@@ -81,8 +96,14 @@ def test_sync_rejects_until_before_since():
     result = runner.invoke(
         app,
         [
-            "sync", "concesiones_busqueda", "--target-url", "sqlite:///:memory:",
-            "--since", "2020-06-01", "--until", "2020-01-01",
+            "sync",
+            "concesiones_busqueda",
+            "--target-url",
+            "sqlite:///:memory:",
+            "--since",
+            "2020-06-01",
+            "--until",
+            "2020-01-01",
         ],
     )
     assert result.exit_code != 0
@@ -119,8 +140,15 @@ def test_sync_rejects_unknown_window():
 def test_dry_run_resolves_a_window_to_concrete_dates_and_chunks():
     result = runner.invoke(
         app,
-        ["sync", "concesiones_busqueda", "--window", "monthly",
-         "--target-url", "sqlite:///:memory:", "--dry-run"],
+        [
+            "sync",
+            "concesiones_busqueda",
+            "--window",
+            "monthly",
+            "--target-url",
+            "sqlite:///:memory:",
+            "--dry-run",
+        ],
     )
     assert result.exit_code == 0
     output = plain(result)
@@ -131,8 +159,15 @@ def test_dry_run_resolves_a_window_to_concrete_dates_and_chunks():
 def test_dry_run_shows_the_policy_that_would_apply():
     result = runner.invoke(
         app,
-        ["sync", "concesiones_busqueda", "--window", "daily",
-         "--target-url", "sqlite:///:memory:", "--dry-run"],
+        [
+            "sync",
+            "concesiones_busqueda",
+            "--window",
+            "daily",
+            "--target-url",
+            "sqlite:///:memory:",
+            "--dry-run",
+        ],
     )
     assert "hash_exclude=['beneficiario']" in plain(result)
 

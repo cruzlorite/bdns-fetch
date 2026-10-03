@@ -5,7 +5,7 @@ version = "0.5.0"
 description = "Sync engine that keeps target databases in SCD2 form from the Base de Datos Nacional de Subvenciones (BDNS) API"
 readme = "README.md"
 authors = ["José María Cruz Lorite <josemariacruzlorite@gmail.com>"]
-license = "GPL-3.0"
+license = "GPL-3.0-or-later"
 homepage = "https://github.com/cruzlorite/bdns-sync"
 repository = "https://github.com/cruzlorite/bdns-sync"
 documentation = "https://cruzlorite.github.io/bdns-sync/"
@@ -20,6 +20,9 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Utilities",
@@ -62,6 +65,7 @@ bdns-sync = "bdns.sync.__main__:app"
 
 [tool.ruff]
 line-length = 100
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "D"]
@@ -71,6 +75,10 @@ ignore = [
     "D105",  # magic methods: covered by the class docstring
     "D107",  # __init__: documented on the class
 ]
+
+[tool.ruff.lint.flake8-bugbear]
+# Typer declares options as argument defaults; they are evaluated once, by design.
+extend-immutable-calls = ["typer.Option", "typer.Argument"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

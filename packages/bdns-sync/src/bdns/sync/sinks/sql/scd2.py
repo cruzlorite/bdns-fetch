@@ -19,8 +19,8 @@ on SQLite, PostgreSQL, and BigQuery.
 
 import logging
 from collections.abc import Iterable, Sequence
-from datetime import date, datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, date, datetime
+from typing import Any
 
 from sqlalchemy import and_, cast, exists, func, insert, literal, null, or_, select, update
 from sqlalchemy.engine import Connection
@@ -43,8 +43,8 @@ class BatchRejected(RuntimeError):
 
 
 def rejection_reason(
-    payload: Any, key_fields: Sequence[str], reg_date_field: Optional[str]
-) -> Optional[str]:
+    payload: Any, key_fields: Sequence[str], reg_date_field: str | None
+) -> str | None:
     """Why this record cannot be versioned, or None if it can.
 
     A record without a usable natural key has no identity, so there is
@@ -90,7 +90,7 @@ def apply_full_reconciliation(
     policy: PayloadPolicy = DEFAULT_POLICY,
     limits: RejectLimits = DEFAULT_LIMITS,
     chunk_size: int = 5000,
-    skipped: Optional[list[dict[str, str]]] = None,
+    skipped: list[dict[str, str]] | None = None,
 ) -> dict[str, int]:
     """Diff a complete batch against the table's current rows.
 
@@ -127,8 +127,16 @@ def apply_full_reconciliation(
         BatchRejected: If the share of unusable records crosses `limits`.
     """
     return _apply(
-        conn, table, staging, rows, key_fields, policy, limits, chunk_size,
-        detect_deletions=True, skipped=skipped,
+        conn,
+        table,
+        staging,
+        rows,
+        key_fields,
+        policy,
+        limits,
+        chunk_size,
+        detect_deletions=True,
+        skipped=skipped,
     )
 
 
@@ -141,10 +149,10 @@ def apply_incremental(
     policy: PayloadPolicy = DEFAULT_POLICY,
     limits: RejectLimits = DEFAULT_LIMITS,
     chunk_size: int = 5000,
-    reg_date_field: Optional[str] = None,
-    window_start: Optional[date] = None,
-    window_end: Optional[date] = None,
-    skipped: Optional[list[dict[str, str]]] = None,
+    reg_date_field: str | None = None,
+    window_start: date | None = None,
+    window_end: date | None = None,
+    skipped: list[dict[str, str]] | None = None,
 ) -> dict[str, int]:
     """Apply a windowed batch: one reg-date window pass.
 
@@ -187,8 +195,17 @@ def apply_incremental(
     """
     window = (reg_date_field, window_start, window_end) if reg_date_field else None
     return _apply(
-        conn, table, staging, rows, key_fields, policy, limits, chunk_size,
-        detect_deletions=False, window=window, skipped=skipped,
+        conn,
+        table,
+        staging,
+        rows,
+        key_fields,
+        policy,
+        limits,
+        chunk_size,
+        detect_deletions=False,
+        window=window,
+        skipped=skipped,
     )
 
 
@@ -202,8 +219,8 @@ def _apply(
     limits: RejectLimits,
     chunk_size: int,
     detect_deletions: bool,
-    window: Optional[tuple] = None,
-    skipped: Optional[list[dict[str, str]]] = None,
+    window: tuple | None = None,
+    skipped: list[dict[str, str]] | None = None,
 ) -> dict[str, int]:
     """Stage the batch, then apply the diff. The engine both entry points share.
 
@@ -233,7 +250,7 @@ def _apply(
     Raises:
         BatchRejected: If the rejects cross `limits`.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     reg_date_field = window[0] if window else None
     policy.check_identity(key_fields, reg_date_field)
     adapter = get_adapter(conn.engine)
@@ -241,7 +258,15 @@ def _apply(
 
     adapter.clear_table(conn, staging)
     fetched = _load_staging(
-        conn, staging, rows, key_fields, policy, chunk_size, reg_date_field, adapter, rejected,
+        conn,
+        staging,
+        rows,
+        key_fields,
+        policy,
+        chunk_size,
+        reg_date_field,
+        adapter,
+        rejected,
     )
     _check_rejects(table.name, fetched, len(rejected), limits)
     logger.info("%s: fetch done, %d rows staged, applying diff", table.name, fetched)
@@ -263,7 +288,7 @@ def _load_staging(
     key_fields: Sequence[str],
     policy: PayloadPolicy,
     chunk_size: int,
-    reg_date_field: Optional[str],
+    reg_date_field: str | None,
     adapter: DialectAdapter,
     rejected: list[dict[str, str]],
 ) -> int:
@@ -324,9 +349,7 @@ def _check_rejects(table_name: str, fetched: int, rejected: int, limits: RejectL
     """
     if not rejected:
         return
-    logger.warning(
-        "%s: %d record(s) rejected of %d fetched", table_name, rejected, fetched
-    )
+    logger.warning("%s: %d record(s) rejected of %d fetched", table_name, rejected, fetched)
     reason = limits.rejection(fetched, rejected)
     if reason:
         raise BatchRejected(
@@ -358,7 +381,11 @@ def _missing_in_window(table: Table, staging: Table, window: tuple):
 
 
 def _diff_stats(
-    conn: Connection, table: Table, staging: Table, detect_deletions: bool, window: Optional[tuple] = None
+    conn: Connection,
+    table: Table,
+    staging: Table,
+    detect_deletions: bool,
+    window: tuple | None = None,
 ) -> dict[str, int]:
     """Count what the diff is about to do, before any statement changes it.
 
@@ -371,7 +398,9 @@ def _diff_stats(
         .select_from(table)
         .where(
             table.c._is_current.is_(True),
-            exists(select(1).where(_matches(table, staging), staging.c._row_hash == table.c._row_hash)),
+            exists(
+                select(1).where(_matches(table, staging), staging.c._row_hash == table.c._row_hash)
+            ),
         )
     ).scalar_one()
 
@@ -380,7 +409,9 @@ def _diff_stats(
         .select_from(table)
         .where(
             table.c._is_current.is_(True),
-            exists(select(1).where(_matches(table, staging), staging.c._row_hash != table.c._row_hash)),
+            exists(
+                select(1).where(_matches(table, staging), staging.c._row_hash != table.c._row_hash)
+            ),
         )
     ).scalar_one()
 
@@ -388,11 +419,7 @@ def _diff_stats(
     inserted = conn.execute(
         select(func.count(func.distinct(staging.c._natural_key)))
         .select_from(staging)
-        .where(
-            ~exists(
-                select(1).where(_matches(table, staging), table.c._is_current.is_(True))
-            )
-        )
+        .where(~exists(select(1).where(_matches(table, staging), table.c._is_current.is_(True))))
     ).scalar_one()
 
     stats = {"inserted": inserted, "updated": updated, "touched": touched}
@@ -401,7 +428,9 @@ def _diff_stats(
         closed = conn.execute(
             select(func.count())
             .select_from(table)
-            .where(table.c._is_current.is_(True), ~exists(select(1).where(_matches(table, staging))))
+            .where(
+                table.c._is_current.is_(True), ~exists(select(1).where(_matches(table, staging)))
+            )
         ).scalar_one()
         stats["soft_deleted"] = closed
     elif window:
@@ -425,7 +454,9 @@ def _touch_unchanged(conn: Connection, table: Table, staging: Table, now: dateti
         update(table)
         .where(
             table.c._is_current.is_(True),
-            exists(select(1).where(_matches(table, staging), staging.c._row_hash == table.c._row_hash)),
+            exists(
+                select(1).where(_matches(table, staging), staging.c._row_hash == table.c._row_hash)
+            ),
         )
         .values(_synced_at=now)
     )
@@ -437,7 +468,7 @@ def _close_stale(
     staging: Table,
     now: datetime,
     detect_deletions: bool,
-    window: Optional[tuple] = None,
+    window: tuple | None = None,
 ) -> None:
     """Close every current version this batch supersedes or proves gone.
 

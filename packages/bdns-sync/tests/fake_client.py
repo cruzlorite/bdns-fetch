@@ -89,8 +89,20 @@ class FakeBDNSClient:
         # what's under test is the merge-without-cross-closing behavior, not
         # the exact row count per value.
         self.organos = {"C": load_fixture("organos"), "A": [], "L": [], "O": []}
-        self.organos_agrupacion = {"C": load_fixture("organos_agrupacion"), "A": [], "L": [], "O": []}
-        self.reglamentos = {"C": load_fixture("reglamentos"), "A": [], "M": [], "S": [], "P": [], "G": []}
+        self.organos_agrupacion = {
+            "C": load_fixture("organos_agrupacion"),
+            "A": [],
+            "L": [],
+            "O": [],
+        }
+        self.reglamentos = {
+            "C": load_fixture("reglamentos"),
+            "A": [],
+            "M": [],
+            "S": [],
+            "P": [],
+            "G": [],
+        }
 
         # Windowed search entities: [{"reg_days_ago": int, "payload": {...}}].
         # partidospoliticos_busqueda has no registration-date field in its
@@ -168,7 +180,12 @@ class FakeBDNSClient:
     # Windowed search entities (reg-date cascade).
 
     def _windowed(
-        self, method: str, records: Iterable[dict], start: date, end: date, upper_inclusive: bool = False
+        self,
+        method: str,
+        records: Iterable[dict],
+        start: date,
+        end: date,
+        upper_inclusive: bool = False,
     ):
         """Models the real API's date filtering, which differs by endpoint:
 
@@ -207,7 +224,10 @@ class FakeBDNSClient:
 
     def fetch_partidospoliticos_busqueda(self, fechaRegInicio, fechaRegFin):
         yield from self._windowed(
-            "fetch_partidospoliticos_busqueda", self.partidospoliticos_busqueda, fechaRegInicio, fechaRegFin
+            "fetch_partidospoliticos_busqueda",
+            self.partidospoliticos_busqueda,
+            fechaRegInicio,
+            fechaRegFin,
         )
 
     def fetch_convocatorias_busqueda(self, fechaDesde, fechaHasta):

@@ -76,7 +76,9 @@ def check(pkg: griffe.Module) -> list[str]:
             for undocumented in sorted(signature - documented):
                 problems.append(f"{member.path}: parameter '{undocumented}' is not in Args")
             for stale in sorted(documented - signature):
-                problems.append(f"{member.path}: Args documents '{stale}', which is not a parameter")
+                problems.append(
+                    f"{member.path}: Args documents '{stale}', which is not a parameter"
+                )
 
     walk(pkg)
     return problems

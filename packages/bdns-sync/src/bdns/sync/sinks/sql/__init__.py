@@ -13,7 +13,7 @@ code allowed to branch on dialect name).
 
 from collections.abc import Iterable, Sequence
 from datetime import date
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
@@ -65,7 +65,7 @@ class SQLSink(Sink):
         key_fields: Sequence[str],
         *,
         policy: PayloadPolicy = DEFAULT_POLICY,
-        skipped: Optional[list[dict[str, str]]] = None,
+        skipped: list[dict[str, str]] | None = None,
     ) -> dict[str, int]:
         """Reconcile `endpoint` against `rows` as its complete current state.
 
@@ -96,9 +96,9 @@ class SQLSink(Sink):
         window_start: date,
         window_end: date,
         run_type: str,
-        reg_date_field: Optional[str] = None,
+        reg_date_field: str | None = None,
         policy: PayloadPolicy = DEFAULT_POLICY,
-        skipped: Optional[list[dict[str, str]]] = None,
+        skipped: list[dict[str, str]] | None = None,
     ) -> dict[str, int]:
         """Apply `rows` as the slice of `endpoint` registered in a date range.
 

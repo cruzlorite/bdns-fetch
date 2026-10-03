@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """BDNS Sync - keeps target databases in SCD2 form from the BDNS API."""
 
 from importlib.metadata import PackageNotFoundError, version

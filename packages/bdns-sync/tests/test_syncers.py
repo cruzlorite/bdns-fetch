@@ -16,9 +16,7 @@ def current_rows(engine, name):
     metadata = MetaData()
     table = build_sync_table(name, metadata)
     with engine.begin() as conn:
-        return conn.execute(
-            select(table).where(table.c._is_current.is_(True))
-        ).mappings().all()
+        return conn.execute(select(table).where(table.c._is_current.is_(True))).mappings().all()
 
 
 # --- convocatorias: two-step discover-then-detail -------------------------
@@ -50,7 +48,14 @@ def test_convocatorias_discover_then_detail_end_to_end():
         },
     )
     stats = sync_convocatorias(SQLSink(engine), client, "daily")
-    assert stats == {"fetched": 2, "inserted": 2, "updated": 0, "touched": 0, "soft_deleted": 0, "skipped": 0}
+    assert stats == {
+        "fetched": 2,
+        "inserted": 2,
+        "updated": 0,
+        "touched": 0,
+        "soft_deleted": 0,
+        "skipped": 0,
+    }
     assert sorted(client.detail_calls) == ["A1", "A2"]
 
     # daily covers just yesterday; convocatorias' fechaHasta is inclusive,

@@ -20,7 +20,7 @@ Comments here only state which behavior applies, never the evidence.
 import logging
 from collections.abc import Callable, Collection, Iterable, Iterator
 from datetime import date
-from typing import Any, Optional
+from typing import Any
 
 from bdns.fetch import BDNSClient, TipoAdministracion
 from bdns.fetch.types import Ambito
@@ -128,7 +128,7 @@ def policy_for(endpoint: str) -> PayloadPolicy:
 
 
 def _skip_malformed(
-    items: Iterator[Any], context: str, errors: Optional[list[dict[str, str]]] = None
+    items: Iterator[Any], context: str, errors: list[dict[str, str]] | None = None
 ) -> Iterator[dict]:
     """Yield only the well-formed records, logging and recording the rest.
 
@@ -267,10 +267,10 @@ def sync_reglamentos(sink: Sink, client: BDNSClient) -> dict[str, int]:
 def sync_concesiones_busqueda(
     sink: Sink,
     client: BDNSClient,
-    window: Optional[str] = None,
+    window: str | None = None,
     *,
-    since: Optional[date] = None,
-    until: Optional[date] = None,
+    since: date | None = None,
+    until: date | None = None,
 ) -> dict[str, int]:
     """Sync `concesiones_busqueda` for a reg-date window or a backfill range.
 
@@ -306,10 +306,10 @@ def sync_concesiones_busqueda(
 def sync_ayudasestado_busqueda(
     sink: Sink,
     client: BDNSClient,
-    window: Optional[str] = None,
+    window: str | None = None,
     *,
-    since: Optional[date] = None,
-    until: Optional[date] = None,
+    since: date | None = None,
+    until: date | None = None,
 ) -> dict[str, int]:
     """Sync `ayudasestado_busqueda` for a reg-date window or a backfill range.
 
@@ -335,10 +335,10 @@ def sync_ayudasestado_busqueda(
 def sync_minimis_busqueda(
     sink: Sink,
     client: BDNSClient,
-    window: Optional[str] = None,
+    window: str | None = None,
     *,
-    since: Optional[date] = None,
-    until: Optional[date] = None,
+    since: date | None = None,
+    until: date | None = None,
 ) -> dict[str, int]:
     """Sync `minimis_busqueda` for a reg-date window or a backfill range.
 
@@ -364,10 +364,10 @@ def sync_minimis_busqueda(
 def sync_partidospoliticos_busqueda(
     sink: Sink,
     client: BDNSClient,
-    window: Optional[str] = None,
+    window: str | None = None,
     *,
-    since: Optional[date] = None,
-    until: Optional[date] = None,
+    since: date | None = None,
+    until: date | None = None,
 ) -> dict[str, int]:
     """Sync `partidospoliticos_busqueda` for a window or a backfill range.
 
@@ -408,10 +408,10 @@ def sync_partidospoliticos_busqueda(
 def sync_convocatorias_busqueda(
     sink: Sink,
     client: BDNSClient,
-    window: Optional[str] = None,
+    window: str | None = None,
     *,
-    since: Optional[date] = None,
-    until: Optional[date] = None,
+    since: date | None = None,
+    until: date | None = None,
 ) -> dict[str, int]:
     """Sync `convocatorias_busqueda`, the discovery listing, as its own table.
 
@@ -477,9 +477,9 @@ def _fetch_details(
     keys: Collection[Any],
     fetch_single: Callable[[Any], Iterable[Any]],
     context_for: Callable[[Any], str],
-    errors: Optional[list[dict[str, str]]],
+    errors: list[dict[str, str]] | None,
     label: str,
-    transform: Optional[Callable[[Any, dict], dict]] = None,
+    transform: Callable[[Any, dict], dict] | None = None,
     max_workers: int = DETAIL_WORKERS,
 ) -> Iterator[dict]:
     """Fetch one detail record per discovered key, in parallel.
@@ -523,7 +523,7 @@ def _fetch_details(
 def fetch_convocatoria_details(
     client: BDNSClient,
     codes: set[str],
-    errors: Optional[list[dict[str, str]]] = None,
+    errors: list[dict[str, str]] | None = None,
     max_workers: int = DETAIL_WORKERS,
 ) -> Iterator[dict]:
     """Fetch the full detail record for each discovered convocatoria code.
@@ -544,10 +544,10 @@ def fetch_convocatoria_details(
 def sync_convocatorias(
     sink: Sink,
     client: BDNSClient,
-    window: Optional[str] = None,
+    window: str | None = None,
     *,
-    since: Optional[date] = None,
-    until: Optional[date] = None,
+    since: date | None = None,
+    until: date | None = None,
 ) -> dict[str, int]:
     """Sync `convocatorias`: discover codes for the range, then fetch detail.
 
@@ -643,7 +643,7 @@ def _tag_id_pes(id_pes: int, item: dict) -> dict:
 
 
 def fetch_pes_details(
-    client: BDNSClient, ids: set[int], errors: Optional[list[dict[str, str]]] = None
+    client: BDNSClient, ids: set[int], errors: list[dict[str, str]] | None = None
 ) -> Iterator[dict]:
     """Fetch one detail record per `idPES`, tagging `idPES` onto each one."""
     return _fetch_details(
@@ -657,7 +657,7 @@ def fetch_pes_details(
 
 
 def fetch_pes_vigencias(
-    client: BDNSClient, ids: set[int], errors: Optional[list[dict[str, str]]] = None
+    client: BDNSClient, ids: set[int], errors: list[dict[str, str]] | None = None
 ) -> Iterator[dict]:
     """Fetch one validity record per `idPES`, tagging `idPES` onto each one."""
     return _fetch_details(

@@ -108,7 +108,11 @@ def test_daily_and_weekly_miss_a_correction_only_monthly_catches(endpoint, key_f
     # upstream corrects the reg_days_ago=20 record (mutate a non-key field)
     records = getattr(client, endpoint)
     target = next(r for r in records if r["reg_days_ago"] == 20)
-    payload_field = next(k for k in target["payload"] if k not in key_fields and isinstance(target["payload"][k], str))
+    payload_field = next(
+        k
+        for k in target["payload"]
+        if k not in key_fields and isinstance(target["payload"][k], str)
+    )
     target["payload"][payload_field] = "__CORRECTED__"
 
     stats = sync_fn(SQLSink(engine), client, "daily")
@@ -245,7 +249,7 @@ def test_window_date_bounds_match_the_declared_cadence(endpoint, key_fields, win
 
     assert calls[0]["start"] == expected_start
     assert calls[-1]["end"] == (expected_end if inclusive else expected_end + timedelta(days=1))
-    for prev, nxt in zip(calls, calls[1:]):
+    for prev, nxt in zip(calls, calls[1:], strict=False):
         # next chunk starts right after the previous chunk's own end
         gap = timedelta(days=1) if inclusive else timedelta(days=0)
         assert nxt["start"] == prev["end"] + gap

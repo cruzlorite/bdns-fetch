@@ -19,7 +19,6 @@ source, not about any one endpoint.
 
 import logging
 from datetime import date, timedelta
-from typing import Optional
 
 from bdns.fetch import BDNSClient
 from bdns.sync.generic import all_pages
@@ -54,7 +53,9 @@ _LEAK_TOLERANCE = 0.05
 
 def _keys(records, key_field):
     """Collect the key values of the records that have one, skipping the rest."""
-    return {record[key_field] for record in records if isinstance(record, dict) and key_field in record}
+    return {
+        record[key_field] for record in records if isinstance(record, dict) and key_field in record
+    }
 
 
 def _probe_exclusive(client, day, problems):
@@ -136,7 +137,11 @@ def _check_shape(name, records, key_field, reg_field, day, problems):
             f"{name}: {missing_key} of {len(records)} records have no usable {key_field}, "
             f"which is the natural key; they cannot be versioned."
         )
-    off_day = [r.get(reg_field) for r in records if isinstance(r, dict) and r.get(reg_field) != day.isoformat()]
+    off_day = [
+        r.get(reg_field)
+        for r in records
+        if isinstance(r, dict) and r.get(reg_field) != day.isoformat()
+    ]
     if off_day:
         problems.append(
             f"{name}: {len(off_day)} of {len(records)} records fetched for {day} carry a different "
@@ -144,7 +149,7 @@ def _check_shape(name, records, key_field, reg_field, day, problems):
         )
 
 
-def check_api_contract(client: BDNSClient, day: Optional[date] = None) -> tuple[str, list[str]]:
+def check_api_contract(client: BDNSClient, day: date | None = None) -> tuple[str, list[str]]:
     """Ask the live API whether it still behaves the way this engine assumes.
 
     There are three outcomes. **ok** means every invariant held.

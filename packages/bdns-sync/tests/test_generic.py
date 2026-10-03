@@ -21,9 +21,7 @@ def current_rows(engine, name):
     metadata = MetaData()
     table = build_sync_table(name, metadata)
     with engine.begin() as conn:
-        return conn.execute(
-            select(table).where(table.c._is_current.is_(True))
-        ).mappings().all()
+        return conn.execute(select(table).where(table.c._is_current.is_(True))).mappings().all()
 
 
 # --- iter_date_chunks -------------------------------------------------------
@@ -64,7 +62,7 @@ def test_iter_date_chunks_are_contiguous_with_no_gaps_or_overlaps():
 
     assert chunks[0][0] == start
     assert chunks[-1][1] == end
-    for (_, prev_end), (next_start, _) in zip(chunks, chunks[1:]):
+    for (_, prev_end), (next_start, _) in zip(chunks, chunks[1:], strict=False):
         assert next_start == prev_end + timedelta(days=1)
     for chunk_start, chunk_end in chunks:
         assert (chunk_end - chunk_start).days < 7
@@ -110,14 +108,19 @@ def _reg_fam_ids(fetch, key, day_lo, day_hi):
     """Fetch natural keys for [day_lo, day_hi] the way production does for the
     four fechaRegFin endpoints: upper bound is exclusive, so +1 via the bridge.
     """
-    return {row[key] for row in fetch(fechaRegInicio=day_lo, fechaRegFin=to_api_upper_bound(day_hi))}
+    return {
+        row[key] for row in fetch(fechaRegInicio=day_lo, fechaRegFin=to_api_upper_bound(day_hi))
+    }
 
 
 def _convo_codes(client, day_lo, day_hi):
     """Fetch codes the way production does for convocatorias discovery:
     fechaHasta is inclusive, so NO +1.
     """
-    return {r["numeroConvocatoria"] for r in client.fetch_convocatorias_busqueda(fechaDesde=day_lo, fechaHasta=day_hi)}
+    return {
+        r["numeroConvocatoria"]
+        for r in client.fetch_convocatorias_busqueda(fechaDesde=day_lo, fechaHasta=day_hi)
+    }
 
 
 def test_adjacent_single_days_are_disjoint_and_their_union_is_the_two_day_range():
@@ -187,20 +190,26 @@ def test_full_catalog_writes_rows_and_run_log():
     client = FakeFullClient([{"id": 1, "v": "a"}, {"id": 2, "v": "b"}])
 
     stats = sync_full_catalog(SQLSink(engine), client, "widgets", "fetch_widgets", ("id",))
-    assert stats == {"fetched": 2, "inserted": 2, "updated": 0, "touched": 0,
-                     "soft_deleted": 0, "skipped": 0}
+    assert stats == {
+        "fetched": 2,
+        "inserted": 2,
+        "updated": 0,
+        "touched": 0,
+        "soft_deleted": 0,
+        "skipped": 0,
+    }
 
     metadata = MetaData()
     sync_state, sync_runs, _ = build_control_tables(metadata)
     with engine.begin() as conn:
         assert len(current_rows(engine, "widgets")) == 2
-        state_row = conn.execute(
-            select(sync_state).where(sync_state.c.table_name == "widgets")
-        ).mappings().one()
+        state_row = (
+            conn.execute(select(sync_state).where(sync_state.c.table_name == "widgets"))
+            .mappings()
+            .one()
+        )
         # append-only event log: exactly one started + one success event
-        events = conn.execute(
-            select(sync_runs).order_by(sync_runs.c.occurred_at)
-        ).mappings().all()
+        events = conn.execute(select(sync_runs).order_by(sync_runs.c.occurred_at)).mappings().all()
         assert [e["event"] for e in events] == ["started", "success"]
         assert events[1]["rows_inserted"] == 2
         # run_id is app-generated (epoch microseconds), not autoincrement;
@@ -235,7 +244,13 @@ def test_swept_catalog_merges_sweep_values_and_tags_payload():
     client = FakeSweptClient(by_value={"X": [{"id": 1}], "Y": [{"id": 1}], "Z": []})
 
     stats = sync_swept_catalog(
-        SQLSink(engine), client, "widgets", "fetch_widgets", "region", ("X", "Y", "Z"), ("region", "id")
+        SQLSink(engine),
+        client,
+        "widgets",
+        "fetch_widgets",
+        "region",
+        ("X", "Y", "Z"),
+        ("region", "id"),
     )
     assert stats["inserted"] == 2  # (X,1) and (Y,1) are distinct entities
 
@@ -249,12 +264,24 @@ def test_swept_catalog_does_not_close_other_sweep_values_as_missing():
     engine = create_engine("sqlite:///:memory:")
     client = FakeSweptClient(by_value={"X": [{"id": 1}], "Y": [{"id": 2}], "Z": []})
     sync_swept_catalog(
-        SQLSink(engine), client, "widgets", "fetch_widgets", "region", ("X", "Y", "Z"), ("region", "id")
+        SQLSink(engine),
+        client,
+        "widgets",
+        "fetch_widgets",
+        "region",
+        ("X", "Y", "Z"),
+        ("region", "id"),
     )
 
     client._by_value["X"] = [{"id": 1, "v": "changed"}]
     stats = sync_swept_catalog(
-        SQLSink(engine), client, "widgets", "fetch_widgets", "region", ("X", "Y", "Z"), ("region", "id")
+        SQLSink(engine),
+        client,
+        "widgets",
+        "fetch_widgets",
+        "region",
+        ("X", "Y", "Z"),
+        ("region", "id"),
     )
     assert stats["soft_deleted"] == 0
     assert len(current_rows(engine, "widgets")) == 2
@@ -318,12 +345,26 @@ def test_search_range_incremental_no_deletion_detection():
     client = FakeSearchClient([{"id": 1}, {"id": 2}])
     start, end = date(2024, 1, 1), date(2024, 1, 1)
     sync_search_range(
-        SQLSink(engine), client, "widgets_busqueda", "fetch_widgets_busqueda", ("id",), start, end, "daily"
+        SQLSink(engine),
+        client,
+        "widgets_busqueda",
+        "fetch_widgets_busqueda",
+        ("id",),
+        start,
+        end,
+        "daily",
     )
 
     client._rows = [{"id": 1}]
     stats = sync_search_range(
-        SQLSink(engine), client, "widgets_busqueda", "fetch_widgets_busqueda", ("id",), start, end, "daily"
+        SQLSink(engine),
+        client,
+        "widgets_busqueda",
+        "fetch_widgets_busqueda",
+        ("id",),
+        start,
+        end,
+        "daily",
     )
     assert stats == {"fetched": 1, "inserted": 0, "updated": 0, "touched": 1, "skipped": 0}
 
@@ -337,7 +378,14 @@ def test_search_range_backfill_chunks_a_multi_week_span_by_7_days():
     client = FakeSearchClient([])
     start, end = date(2020, 1, 1), date(2020, 1, 31)  # 31 days -> 5 weekly chunks
     sync_search_range(
-        SQLSink(engine), client, "widgets_busqueda", "fetch_widgets_busqueda", ("id",), start, end, "backfill"
+        SQLSink(engine),
+        client,
+        "widgets_busqueda",
+        "fetch_widgets_busqueda",
+        ("id",),
+        start,
+        end,
+        "backfill",
     )
 
     calls = sorted(client.calls)

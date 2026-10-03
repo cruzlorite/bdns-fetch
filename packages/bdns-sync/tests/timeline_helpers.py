@@ -33,12 +33,16 @@ def last_sync_run(engine, table_name):
     metadata = MetaData()
     _, sync_runs, _ = build_control_tables(metadata)
     with engine.begin() as conn:
-        return conn.execute(
-            select(sync_runs)
-            .where(sync_runs.c.table_name == table_name)
-            .order_by(desc(sync_runs.c.run_id), desc(sync_runs.c.occurred_at))
-            .limit(1)
-        ).mappings().one()
+        return (
+            conn.execute(
+                select(sync_runs)
+                .where(sync_runs.c.table_name == table_name)
+                .order_by(desc(sync_runs.c.run_id), desc(sync_runs.c.occurred_at))
+                .limit(1)
+            )
+            .mappings()
+            .one()
+        )
 
 
 def sync_errors_for(engine, table_name):
@@ -49,11 +53,15 @@ def sync_errors_for(engine, table_name):
     metadata = MetaData()
     _, _, sync_errors = build_control_tables(metadata)
     with engine.begin() as conn:
-        return conn.execute(
-            select(sync_errors)
-            .where(sync_errors.c.table_name == table_name)
-            .order_by(desc(sync_errors.c.error_id))
-        ).mappings().all()
+        return (
+            conn.execute(
+                select(sync_errors)
+                .where(sync_errors.c.table_name == table_name)
+                .order_by(desc(sync_errors.c.error_id))
+            )
+            .mappings()
+            .all()
+        )
 
 
 def all_rows(engine, name):

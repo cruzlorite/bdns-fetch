@@ -76,7 +76,9 @@ def test_a_separator_inside_an_element_does_not_split_it():
     """
     a = {"s": f"84 - {CNAE}; 16 - Madera"}
     b = {"s": f"16 - Madera; 84 - {CNAE}"}
-    assert row_hash(a, None, {"s": SPLIT_BEFORE_CODE}) == row_hash(b, None, {"s": SPLIT_BEFORE_CODE})
+    assert row_hash(a, None, {"s": SPLIT_BEFORE_CODE}) == row_hash(
+        b, None, {"s": SPLIT_BEFORE_CODE}
+    )
     assert CNAE in sorted_delimited_list(a["s"], SPLIT_BEFORE_CODE)
 
 
@@ -85,9 +87,11 @@ def test_a_pattern_that_stops_matching_degrades_to_over_versioning():
     split, so it stops being sorted: reordering versions again, which is the
     safe direction. It never merges two different lists.
     """
-    a = {"s": "zzz - uno; aaa - dos"}          # lowercase codes: pattern misses
+    a = {"s": "zzz - uno; aaa - dos"}  # lowercase codes: pattern misses
     b = {"s": "aaa - dos; zzz - uno"}
-    assert row_hash(a, None, {"s": SPLIT_BEFORE_CODE}) != row_hash(b, None, {"s": SPLIT_BEFORE_CODE})
+    assert row_hash(a, None, {"s": SPLIT_BEFORE_CODE}) != row_hash(
+        b, None, {"s": SPLIT_BEFORE_CODE}
+    )
 
 
 def test_a_real_change_in_a_delimited_list_still_changes_the_hash():

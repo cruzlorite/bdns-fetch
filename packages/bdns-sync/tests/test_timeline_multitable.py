@@ -59,10 +59,17 @@ def test_grandesbeneficiarios_busqueda_day_by_day_timeline():
     # beneficiary registered under that year is a plain insert.
     client.grandesbeneficiarios_anios.append({"id": 2024, "descripcion": 2024})
     client.grandesbeneficiarios_busqueda.append(
-        {"idPersona": 9999999, "beneficiario": "99900099 FUNDACION FICTICIA NUEVA", "ejercicio": 2024, "ayudaETotal": 1000}
+        {
+            "idPersona": 9999999,
+            "beneficiario": "99900099 FUNDACION FICTICIA NUEVA",
+            "ejercicio": 2024,
+            "ayudaETotal": 1000,
+        }
     )
     stats = sync_grandesbeneficiarios_busqueda(SQLSink(engine), client)
-    assert client.calls_to("fetch_grandesbeneficiarios_busqueda")[-1] == {"anios": [2022, 2023, 2024]}
+    assert client.calls_to("fetch_grandesbeneficiarios_busqueda")[-1] == {
+        "anios": [2022, 2023, 2024]
+    }
     assert stats["inserted"] == 1
 
 
@@ -126,6 +133,8 @@ def test_planesestrategicos_vigencia_is_a_separate_reconciled_table():
     assert stats["inserted"] == len(ids)
 
     first_id = str(ids[0])
-    client.planesestrategicos_vigencia[first_id]["vigHasta"].append({"id": 2099, "descripcion": 2099})
+    client.planesestrategicos_vigencia[first_id]["vigHasta"].append(
+        {"id": 2099, "descripcion": 2099}
+    )
     stats = sync_planesestrategicos_vigencia(SQLSink(engine), client)
     assert stats["updated"] == 1

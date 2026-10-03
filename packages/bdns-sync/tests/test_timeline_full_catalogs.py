@@ -68,7 +68,9 @@ FULL_CATALOG_CASES = [
 CASE_IDS = [case[2] for case in FULL_CATALOG_CASES]
 
 
-@pytest.mark.parametrize("sync_fn,attr,table,key_fields,mutate_field", FULL_CATALOG_CASES, ids=CASE_IDS)
+@pytest.mark.parametrize(
+    "sync_fn,attr,table,key_fields,mutate_field", FULL_CATALOG_CASES, ids=CASE_IDS
+)
 def test_full_catalog_day_by_day_timeline(sync_fn, attr, table, key_fields, mutate_field):
     engine = create_engine("sqlite:///:memory:")
     client = FakeBDNSClient()
@@ -85,8 +87,14 @@ def test_full_catalog_day_by_day_timeline(sync_fn, attr, table, key_fields, muta
 
     # Day 2: identical re-fetch, a pure no-op that only touches `_synced_at`
     stats = sync_fn(SQLSink(engine), client)
-    assert stats == {"fetched": len(baseline), "inserted": 0, "updated": 0,
-                     "touched": len(baseline), "soft_deleted": 0, "skipped": 0}
+    assert stats == {
+        "fetched": len(baseline),
+        "inserted": 0,
+        "updated": 0,
+        "touched": len(baseline),
+        "soft_deleted": 0,
+        "skipped": 0,
+    }
 
     # Day 3: upstream edits one field on one row. SCD2 rewrite: the old
     # version is closed out and the new version becomes current.

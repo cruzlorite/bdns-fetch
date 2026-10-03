@@ -11,7 +11,7 @@ import inspect
 import logging
 from collections.abc import Callable, Iterator, Sequence
 from datetime import date, timedelta
-from typing import Any, Optional
+from typing import Any
 
 from bdns.fetch import BDNSClient
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
@@ -63,6 +63,7 @@ def all_pages(fetch: Callable[..., Any]) -> Callable[..., Any]:
 
     return fetch_all
 
+
 # window name -> reg-date window size in days. Shared by every entity that
 # does cascading re-verification (concesiones, ayudasestado, minimis,
 # partidospoliticos, convocatorias).
@@ -82,7 +83,9 @@ WINDOWS: dict[str, int] = {
 CHUNK_DAYS = 7
 
 
-def iter_date_chunks(start: date, end: date, chunk_days: int = CHUNK_DAYS) -> Iterator[tuple[date, date]]:
+def iter_date_chunks(
+    start: date, end: date, chunk_days: int = CHUNK_DAYS
+) -> Iterator[tuple[date, date]]:
     """Split `[start, end]` into contiguous, non-overlapping chunks.
 
     Both bounds are inclusive, the project-wide convention. Why the range
@@ -128,7 +131,11 @@ def to_api_upper_bound(inclusive_end: date) -> date:
 
 
 def sync_full_catalog(
-    sink: Sink, client: BDNSClient, endpoint_name: str, fetch_method_name: str, key_fields: Sequence[str]
+    sink: Sink,
+    client: BDNSClient,
+    endpoint_name: str,
+    fetch_method_name: str,
+    key_fields: Sequence[str],
 ) -> dict[str, int]:
     """Fetch everything with one no-arg call, full-reconcile every run.
 
@@ -206,7 +213,7 @@ def window_bounds(window: str) -> tuple[date, date]:
 
 
 def resolve_when(
-    window: Optional[str], since: Optional[date], until: Optional[date]
+    window: str | None, since: date | None, until: date | None
 ) -> tuple[date, date, str]:
     """Resolve the two ways of asking for a reg-date range into one triple.
 
@@ -245,7 +252,7 @@ def sync_search_range(
     start: date,
     end: date,
     run_type: str,
-    reg_date_field: Optional[str] = None,
+    reg_date_field: str | None = None,
     policy: PayloadPolicy = DEFAULT_POLICY,
 ) -> dict[str, int]:
     """Fetch a `fechaRegInicio`/`fechaRegFin` range and apply incrementally.
@@ -281,13 +288,16 @@ def sync_search_range(
     def rows():
         for chunk_start, chunk_end in iter_date_chunks(start, end):
             logger.info("%s: chunk [%s .. %s]", endpoint_name, chunk_start, chunk_end)
-            yield from fetch(
-                fechaRegInicio=chunk_start, fechaRegFin=to_api_upper_bound(chunk_end)
-            )
+            yield from fetch(fechaRegInicio=chunk_start, fechaRegFin=to_api_upper_bound(chunk_end))
 
     return sink.sync_window(
-        endpoint_name, rows(), key_fields,
-        window_start=start, window_end=end, run_type=run_type, reg_date_field=reg_date_field,
+        endpoint_name,
+        rows(),
+        key_fields,
+        window_start=start,
+        window_end=end,
+        run_type=run_type,
+        reg_date_field=reg_date_field,
         policy=policy,
     )
 
@@ -301,7 +311,7 @@ def sync_search_range_inclusive(
     start: date,
     end: date,
     run_type: str,
-    reg_date_field: Optional[str] = None,
+    reg_date_field: str | None = None,
     policy: PayloadPolicy = DEFAULT_POLICY,
 ) -> dict[str, int]:
     """Fetch a `fechaDesde`/`fechaHasta` range and apply incrementally.
@@ -335,8 +345,12 @@ def sync_search_range_inclusive(
             yield from fetch(fechaDesde=chunk_start, fechaHasta=chunk_end)
 
     return sink.sync_window(
-        endpoint_name, rows(), key_fields,
-        window_start=start, window_end=end, run_type=run_type, reg_date_field=reg_date_field,
+        endpoint_name,
+        rows(),
+        key_fields,
+        window_start=start,
+        window_end=end,
+        run_type=run_type,
+        reg_date_field=reg_date_field,
         policy=policy,
     )
-

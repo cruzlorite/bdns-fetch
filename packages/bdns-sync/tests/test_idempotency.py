@@ -73,7 +73,9 @@ def test_repeating_a_sync_after_a_real_change_is_also_stable(engine, metadata, t
         assert history(engine, metadata, table_name) == after_change
 
 
-def test_repeating_a_sync_after_a_deletion_does_not_reclose_or_resurrect(engine, metadata, table_name):
+def test_repeating_a_sync_after_a_deletion_does_not_reclose_or_resurrect(
+    engine, metadata, table_name
+):
     sink = SQLSink(engine)
     sink.sync_full(table_name, list(CATALOG), ("id",))
 

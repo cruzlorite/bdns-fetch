@@ -28,8 +28,12 @@ SWEPT_CASES = [
 CASE_IDS = [case[2] for case in SWEPT_CASES]
 
 
-@pytest.mark.parametrize("sync_fn,attr,table,populated_value,empty_value,mutate_field", SWEPT_CASES, ids=CASE_IDS)
-def test_swept_catalog_day_by_day_timeline(sync_fn, attr, table, populated_value, empty_value, mutate_field):
+@pytest.mark.parametrize(
+    "sync_fn,attr,table,populated_value,empty_value,mutate_field", SWEPT_CASES, ids=CASE_IDS
+)
+def test_swept_catalog_day_by_day_timeline(
+    sync_fn, attr, table, populated_value, empty_value, mutate_field
+):
     engine = create_engine("sqlite:///:memory:")
     client = FakeBDNSClient()
     baseline = deepcopy(getattr(client, attr)[populated_value])
@@ -73,8 +77,12 @@ def test_swept_catalog_day_by_day_timeline(sync_fn, attr, table, populated_value
     assert len(current_rows(engine, table)) == before + 1
 
 
-@pytest.mark.parametrize("sync_fn,attr,table,populated_value,empty_value,mutate_field", SWEPT_CASES, ids=CASE_IDS)
-def test_swept_catalog_sweeps_every_declared_value(sync_fn, attr, table, populated_value, empty_value, mutate_field):
+@pytest.mark.parametrize(
+    "sync_fn,attr,table,populated_value,empty_value,mutate_field", SWEPT_CASES, ids=CASE_IDS
+)
+def test_swept_catalog_sweeps_every_declared_value(
+    sync_fn, attr, table, populated_value, empty_value, mutate_field
+):
     """Every registered sweep value is actually requested, not just the one
     the fixture happens to populate. This is the "additional filters and
     options actually get used" check for the swept entities.

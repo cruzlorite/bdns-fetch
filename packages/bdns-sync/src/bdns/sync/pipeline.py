@@ -135,8 +135,7 @@ def rate_limited_map(
     keys_iter = iter(keys)
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         pending = {
-            executor.submit(run_one, key)
-            for key in itertools.islice(keys_iter, max_workers * 2)
+            executor.submit(run_one, key) for key in itertools.islice(keys_iter, max_workers * 2)
         }
         while pending:
             finished, pending = concurrent.futures.wait(

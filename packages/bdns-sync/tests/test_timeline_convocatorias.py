@@ -55,7 +55,7 @@ def test_convocatorias_discovery_is_chunked_for_wide_windows():
     assert len(calls) > 1
     for call in calls:
         assert (call["end"] - call["start"]).days < CHUNK_DAYS
-    for prev, nxt in zip(calls, calls[1:]):
+    for prev, nxt in zip(calls, calls[1:], strict=False):
         assert nxt["start"] == prev["end"] + timedelta(days=1)
 
 

@@ -10,7 +10,6 @@ orchestration concern that lives outside this package (see scripts/).
 import logging
 import sys
 from datetime import date
-from typing import Optional
 
 import typer
 from sqlalchemy.engine import make_url
@@ -88,7 +87,7 @@ TARGET_URL_OPTION = typer.Option(
 )
 
 
-def _parse_iso_date(value: Optional[str], flag: str) -> Optional[date]:
+def _parse_iso_date(value: str | None, flag: str) -> date | None:
     """Parse an ISO date option, reporting a bad one as a CLI error.
 
     Raises:
@@ -100,12 +99,14 @@ def _parse_iso_date(value: Optional[str], flag: str) -> Optional[date]:
     try:
         return date.fromisoformat(value)
     except ValueError:
-        raise typer.BadParameter(f"{flag} must be an ISO date (YYYY-MM-DD), got {value!r}") from None
+        raise typer.BadParameter(
+            f"{flag} must be an ISO date (YYYY-MM-DD), got {value!r}"
+        ) from None
 
 
 def _resolve_plan(
-    endpoint: str, window: Optional[str], since: Optional[date], until: Optional[date]
-) -> tuple[Optional[date], Optional[date], str]:
+    endpoint: str, window: str | None, since: date | None, until: date | None
+) -> tuple[date | None, date | None, str]:
     """Validate the invocation and work out what it would do.
 
     Shared by the real run and `--dry-run`, so a preview cannot disagree
@@ -132,8 +133,8 @@ def _resolve_plan(
 def _echo_plan(
     endpoint: str,
     target_url: str,
-    start: Optional[date],
-    end: Optional[date],
+    start: date | None,
+    end: date | None,
     run_type: str,
     limits: RejectLimits,
 ) -> None:

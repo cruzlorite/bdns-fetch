@@ -26,9 +26,7 @@ def table(engine, metadata, table_name):
 
 
 def current_rows(conn, table):
-    return conn.execute(
-        select(table).where(table.c._is_current.is_(True))
-    ).mappings().all()
+    return conn.execute(select(table).where(table.c._is_current.is_(True))).mappings().all()
 
 
 def test_first_pass_inserts_all_rows(table):
@@ -173,13 +171,25 @@ def test_window_scoped_deletion_closes_a_row_whose_reg_date_is_in_window(table):
     row = {"id": 1, "fecha": "2024-01-15"}
     with engine.begin() as conn:
         apply_incremental(
-            conn, tbl, staging, [row], ("id",),
-            reg_date_field="fecha", window_start=start, window_end=end,
+            conn,
+            tbl,
+            staging,
+            [row],
+            ("id",),
+            reg_date_field="fecha",
+            window_start=start,
+            window_end=end,
         )
     with engine.begin() as conn:
         stats = apply_incremental(
-            conn, tbl, staging, [], ("id",),
-            reg_date_field="fecha", window_start=start, window_end=end,
+            conn,
+            tbl,
+            staging,
+            [],
+            ("id",),
+            reg_date_field="fecha",
+            window_start=start,
+            window_end=end,
         )
         assert stats["soft_deleted"] == 1
         assert len(current_rows(conn, tbl)) == 0
@@ -195,13 +205,25 @@ def test_window_scoped_deletion_ignores_a_row_whose_reg_date_is_outside_window(t
     row = {"id": 1, "fecha": "2023-01-01"}
     with engine.begin() as conn:
         apply_incremental(
-            conn, tbl, staging, [row], ("id",),
-            reg_date_field="fecha", window_start=date(2023, 1, 1), window_end=date(2023, 1, 1),
+            conn,
+            tbl,
+            staging,
+            [row],
+            ("id",),
+            reg_date_field="fecha",
+            window_start=date(2023, 1, 1),
+            window_end=date(2023, 1, 1),
         )
     with engine.begin() as conn:
         stats = apply_incremental(
-            conn, tbl, staging, [], ("id",),
-            reg_date_field="fecha", window_start=date(2024, 1, 1), window_end=date(2024, 1, 31),
+            conn,
+            tbl,
+            staging,
+            [],
+            ("id",),
+            reg_date_field="fecha",
+            window_start=date(2024, 1, 1),
+            window_end=date(2024, 1, 31),
         )
         assert stats.get("soft_deleted", 0) == 0
         assert len(current_rows(conn, tbl)) == 1
@@ -216,13 +238,25 @@ def test_window_scoped_deletion_still_touches_and_versions_normally(table):
     start, end = date(2024, 1, 1), date(2024, 1, 31)
     with engine.begin() as conn:
         apply_incremental(
-            conn, tbl, staging, [{"id": 1, "fecha": "2024-01-10", "v": "a"}], ("id",),
-            reg_date_field="fecha", window_start=start, window_end=end,
+            conn,
+            tbl,
+            staging,
+            [{"id": 1, "fecha": "2024-01-10", "v": "a"}],
+            ("id",),
+            reg_date_field="fecha",
+            window_start=start,
+            window_end=end,
         )
     with engine.begin() as conn:
         stats = apply_incremental(
-            conn, tbl, staging, [{"id": 1, "fecha": "2024-01-10", "v": "b"}], ("id",),
-            reg_date_field="fecha", window_start=start, window_end=end,
+            conn,
+            tbl,
+            staging,
+            [{"id": 1, "fecha": "2024-01-10", "v": "b"}],
+            ("id",),
+            reg_date_field="fecha",
+            window_start=start,
+            window_end=end,
         )
         assert stats["updated"] == 1
         assert stats.get("soft_deleted", 0) == 0

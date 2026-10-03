@@ -130,7 +130,11 @@ def check(site: pathlib.Path) -> list[str]:
             name = code.rstrip("()")
             if SCRIPT.fullmatch(code) or PATHS.fullmatch(code):
                 found.add(f"`{code}` is not a link")
-            elif name in names and not name.startswith("__") and not ("." not in name and name in params):
+            elif (
+                name in names
+                and not name.startswith("__")
+                and not ("." not in name and name in params)
+            ):
                 found.add(f"`{code}` names {' or '.join(sorted(names[name]))} but is not a link")
         for path in PATHS.findall(html.unescape(" ".join(article.text))):
             found.add(f"'{path}' is not a link")

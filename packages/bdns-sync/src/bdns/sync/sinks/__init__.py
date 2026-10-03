@@ -20,7 +20,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, Optional
+from typing import Any
 
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
 
@@ -58,10 +58,10 @@ class RejectLimits:
     """
 
     max_ratio: float = 0.10
-    max_count: Optional[int] = None
+    max_count: int | None = None
     min_to_enforce_ratio: int = 5
 
-    def rejection(self, fetched: int, rejected: int) -> Optional[str]:
+    def rejection(self, fetched: int, rejected: int) -> str | None:
         """Return why this batch must not be applied, or None if it may be.
 
         Args:
@@ -155,7 +155,7 @@ class Sink(ABC):
         key_fields: Sequence[str],
         *,
         policy: PayloadPolicy = DEFAULT_POLICY,
-        skipped: Optional[list[dict[str, str]]] = None,
+        skipped: list[dict[str, str]] | None = None,
     ) -> dict[str, int]:
         """Reconcile `endpoint` against `rows` as its COMPLETE current state.
 
@@ -199,9 +199,9 @@ class Sink(ABC):
         window_start: date,
         window_end: date,
         run_type: str,
-        reg_date_field: Optional[str] = None,
+        reg_date_field: str | None = None,
         policy: PayloadPolicy = DEFAULT_POLICY,
-        skipped: Optional[list[dict[str, str]]] = None,
+        skipped: list[dict[str, str]] | None = None,
     ) -> dict[str, int]:
         """Apply `rows` as the slice of `endpoint` registered in a date range.
 

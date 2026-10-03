@@ -81,7 +81,14 @@ def test_staging_json_rows_sends_reg_date_as_an_iso_string():
     staging = build_staging_table("things", metadata)
     [row] = staging_json_rows(
         staging,
-        [{"_natural_key": "[1]", "_row_hash": "c" * 64, "payload": {}, "_reg_date": date(2026, 9, 1)}],
+        [
+            {
+                "_natural_key": "[1]",
+                "_row_hash": "c" * 64,
+                "payload": {},
+                "_reg_date": date(2026, 9, 1),
+            }
+        ],
     )
     assert row["_reg_date"] == "2026-09-01"
 
@@ -95,7 +102,12 @@ def test_staging_json_rows_omits_reg_date_for_entities_without_one():
     rows = staging_json_rows(
         staging,
         [
-            {"_natural_key": "[1]", "_row_hash": "d" * 64, "payload": {}, "_reg_date": date(2026, 9, 1)},
+            {
+                "_natural_key": "[1]",
+                "_row_hash": "d" * 64,
+                "payload": {},
+                "_reg_date": date(2026, 9, 1),
+            },
             {"_natural_key": "[2]", "_row_hash": "e" * 64, "payload": {}},
         ],
     )

@@ -6,7 +6,7 @@ import hashlib
 import json
 import re
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 __all__ = ["canonical_json", "natural_key", "row_hash", "sorted_delimited_list"]
 
@@ -32,7 +32,9 @@ def _order_independent(value: Any) -> Any:
         return {k: _order_independent(v) for k, v in value.items()}
     if isinstance(value, list):
         items = [_order_independent(v) for v in value]
-        return sorted(items, key=lambda v: json.dumps(v, sort_keys=True, ensure_ascii=False, default=str))
+        return sorted(
+            items, key=lambda v: json.dumps(v, sort_keys=True, ensure_ascii=False, default=str)
+        )
     return value
 
 
@@ -75,8 +77,8 @@ def sorted_delimited_list(value: str, split_pattern: str) -> str:
 
 def canonical_json(
     payload: dict[str, Any],
-    exclude_fields: Optional[Iterable[str]] = None,
-    delimited_lists: Optional[Mapping[str, str]] = None,
+    exclude_fields: Iterable[str] | None = None,
+    delimited_lists: Mapping[str, str] | None = None,
     canonical_arrays: bool = True,
 ) -> str:
     """Render `payload` as the canonical JSON string the hash is taken over.
@@ -120,8 +122,8 @@ def canonical_json(
 
 def row_hash(
     payload: dict[str, Any],
-    exclude_fields: Optional[Iterable[str]] = None,
-    delimited_lists: Optional[Mapping[str, str]] = None,
+    exclude_fields: Iterable[str] | None = None,
+    delimited_lists: Mapping[str, str] | None = None,
     canonical_arrays: bool = True,
 ) -> str:
     """Return the SHA-256 hex digest of `payload`'s canonical JSON.
@@ -140,7 +142,9 @@ def row_hash(
     Returns:
         A 64-character lowercase hex digest.
     """
-    digest = canonical_json(payload, exclude_fields, delimited_lists, canonical_arrays).encode("utf-8")
+    digest = canonical_json(payload, exclude_fields, delimited_lists, canonical_arrays).encode(
+        "utf-8"
+    )
     return hashlib.sha256(digest).hexdigest()
 
 

@@ -219,7 +219,9 @@ class BigQueryAdapter(DialectAdapter):
         from google.cloud import bigquery
 
         client = conn.connection.driver_connection._client
-        table_ref = bigquery.DatasetReference(client.project, conn.engine.url.database).table(table.name)
+        table_ref = bigquery.DatasetReference(client.project, conn.engine.url.database).table(
+            table.name
+        )
         client.load_table_from_json(staging_json_rows(table, rows), table_ref).result()
 
 

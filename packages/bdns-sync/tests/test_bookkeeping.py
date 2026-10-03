@@ -73,12 +73,16 @@ def test_successful_run_records_counters_on_the_terminal_event(engine, metadata,
 
     _, sync_runs, _ = build_control_tables(metadata)
     with engine.begin() as conn:
-        row = conn.execute(
-            select(sync_runs)
-            .where(sync_runs.c.table_name == table_name, sync_runs.c.event == "success")
-            .order_by(desc(sync_runs.c.run_id))
-            .limit(1)
-        ).mappings().one()
+        row = (
+            conn.execute(
+                select(sync_runs)
+                .where(sync_runs.c.table_name == table_name, sync_runs.c.event == "success")
+                .order_by(desc(sync_runs.c.run_id))
+                .limit(1)
+            )
+            .mappings()
+            .one()
+        )
     assert row["rows_fetched"] == 2
     assert row["rows_inserted"] == 2
 
@@ -109,7 +113,9 @@ def test_leftover_staging_rows_do_not_leak_into_the_next_run(engine, metadata, t
     metadata.create_all(engine, checkfirst=True)
     with engine.begin() as conn:
         get_adapter(engine).insert_rows(
-            conn, staging, [{"_natural_key": "[999]", "_row_hash": "x" * 64, "payload": {"id": 999}}]
+            conn,
+            staging,
+            [{"_natural_key": "[999]", "_row_hash": "x" * 64, "payload": {"id": 999}}],
         )
     assert staging_count(engine, staging) == 1
 

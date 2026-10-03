@@ -3,7 +3,7 @@
 """Generic SCD2 table shape shared by every synced endpoint, plus control tables."""
 
 import json
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import (
     BigInteger,
@@ -34,13 +34,13 @@ class PortableJSON(TypeDecorator):
     impl = Text
     cache_ok = True
 
-    def process_bind_param(self, value: Optional[Any], dialect) -> Optional[str]:
+    def process_bind_param(self, value: Any | None, dialect) -> str | None:
         """Serialize a Python value to the JSON text stored in the column."""
         if value is None:
             return None
         return json.dumps(value, default=str, ensure_ascii=False)
 
-    def process_result_value(self, value: Optional[str], dialect) -> Optional[Any]:
+    def process_result_value(self, value: str | None, dialect) -> Any | None:
         """Deserialize the stored JSON text back into a Python value."""
         if value is None:
             return None

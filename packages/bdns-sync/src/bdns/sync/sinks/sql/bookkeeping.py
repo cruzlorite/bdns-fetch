@@ -29,8 +29,8 @@ rule is the same: no `success` event => re-run.
 
 import logging
 import time
-from datetime import datetime, timezone
-from typing import Callable, Optional
+from collections.abc import Callable
+from datetime import UTC, datetime
 
 from sqlalchemy import MetaData, insert, update
 from sqlalchemy.engine import Engine
@@ -49,7 +49,7 @@ def run_with_bookkeeping(
     endpoint_name: str,
     run_type: str,
     apply_fn: Callable,
-    skipped: Optional[list[dict[str, str]]] = None,
+    skipped: list[dict[str, str]] | None = None,
 ) -> dict[str, int]:
     """Run `apply_fn` inside the tables, transaction and run log it needs.
 
@@ -80,7 +80,7 @@ def run_with_bookkeeping(
     get_adapter(engine).prepare_metadata(metadata)
     metadata.create_all(engine, checkfirst=True)
 
-    started_at = datetime.now(timezone.utc)
+    started_at = datetime.now(UTC)
     # App-generated id (epoch microseconds) instead of DB autoincrement:
     # BigQuery has none, and this key is read back (it links `_sync_errors`
     # and the terminal event). One id per run and runs are sequential per
@@ -96,7 +96,7 @@ def run_with_bookkeeping(
                     table_name=endpoint_name,
                     run_type=run_type,
                     event=event,
-                    occurred_at=datetime.now(timezone.utc),
+                    occurred_at=datetime.now(UTC),
                     **extra,
                 )
             )
@@ -111,7 +111,7 @@ def run_with_bookkeeping(
         """
         if not skipped:
             return
-        occurred_at = datetime.now(timezone.utc)
+        occurred_at = datetime.now(UTC)
         with engine.begin() as skip_conn:
             skip_conn.execute(
                 insert(sync_errors),
@@ -134,15 +134,20 @@ def run_with_bookkeeping(
         with engine.begin() as conn:
             stats = apply_fn(conn, table, staging)
     except Exception as exc:
-        logger.error("%s: run %s failed after %.1fs: %s", endpoint_name, run_id,
-                     (datetime.now(timezone.utc) - started_at).total_seconds(), exc)
+        logger.error(
+            "%s: run %s failed after %.1fs: %s",
+            endpoint_name,
+            run_id,
+            (datetime.now(UTC) - started_at).total_seconds(),
+            exc,
+        )
         record_skips()
         record_event("failed", error=str(exc))
         raise
 
     # Terminal bookkeeping runs AFTER the data transaction committed, so a
     # `success` event can never describe rolled-back data.
-    finished_at = datetime.now(timezone.utc)
+    finished_at = datetime.now(UTC)
     record_skips()
     record_event(
         "success",
@@ -156,9 +161,15 @@ def run_with_bookkeeping(
 
     logger.info(
         "%s: run %s done in %.1fs (fetched=%d inserted=%d updated=%d touched=%d soft_deleted=%d skipped=%d)",
-        endpoint_name, run_id, (finished_at - started_at).total_seconds(),
-        stats["fetched"], stats["inserted"], stats["updated"], stats["touched"],
-        stats.get("soft_deleted", 0), stats.get("skipped", 0),
+        endpoint_name,
+        run_id,
+        (finished_at - started_at).total_seconds(),
+        stats["fetched"],
+        stats["inserted"],
+        stats["updated"],
+        stats["touched"],
+        stats.get("soft_deleted", 0),
+        stats.get("skipped", 0),
     )
     return stats
 

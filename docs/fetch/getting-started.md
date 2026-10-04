@@ -67,7 +67,7 @@ Los fallos pasajeros (problemas de red, `429`, errores `5xx` o `ERR_MANTENIMIENT
 
 ```console
 $ bdns-fetch planesestrategicos-documentos --idDocumento 1
-Error: Error (ERR_VALIDACION): No se ha podido obtener el documento solicitado
+Error: ERR_VALIDACION: No se ha podido obtener el documento solicitado
 Hint: Check the parameter values and formats; see the command's --help.
 ```
 

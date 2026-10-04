@@ -59,13 +59,13 @@ def test_error_carries_status_code_and_url():
     error = _error(400, '{"codigo": "ERR_VALIDACION", "error": "bad"}')
     assert type(error) is BDNSError
     assert (error.status_code, error.code, error.url) == (400, "ERR_VALIDACION", "https://x/api")
-    assert str(error) == "Error (ERR_VALIDACION): bad"
+    assert str(error) == "ERR_VALIDACION: bad"
     assert "HTTP 400 from https://x/api" in error.details
 
 
 def test_several_messages_are_numbered():
     error = _error(400, '{"codigo": "E", "errores": ["a", "b"]}')
-    assert error.message == "Error (E):\n  1. a\n  2. b"
+    assert error.message == "E:\n  1. a\n  2. b"
 
 
 @pytest.mark.parametrize(

@@ -60,3 +60,37 @@ Network errors that ran out of retries arrive as the original `requests` excepti
 ## From the CLI
 
 The CLI turns any [`BDNSError`][bdns.fetch.exceptions.BDNSError] into a message and exit code 1, with a hint depending on the kind of error. `--verbose` adds the response details and a log line per HTTP request.
+
+For example, asking for a document that does not exist:
+
+```console
+$ bdns-fetch --verbose planesestrategicos-documentos --idDocumento 1
+2026-10-04 20:02:23,995 - bdns.fetch.client - DEBUG - HTTP REQUEST: GET https://www.infosubvenciones.es/bdnstrans/api/planesestrategicos/documentos?idDocumento=1
+2026-10-04 20:02:23,997 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.infosubvenciones.es:443
+2026-10-04 20:02:24,125 - urllib3.connectionpool - DEBUG - https://www.infosubvenciones.es:443 "GET /bdnstrans/api/planesestrategicos/documentos?idDocumento=1 HTTP/1.1" 400 None
+2026-10-04 20:02:24,126 - bdns.fetch.client - DEBUG - HTTP RESPONSE: 400  - 130.6ms, 89 bytes
+Error: ERR_VALIDACION: No se ha podido obtener el documento solicitado
+Hint: Check the parameter values and formats; see the command's --help.
+HTTP 400 from https://www.infosubvenciones.es/bdnstrans/api/planesestrategicos/documentos?idDocumento=1
+Response headers:
+  Date: Sun, 04 Oct 2026 18:02:24 GMT
+  Content-Type: application/json
+  Connection: keep-alive
+  Vary: Origin, Access-Control-Request-Method, Access-Control-Request-Headers
+  Set-Cookie: XSRF-TOKEN=…; Path=/bdnstrans; Version=1; Secure, TS01bc68c4=…; Path=/; Secure; HttpOnly, TS014c174a=…; path=/bdnstrans; HttpOnly; Secure
+  Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=15552000; includeSubDomains
+  Referrer-Policy: strict-origin-when-cross-origin
+  Transfer-Encoding: chunked
+Response body: {"codigo":"ERR_VALIDACION","errores":["No se ha podido obtener el documento solicitado"]}
+```
+
+- The `DEBUG` lines are the ones `--verbose` adds: each request, with how long the response took (130.6 ms) and its size. There is only one, because a `400` with `ERR_VALIDACION` is not retried.
+- `Error:` is what the API said, with its code and message.
+- `Hint:` is the terminal's hint on what to check.
+- The rest are the response details (status, headers and body), which is what to attach if you open an issue. The session cookies are shortened here with `…`.

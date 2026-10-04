@@ -96,7 +96,7 @@ _STATUS_TEXT = {
 
 def _message(status_code: int, code: str | None, messages: list[str], body: str) -> str:
     """Compose the one-line (or numbered) message an error is known by."""
-    prefix = f"Error ({code})" if code else f"HTTP {status_code}"
+    prefix = code or f"HTTP {status_code}"
     if len(messages) == 1:
         return f"{prefix}: {messages[0]}"
     if messages:

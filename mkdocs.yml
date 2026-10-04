@@ -32,11 +32,11 @@ theme:
     - search.highlight
     - search.suggest
     - toc.follow
-  # Dark by default, with a black header; the light mode keeps Material's
-  # indigo header. The accent is indigo in both.
+  # Dark by default, with a light mode one click away. Both share Material's
+  # indigo header and accent, so only the background changes.
   palette:
     - scheme: slate
-      primary: black
+      primary: indigo
       accent: indigo
       toggle:
         icon: material/brightness-4

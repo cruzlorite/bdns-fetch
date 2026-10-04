@@ -119,7 +119,7 @@ def test_api_error_is_reported_without_traceback(mocked, runner):
     mocked.get(endpoint("sectores"), status=400, json={"codigo": "ERR_VALIDACION", "error": "bad"})
     result = run(runner, "sectores")
     assert result.exit_code == 1
-    assert "Error: Error (ERR_VALIDACION): bad" in result.stderr
+    assert "Error: ERR_VALIDACION: bad" in result.stderr
     assert "Traceback" not in result.output
 
 

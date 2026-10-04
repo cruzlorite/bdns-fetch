@@ -31,6 +31,8 @@ Changes since bdns-fetch 1.3.0.
 
 #### Fixed
 
+- API errors no longer read "Error: Error (ERR_VALIDACION): …" on the command line: an error's message now starts
+  with the API's code (`ERR_VALIDACION: …`), or with `HTTP 404` when there is none.
 - Transient failures are retried. Only network errors were: HTTP 429 and 5xx, and the API's
   `ERR_MANTENIMIENTO_BBDD`, raised at the first attempt whatever `max_retries` said. Long-running
   callers configured retries that never happened.

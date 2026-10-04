@@ -8,41 +8,73 @@ icon: material/chart-box
 
     Todavía no hay ninguna versión publicada. Esta sección cuenta qué será el dataset y cómo se está construyendo, y su SQL es experimental: puede cambiar en cualquier momento hasta que se publique la primera versión.
 
-Un conjunto de datos listo para usar con **todo el histórico** de la BDNS que conserva `bdns-sync`, y no solo con los años que todavía publica el portal ([por qué importa](../sync/index.md#why-history)). Irá siempre **anonimizado y agregado**: proteger a las personas físicas es la prioridad, y todo el proceso tiene que cumplir las condiciones de reutilización de la IGAE, el RGPD y la LOPDGDD. Qué se publica, con qué detalle y por qué lo recoge la [decisión 0002](../adr/0002-anonymised-dataset.md), que todavía es una propuesta.
+Un conjunto de datos listo para usar con **todo el histórico** de la BDNS que conserva `bdns-sync`, y no solo con los años que todavía publica el portal ([por qué importa](../sync/index.md#why-history)). Irá siempre **anonimizado y agregado**: proteger a las personas físicas es la prioridad, y todo el proceso tiene que cumplir las condiciones de reutilización de la IGAE, el RGPD y la LOPDGDD.
 
-## Cómo se protege a las personas físicas
+Son ficheros Parquet, uno por tabla, que puedes abrir con DuckDB, pandas, R o cualquier otra herramienta de datos:
 
-Cada beneficiario se clasifica a partir de su NIF, nunca de su nombre, y lo que no se reconoce se trata como una persona física. Por ejemplo (los nombres y los NIF son inventados):
-
-| Cómo aparece en la BDNS | Se clasifica como | En el dataset |
+| Tabla | Qué contiene | Detalle |
 |---|---|---|
-| `***1234** NOMBRE APELLIDOS` | Persona física | Solo agregado |
-| `E12345678 APELLIDO Y APELLIDO CB` | Entidad formada por personas | Solo agregado |
-| `123456789012 FOREIGN COMPANY LTD` | Dudoso | Solo agregado |
-| `B12345678 EMPRESA DE EJEMPLO SL` | Persona jurídica | Registro a registro |
-| `P1234567D AYUNTAMIENTO DE EJEMPLO` | Entidad pública | Registro a registro |
+| `concesiones_entidades` | Concesiones a personas jurídicas y entidades públicas | Una fila por concesión |
+| `ayudas_estado_entidades` | Ayudas de Estado a personas jurídicas y entidades públicas | Una fila por ayuda |
+| `minimis_entidades` | Ayudas de minimis a personas jurídicas y entidades públicas | Una fila por ayuda |
+| `concesiones_personas` | Concesiones a personas físicas | Un resumen por convocatoria |
 
-Las comunidades de bienes y las sociedades civiles tienen NIF propio, pero suelen llevar el nombre de sus miembros, y por eso se protegen igual que una persona física.
-
-Antes de escribir nada, la generación comprueba lo que va a publicar y **se para** si encuentra un valor con forma de DNI, NIE o NIF enmascarado, una columna que identifica a alguien (el beneficiario, su identificador en la BDNS, el enlace al boletín...) o un resumen que junte a menos de diez personas. No limpia lo que encuentra: lo señala, porque un fallo así indica un error anterior que hay que corregir.
-
-<a id="sql"></a>
-## El SQL
-
-Todo el proceso es SQL de DuckDB, sin una línea de Python. DuckDB se conecta a la base de datos de `bdns-sync` (SQLite, PostgreSQL, DuckDB o BigQuery), lee sus tablas y deja el resultado en un fichero privado, porque hasta el final contiene datos personales. Los pasos son ficheros SQL en [`dataset/sql/`](https://github.com/cruzlorite/bdns-tools/tree/main/dataset/sql), que se pueden leer, revisar y volver a ejecutar tal cual, y se lanzan todos desde la raíz del repositorio con la línea de comandos de DuckDB:
+Por ejemplo, para ver qué órganos han concedido más a empresas y entidades basta con consultar el fichero directamente (los datos son inventados):
 
 ```console
-$ duckdb /ruta/privada/dataset.duckdb \
-    -cmd "ATTACH 'postgresql://usuario@servidor/bdns' AS sync (TYPE postgres, READ_ONLY);
-          SET VARIABLE output_dir = '/ruta/de/salida'" \
-    -f dataset/build.sql
+$ duckdb -c "
+    SELECT nivel3 AS organo, count(*) AS concesiones, sum(importe) AS importe
+    FROM 'concesiones_entidades.parquet'
+    GROUP BY organo
+    ORDER BY importe DESC
+    LIMIT 3"
+┌─────────────────────────────┬─────────────┬───────────────┐
+│           organo            │ concesiones │    importe    │
+│           varchar           │    int64    │ decimal(38,2) │
+├─────────────────────────────┼─────────────┼───────────────┤
+│ CONSEJERÍA DE AGRICULTURA   │           3 │     145000.00 │
+│ CONSEJERÍA DE EDUCACIÓN     │           1 │      90000.00 │
+│ SERVICIO REGIONAL DE EMPLEO │           3 │      28000.00 │
+└─────────────────────────────┴─────────────┴───────────────┘
 ```
 
-Este es el paso que clasifica a los beneficiarios, mostrado directamente desde el código:
+## Por dónde empezar
 
-```sql
---8<-- "dataset/sql/01_beneficiarios.sql"
-```
+<div class="grid cards" markdown>
+
+- :material-rocket-launch:{ .lg .middle } **Es la primera vez**
+
+    ---
+
+    Genera el dataset a partir de tu copia de `bdns-sync` y haz tu primera consulta.
+
+    [:octicons-arrow-right-24: Primeros pasos](getting-started.md)
+
+- :material-magnify:{ .lg .middle } **Quiero analizar los datos**
+
+    ---
+
+    Consultas de ejemplo con DuckDB y pandas, y cómo leer los resúmenes de las personas físicas.
+
+    [:octicons-arrow-right-24: Guías](guides/queries.md)
+
+- :material-shield-account:{ .lg .middle } **Quiero saber cómo se protege a las personas**
+
+    ---
+
+    Qué beneficiarios se protegen, qué se publica de ellos y qué se comprueba antes de escribir nada.
+
+    [:octicons-arrow-right-24: Conceptos](explanation/anonymisation.md)
+
+- :material-code-braces:{ .lg .middle } **Busco un detalle concreto**
+
+    ---
+
+    Todas las tablas y sus columnas, y los pasos de la generación.
+
+    [:octicons-arrow-right-24: Referencia](reference/tables.md)
+
+</div>
 
 ## Estado
 

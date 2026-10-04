@@ -248,6 +248,14 @@ nav:
           - sync/adr/0010-api-semantics-from-bdns-fetch.md
   - BDNS Dataset:
       - dataset/index.md
+      - Primeros pasos: dataset/getting-started.md
+      - Guías:
+          - dataset/guides/queries.md
+      - Conceptos:
+          - dataset/explanation/anonymisation.md
+      - Referencia:
+          - dataset/reference/tables.md
+          - dataset/reference/build.md
   - Proyecto:
       - Compatibilidad: compatibility.md
       - Hoja de ruta: roadmap.md

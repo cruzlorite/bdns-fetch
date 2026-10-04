@@ -20,7 +20,7 @@ Official statistics solve this same problem by publishing aggregates and suppres
 
 The dataset **holds no personal data**. It may identify legal persons and public bodies, never natural persons.
 
-1. **Each beneficiary is classified** as a natural person, an entity made of persons (communities of property and civil partnerships, often named after their members), a legal person, a public body or doubtful. The classification is conservative: anything doubtful is treated as a natural person ([the SQL](../dataset/index.md#sql)).
+1. **Each beneficiary is classified** as a natural person, an entity made of persons (communities of property and civil partnerships, often named after their members), a legal person, a public body or doubtful. The classification is conservative: anything doubtful is treated as a natural person ([the SQL](../dataset/reference/build.md#sql)).
 2. **What is published, and at what detail:**
 
     | Data | Level |
@@ -34,7 +34,7 @@ The dataset **holds no personal data**. It may identify legal persons and public
 3. **No summary about natural persons gathers fewer than 10 people**, or one holding more than half its amount: an amount that appears only once would single out who got it, even without a name, and could be matched against old copies of the BDNS that do carry names. The smallest and largest amount or date are never published, since each is one specific person's, and the 10th and 90th percentiles, which sit close to them, only when the summary gathers at least 20 people. Calls that fall short are gathered, per year, into a "rest" row, published only if it gathers at least two (with one, the rest would be that call as it is) and meets the thresholds too. Every statistic covers every award in its row, and there is no other table about them to compare it with.
 4. **Never published**, in anything about natural persons: the name, the tax ID (full, partial or hashed), `idPersona`, `urlBR`, `codConcesion` or `id`.
 5. **Generation stops** if what is about to be published holds a value shaped like a DNI, NIE or masked tax ID, a forbidden field or a cell below the minimum.
-6. **The dataset is built where the data lives**, with DuckDB SQL that reads `bdns-sync`'s tables directly, so the method can be read and reviewed as it is ([the SQL](../dataset/index.md#sql)). The result stays private until a person reviews it, and is published outside the repository (on Zenodo, with a DOI per version) with the methodology, the IGAE citation and the update date. The only format is Parquet, one file per table: it carries each column's type, takes little space and every data tool reads it.
+6. **The dataset is built where the data lives**, with DuckDB SQL that reads `bdns-sync`'s tables directly, so the method can be read and reviewed as it is ([the SQL](../dataset/reference/build.md#sql)). The result stays private until a person reviews it, and is published outside the repository (on Zenodo, with a DOI per version) with the methodology, the IGAE citation and the update date. The only format is Parquet, one file per table: it carries each column's type, takes little space and every data tool reads it.
 7. **Before the first publication**, a risk assessment and a legal review take place.
 
 Still to decide: whether communities of property and civil partnerships are protected like natural persons (meanwhile, they are), how often a version is published, and the dataset's license (the IGAE's conditions plus, for example, CC BY 4.0 for the project's own work).

@@ -30,7 +30,7 @@ Antes de escribir nada, la generación comprueba lo que va a publicar y **se par
 
 - [x] La decisión de diseño, como propuesta ([decisión 0002](../adr/0002-anonymised-dataset.md))
 - [x] La clasificación de beneficiarios ([`beneficiaries`][bdns.dataset.beneficiaries]) y los controles de privacidad ([`privacy`][bdns.dataset.privacy])
-- [ ] La extracción desde las tablas de `bdns-sync`
+- [x] La extracción de la última versión conocida de cada registro, incluidos los que la API ya ha retirado ([`extract`][bdns.dataset.extract])
 - [ ] Los agregados, con control de revelación estadística
 - [ ] La ficha del dataset, el esquema y la publicación
 - [ ] La evaluación de riesgos y la revisión legal, antes de la primera versión

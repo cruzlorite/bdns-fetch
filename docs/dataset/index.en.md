@@ -30,7 +30,7 @@ Before writing anything, the build checks what it is about to publish and **stop
 
 - [x] The design decision, as a proposal ([decision 0002](../adr/0002-anonymised-dataset.md))
 - [x] Beneficiary classification ([`beneficiaries`][bdns.dataset.beneficiaries]) and privacy checks ([`privacy`][bdns.dataset.privacy])
-- [ ] Extraction from `bdns-sync`'s tables
+- [x] Extraction of each record's last known version, including those the API has withdrawn ([`extract`][bdns.dataset.extract])
 - [ ] The aggregates, with statistical disclosure control
 - [ ] The dataset card, the schema and publication
 - [ ] The risk assessment and legal review, before the first version

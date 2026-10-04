@@ -29,9 +29,10 @@ The dataset **holds no personal data**. It may identify legal persons and public
     | Calls for applications | Record by record, reviewing titles that name people |
     | Awards, state aid and de minimis aid to legal persons and public bodies | Record by record |
     | The same, to natural persons, entities made of persons and doubtful beneficiaries | Only aggregated by call and award year, the current year included (with its body, region and instrument): number of awards, number of beneficiaries and total amount |
-    | Sanctions on natural persons | Not published |
+    | How those same awards' amounts are distributed, by call and year | Exact amounts shared by at least 10 awards (fixed-amount aid) and, for the rest, amount bands with their number of awards and their sum *(proposed)* |
+| Sanctions on natural persons | Not published |
 
-3. **In the aggregates, any cell is suppressed** with fewer than 10 beneficiaries or where a single one holds most of the amount, and so are the cells that would let a suppressed one be recomputed by subtraction (secondary suppression).
+3. **In the aggregates, any cell is suppressed** with fewer than 10 beneficiaries (in the distribution of amounts, any amount or band with fewer than 10 awards, which joins the next band or a "rest" band; and the minimum and maximum are never published, since each is one specific person's amount) or where a single one holds most of the amount, and so are the cells that would let a suppressed one be recomputed by subtraction (secondary suppression).
 4. **Never published**, in anything about natural persons: the name, the tax ID (full, partial or hashed), `idPersona`, `urlBR`, `codConcesion` or `id`.
 5. **Generation stops** if what is about to be published holds a value shaped like a DNI, NIE or masked tax ID, a forbidden field or a cell below the minimum ([`bdns.dataset.privacy`][bdns.dataset.privacy]).
 6. **The dataset is built where the data lives**, from `bdns-sync`'s tables. The result stays private until a person reviews it, and is published outside the repository (on Zenodo, with a DOI per version) with the methodology, the IGAE citation and the update date.

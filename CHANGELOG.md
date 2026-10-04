@@ -35,6 +35,8 @@ still a proposal). Experimental: any of it may change until the first version of
   defined once and runs both in Python and as a DuckDB SQL expression.
 - `privacy`: SQL checks that stop the build if a table about to be published holds something shaped like a natural
   person's tax ID, a column that identifies people, or an aggregated cell below the minimum count.
+- `extract`: copies each key's last known version from a bdns-sync table (the current one, or the one closed as
+  removed when the API withdrew it) into a private DuckDB table, through portable SQL on any bdns-sync database.
 
 ### bdns.fetch
 

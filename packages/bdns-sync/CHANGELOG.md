@@ -63,7 +63,8 @@ Planned as 0.6.0, on bdns-fetch 2.0.
 - `list --kind windowed` replaces `search`, which is still accepted.
 - One API call at a time by default, pages and detail calls alike, as the official good-practice guide asks. The
   detail step of `convocatorias` and `planesestrategicos` used 8 threads; `--max-workers` (`BDNS_SYNC_MAX_WORKERS`)
-  raises it again. An initial load of `convocatorias` takes considerably longer with one.
+  raises it again. Paginated searches take about twice as long with one (a week of `concesiones_busqueda` into
+  SQLite: 63 s instead of 27 s); detail calls barely change while the server is fast, since the rate limit caps them.
 - Requires bdns-fetch 2.0, which now owns the API's date semantics (`bdns.fetch.dates`), the contract check
   (`bdns.fetch.contract`) and request spacing. The tqdm patch, the all-pages wrapper and the per-call spacing are gone.
 - The scripts are one-line wrappers around `delta` and `backfill`, kept for existing crontabs, and the image runs

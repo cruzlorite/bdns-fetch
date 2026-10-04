@@ -46,18 +46,19 @@ Cada entidad incremental indica en el [registro de entidades][bdns.sync.entities
 
 ## Cuánto tarda
 
-Estos tiempos se midieron en una carga inicial completa real (julio de 2026, con BigQuery como destino y desde una sola máquina), salvo los marcados como estimados, que salen del tiempo medido por llamada. Lo que marca el ritmo es siempre la API, nunca la base de datos:
-
+Estos tiempos se midieron en una carga inicial completa real (julio de 2026, con BigQuery como destino, desde una sola máquina y con varias llamadas a la vez: 5 al paginar y 8 en los detalles). Lo que marca el ritmo es siempre la API o la escritura, nunca nuestro código: 
 | Carga | Filas | Duración |
 |---|---|---|
-| Las entidades completas | unas 150.000 | unos 10 segundos casi todas; `grandesbeneficiarios_busqueda`, unos 2 minutos; `planesestrategicos` y `planesestrategicos_vigencia`, que piden el detalle de cada plan, entre 8 minutos y una hora cada una con una llamada cada vez (estimado) |
+| Las entidades completas | unas 150.000 | unos 10 segundos casi todas; `grandesbeneficiarios_busqueda`, unos 2 minutos; `planesestrategicos` y `planesestrategicos_vigencia`, que piden el detalle de cada plan, unos 4 minutos cada una |
 | `concesiones_busqueda` (desde 2020) | 27,7 millones | unas 2 horas y media |
 | `ayudasestado_busqueda` (desde 2015) | 6,4 millones | unas 2 horas |
 | `minimis_busqueda` (desde 2015) | 4,3 millones | unos 30 minutos |
 | `convocatorias_busqueda` (desde 2013) | 636.000 | unos 6 minutos |
 | `partidospoliticos_busqueda` (desde 2020) | 6.000 | unos 2 minutos |
-| `convocatorias` (desde 2013) | 636.000 | **entre día y medio y dos semanas** con una llamada cada vez (estimado a partir del tiempo por llamada); unas 19 horas, medidas, con 8 llamadas a la vez |
+| `convocatorias` (desde 2013) | 636.000 | **unas 19 horas** |
 
-Casi todo el tiempo se lo lleva `convocatorias`, porque cada código necesita su propia llamada para pedir el detalle, y ese tiempo depende de la API, no de la base de datos de destino. Las buenas prácticas oficiales piden no hacer llamadas en paralelo, y por eso por defecto se hacen de una en una; si necesitas terminar antes, puedes subir `--max-workers`, sabiendo que te apartas de esa recomendación. Los cortes puntuales de la API (tiempos de espera agotados, mantenimiento nocturno) los resuelven los reintentos del cliente ([rendimiento](../explanation/sync-behavior.md#performance)).
+Casi todo el tiempo se lo lleva `convocatorias`, porque cada código necesita su propia llamada para pedir el detalle y son 636.000 llamadas al máximo de peticiones por segundo que permite la API: ni con más llamadas a la vez puede bajar de unas 18 horas y media. Con una llamada cada vez tardará lo mismo si el servidor responde rápido, y más si va cargado.
+
+Con una llamada cada vez, que es lo que hace por defecto, las búsquedas paginadas (`concesiones_busqueda`, `ayudasestado_busqueda` y `minimis_busqueda`) sí tardarán más que en la tabla. En nuestras pruebas, sincronizar una semana de concesiones con SQLite como destino pasó de 27 a 63 segundos; con BigQuery la diferencia debería ser menor, porque escribir allí es más lento que descargar, pero no lo hemos medido. Si necesitas terminar antes, puedes subir `--max-workers` sabiendo que te apartas de la recomendación oficial ([rendimiento](../explanation/sync-behavior.md#performance)). Los cortes puntuales de la API (tiempos de espera agotados, mantenimiento nocturno) los resuelven los reintentos del cliente.
 
 Cuando termine, ten en cuenta que una carga histórica muy grande hecha de una sola vez puede dejar alguna pareja de duplicados por cómo pagina la API las fechas recientes. Cómo encontrarlos y eliminarlos lo tienes en [duplicados que pueden quedar tras una carga histórica](../explanation/data-caveats.md).

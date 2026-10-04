@@ -61,7 +61,7 @@ gcloud scheduler jobs create http bdns-sync-delta-daily \
 Algunas notas:
 
 - **`--memory 4Gi`, no menos.** Lo que más memoria necesita es el periodo anual de `concesiones_busqueda`, que se lanza tres días al año y carga en el staging unos 20 millones de filas, con un pico medido de **2,33 GB**. Las dos veces que se quedó corta la memoria se vio en producción, y las dos de la misma manera, con un `exit 137` y sin evento final en `_sync_runs`: con 1 GiB fallaron cuatro ejecuciones semanales seguidas en julio de 2026, y con 2 GiB falló la anual del 1 de septiembre. Pasar de 2 a 4 GiB cuesta unos 0,18 dólares al mes y no obliga a añadir más vCPU.
-- **`--task-timeout 24h`.** Con una llamada cada vez, como piden las buenas prácticas oficiales, calculamos (a partir del tiempo medido por llamada) que la sincronización diaria con el periodo semanal tardará entre 20 minutos y una hora, y que la del lunes (mensual) puede pasar de 3 horas. El periodo anual es otra historia: pedir el detalle de las unas 74.000 convocatorias de un año puede llevar más de un día si el servidor va cargado. Si te ocurre, esos tres días al año puedes lanzar la tarea con `BDNS_SYNC_MAX_WORKERS` (por ejemplo, 4), sabiendo que te apartas de la recomendación oficial.
+- **`--task-timeout 24h`.** Con una llamada cada vez, como piden las buenas prácticas oficiales, la sincronización diaria con el periodo semanal sigue tardando minutos, y la del lunes (mensual), algo más. El periodo anual es el más largo: solo pedir el detalle de las unas 74.000 convocatorias de un año lleva unas 2 horas al ritmo máximo que permite la API, y más si el servidor va cargado, así que conviene dejar margen. Si necesitas que vaya más rápido, puedes lanzar la tarea con `BDNS_SYNC_MAX_WORKERS`, sabiendo que te apartas de la recomendación oficial.
 - **`--max-retries 0`.** Si una ejecución falla, la del día siguiente lo arregla, porque repetir una sincronización no duplica nada; reintentarla en el momento solo volvería a descargar lo mismo.
 
 ### Coste y límites de gasto
@@ -91,7 +91,7 @@ Es una operación larga ([carga inicial](backfill.md)) que se lanza a mano una s
   gcloud run jobs execute bdns-sync-full --project $PROJECT --region $REGION
   ```
 
-  Como con una llamada cada vez `convocatorias` puede tardar más de 24 horas, lo más práctico es lanzar primero todo lo demás y dejar `convocatorias` para otra ejecución, o repartirla por años con `bdns-sync sync convocatorias --since ... --until ...`.
+  Como `convocatorias` tarda unas 19 horas y puede tardar más si el servidor va cargado, lo más práctico es lanzar primero todo lo demás y dejar `convocatorias` para otra ejecución, o repartirla por años con `bdns-sync sync convocatorias --since ... --until ...`.
 
 - **Cualquier máquina con Docker**: `docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync bdns-sync backfill`
 

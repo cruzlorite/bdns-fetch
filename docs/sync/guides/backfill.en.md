@@ -69,7 +69,8 @@ call each. See
 ## What to expect
 
 Durations measured on a real full initial load (July 2026, BigQuery
-target, a single machine). The bottleneck is always the source API, never
+target, a single machine, with several calls at once: 5 when paging and
+8 for details). The bottleneck is always the source API, never
 the target:
 
 | Load | Rows | Duration |
@@ -80,9 +81,11 @@ the target:
 | `minimis_busqueda` (since 2015) | 4.3 M | ~30 min |
 | `convocatorias_busqueda` (since 2013) | 636 K | ~6 min |
 | `partidospoliticos_busqueda` (since 2020) | 6 K | ~2 min |
-| `convocatorias` (since 2013) | 636 K | **between a day and a half and two weeks** one call at a time (estimated from the time per call); ~19 h, measured, with 8 concurrent calls |
+| `convocatorias` (since 2013) | 636 K | **~19 h** |
 
-Nearly all the time goes to `convocatorias`, since each code needs its own detail call, and that time depends on the API, not on the target database. The official good practices ask for no concurrent calls, so by default they are made one at a time; if you need to finish sooner you can raise `--max-workers`, knowing it departs from that recommendation. Occasional API outages (timeouts, nightly maintenance) are absorbed by the client's retries ([performance](../explanation/sync-behavior.md#performance)).
+Nearly all the time goes to `convocatorias`, since each code needs its own detail call and there are 636,000 of them at the API's maximum rate: not even with more calls at once can it go below about 18.5 hours. One call at a time it takes the same when the server answers fast, and longer when it is loaded.
+
+One call at a time, which is the default, the paginated searches (`concesiones_busqueda`, `ayudasestado_busqueda` and `minimis_busqueda`) will take longer than in the table. In our tests, syncing a week of awards into SQLite went from 27 to 63 seconds; with BigQuery the difference should be smaller, since writing there is slower than downloading, but we have not measured it. If you need to finish sooner, raise `--max-workers`, knowing it departs from the official recommendation ([performance](../explanation/sync-behavior.md#performance)). Occasional API outages are absorbed by the client's retries.
 
 When it finishes, keep in mind that a massive one-pass historical load
 may leave a residual duplicate pair, due to unstable pagination on recent

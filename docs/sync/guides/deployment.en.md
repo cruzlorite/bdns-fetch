@@ -61,7 +61,7 @@ gcloud scheduler jobs create http bdns-sync-delta-daily \
 Notes:
 
 - `--memory 4Gi`, no less. Consumption is set by the widest window, the `annual` pass over `concesiones_busqueda`, which runs three days a year and stages around 20 million rows: measured peak **2.33 GB**. Both times it has been too small it showed up live, with the same signature — an `exit 137` and no terminal event in `_sync_runs`: at 1 GiB, four consecutive weekly runs died in July 2026; at 2 GiB, the annual run of 1 September died. Going from 2 to 4 GiB costs about $0.18 a month and does not force a higher vCPU tier.
-- `--task-timeout 24h`. One call at a time, as the official good practices ask, we estimate (from the measured time per call) that the daily weekly run takes between 20 minutes and an hour, and Monday's monthly run can exceed 3 hours. The annual period is another matter: fetching the detail of the ~74,000 calls for applications of a year can take more than a day when the server is loaded. If that happens, on those three days a year you can run the job with `BDNS_SYNC_MAX_WORKERS` (say, 4), knowing it departs from the official recommendation.
+- `--task-timeout 24h`. One call at a time, as the official good practices ask, the daily weekly run still takes minutes, and Monday's monthly run somewhat more. The annual period is the longest: fetching the detail of the ~74,000 calls for applications of a year alone takes about 2 hours at the API's maximum rate, and longer when the server is loaded, so leave margin. If you need it faster, run the job with `BDNS_SYNC_MAX_WORKERS`, knowing it departs from the official recommendation.
 - `--max-retries 0`: if a run dies, the next cron heals it (idempotent); hot retries only duplicate fetch work.
 
 ### Cost and guardrails
@@ -91,7 +91,7 @@ A long operation (see [initial loads and backfills](backfill.md)), launched by h
   gcloud run jobs execute bdns-sync-full --project $PROJECT --region $REGION
   ```
 
-  One call at a time, `convocatorias` can take longer than 24 hours, so it is easiest to load everything else first and run `convocatorias` separately, or split it by year with `bdns-sync sync convocatorias --since ... --until ...`.
+  Since `convocatorias` takes about 19 hours, and longer when the server is loaded, it is easiest to load everything else first and run `convocatorias` separately, or split it by year with `bdns-sync sync convocatorias --since ... --until ...`.
 
 - **Any machine with Docker**: `docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync bdns-sync backfill`
 

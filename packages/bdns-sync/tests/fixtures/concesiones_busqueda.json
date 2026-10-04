@@ -1,0 +1,98 @@
+[
+  {
+    "reg_days_ago": 0,
+    "payload": {
+      "id": 900000001,
+      "codConcesion": "SB900000001",
+      "fechaConcesion": "2026-07-04",
+      "beneficiario": "P0000001H AYUNTAMIENTO DE VILAFICTICIA",
+      "instrumento": "SUBVENCIÓN Y ENTREGA DINERARIA SIN CONTRAPRESTACIÓN",
+      "importe": 18888.8,
+      "ayudaEquivalente": 18888.8,
+      "urlBR": "https://example.org/boa/1",
+      "tieneProyecto": false,
+      "numeroConvocatoria": "800001",
+      "idConvocatoria": 900001,
+      "convocatoria": "Convocatoria ficticia de subvenciones a entidades locales.",
+      "descripcionCooficial": null,
+      "nivel1": "AUTONOMICA",
+      "nivel2": "REGIÓN FICTICIA",
+      "nivel3": "INSTITUTO FICTICIO DE EMPLEO",
+      "codigoInvente": "INV00000001",
+      "idPersona": 9000001,
+      "fechaAlta": "2026-07-04"
+    }
+  },
+  {
+    "reg_days_ago": 5,
+    "payload": {
+      "id": 900000002,
+      "codConcesion": "SB900000002",
+      "fechaConcesion": "2026-06-29",
+      "beneficiario": "P0000002F AYUNTAMIENTO DE MESONES FICTICIOS",
+      "instrumento": "SUBVENCIÓN Y ENTREGA DINERARIA SIN CONTRAPRESTACIÓN",
+      "importe": 37777.6,
+      "ayudaEquivalente": 37777.6,
+      "urlBR": "https://example.org/boa/1",
+      "tieneProyecto": false,
+      "numeroConvocatoria": "800001",
+      "idConvocatoria": 900001,
+      "convocatoria": "Convocatoria ficticia de subvenciones a entidades locales.",
+      "descripcionCooficial": null,
+      "nivel1": "AUTONOMICA",
+      "nivel2": "REGIÓN FICTICIA",
+      "nivel3": "INSTITUTO FICTICIO DE EMPLEO",
+      "codigoInvente": "INV00000001",
+      "idPersona": 9000002,
+      "fechaAlta": "2026-06-29"
+    }
+  },
+  {
+    "reg_days_ago": 20,
+    "payload": {
+      "id": 900000003,
+      "codConcesion": "SB900000003",
+      "fechaConcesion": "2026-06-14",
+      "beneficiario": "B00000003 EMPRESA FICTICIA TRES SL",
+      "instrumento": "PRÉSTAMO",
+      "importe": 52000.0,
+      "ayudaEquivalente": 52000.0,
+      "urlBR": "https://example.org/boa/2",
+      "tieneProyecto": true,
+      "numeroConvocatoria": "800002",
+      "idConvocatoria": 900002,
+      "convocatoria": "Convocatoria ficticia de préstamos a pymes.",
+      "descripcionCooficial": null,
+      "nivel1": "ESTATAL",
+      "nivel2": "ESTADO",
+      "nivel3": "MINISTERIO FICTICIO",
+      "codigoInvente": "INV00000002",
+      "idPersona": 9000003,
+      "fechaAlta": "2026-06-14"
+    }
+  },
+  {
+    "reg_days_ago": 100,
+    "payload": {
+      "id": 900000004,
+      "codConcesion": "SB900000004",
+      "fechaConcesion": "2026-03-26",
+      "beneficiario": "B00000004 EMPRESA FICTICIA CUATRO SL",
+      "instrumento": "GARANTÍA",
+      "importe": 9000.0,
+      "ayudaEquivalente": 9000.0,
+      "urlBR": "https://example.org/boa/3",
+      "tieneProyecto": false,
+      "numeroConvocatoria": "800003",
+      "idConvocatoria": 900003,
+      "convocatoria": "Convocatoria ficticia de garantías.",
+      "descripcionCooficial": null,
+      "nivel1": "LOCAL",
+      "nivel2": "MUNICIPIO FICTICIO",
+      "nivel3": "AYUNTAMIENTO FICTICIO",
+      "codigoInvente": "INV00000003",
+      "idPersona": 9000004,
+      "fechaAlta": "2026-03-26"
+    }
+  }
+]

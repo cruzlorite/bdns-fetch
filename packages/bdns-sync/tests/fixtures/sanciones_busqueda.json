@@ -1,0 +1,34 @@
+[
+  {
+    "numeroConvocatoria": "705660",
+    "convocatoria": "Subvenciones de fomento de la Economía Social. Programa 2.",
+    "nivel1": "AUTONOMICA",
+    "nivel2": "REGIÓN FICTICIA",
+    "nivel3": "CONSEJERÍA DE EMPRESA, EMPLEO Y ECONOMÍA SOCIAL",
+    "codigoInvente": null,
+    "fechaConcesion": "2023-12-07",
+    "infraccion": "ART. 58.A LA OBTENCIÓN DE UNA SUBVENCIÓN FALSEANDO LAS CONDICIONES REQUERIDAS",
+    "importe": 12000,
+    "sancionado": "B00000001 EMPRESA FICTICIA UNO SL",
+    "fechaSancion": "2024-03-25",
+    "importeMulta": 7501,
+    "inicioInhabilitacion": "2024-03-26",
+    "finInhabilitacion": "2029-03-25"
+  },
+  {
+    "numeroConvocatoria": "705647",
+    "convocatoria": "Subvenciones de fomento de la Economía Social. Programa 1.",
+    "nivel1": "AUTONOMICA",
+    "nivel2": "REGIÓN FICTICIA",
+    "nivel3": "CONSEJERÍA DE EMPRESA, EMPLEO Y ECONOMÍA SOCIAL",
+    "codigoInvente": null,
+    "fechaConcesion": "2023-12-14",
+    "infraccion": "ART. 58.A LA OBTENCIÓN DE UNA SUBVENCIÓN FALSEANDO LAS CONDICIONES REQUERIDAS",
+    "importe": 20000,
+    "sancionado": "B00000002 EMPRESA FICTICIA DOS SL",
+    "fechaSancion": "2024-03-25",
+    "importeMulta": 7501,
+    "inicioInhabilitacion": "2024-03-26",
+    "finInhabilitacion": "2029-03-25"
+  }
+]

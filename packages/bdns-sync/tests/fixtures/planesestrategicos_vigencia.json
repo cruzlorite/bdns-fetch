@@ -1,0 +1,30 @@
+{
+  "3078": {
+    "vigDesde": [
+      {
+        "id": 2026,
+        "descripcion": 2026
+      }
+    ],
+    "vigHasta": [
+      {
+        "id": 2028,
+        "descripcion": 2028
+      }
+    ]
+  },
+  "3067": {
+    "vigDesde": [
+      {
+        "id": 2026,
+        "descripcion": 2026
+      }
+    ],
+    "vigHasta": [
+      {
+        "id": 2028,
+        "descripcion": 2028
+      }
+    ]
+  }
+}

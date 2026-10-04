@@ -1,0 +1,62 @@
+[
+  {
+    "reg_days_ago": 0,
+    "payload": {
+      "id": 2118827,
+      "mrr": false,
+      "numeroConvocatoria": "927266",
+      "descripcion": "Subvención nominativa ficticia Uno 2026",
+      "descripcionLeng": null,
+      "fechaRecepcion": "2026-07-04",
+      "nivel1": "LOCAL",
+      "nivel2": "MUNICIPIO FICTICIO",
+      "nivel3": "AYUNTAMIENTO DE MUNICIPIO FICTICIO",
+      "codigoInvente": null
+    }
+  },
+  {
+    "reg_days_ago": 5,
+    "payload": {
+      "id": 2118828,
+      "mrr": false,
+      "numeroConvocatoria": "927267",
+      "descripcion": "Subvención nominativa ficticia Dos 2026",
+      "descripcionLeng": null,
+      "fechaRecepcion": "2026-06-29",
+      "nivel1": "LOCAL",
+      "nivel2": "MUNICIPIO FICTICIO",
+      "nivel3": "AYUNTAMIENTO DE MUNICIPIO FICTICIO",
+      "codigoInvente": null
+    }
+  },
+  {
+    "reg_days_ago": 20,
+    "payload": {
+      "id": 2118829,
+      "mrr": false,
+      "numeroConvocatoria": "927268",
+      "descripcion": "Subvención nominativa ficticia Tres 2026",
+      "descripcionLeng": null,
+      "fechaRecepcion": "2026-06-14",
+      "nivel1": "AUTONOMICA",
+      "nivel2": "COMUNIDAD FICTICIA",
+      "nivel3": "DIRECCIÓN GENERAL FICTICIA",
+      "codigoInvente": null
+    }
+  },
+  {
+    "reg_days_ago": 100,
+    "payload": {
+      "id": 2118830,
+      "mrr": false,
+      "numeroConvocatoria": "927269",
+      "descripcion": "Subvención nominativa ficticia Cuatro 2026",
+      "descripcionLeng": null,
+      "fechaRecepcion": "2026-03-26",
+      "nivel1": "LOCAL",
+      "nivel2": "MUNICIPIO FICTICIO",
+      "nivel3": "AYUNTAMIENTO FICTICIO",
+      "codigoInvente": null
+    }
+  }
+]

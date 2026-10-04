@@ -1,0 +1,11 @@
+.git
+.github
+.venv
+__pycache__
+*.pyc
+htmlcov
+.coverage
+coverage.xml
+tests
+docs
+dist

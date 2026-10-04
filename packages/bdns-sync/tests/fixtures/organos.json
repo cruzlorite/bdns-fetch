@@ -1,0 +1,26 @@
+[
+  {
+    "descripcion": "MINISTERIO DE AGRICULTURA, PESCA Y ALIMENTACIÓN",
+    "id": 23,
+    "children": [
+      {
+        "descripcion": "DIRECCIÓN GENERAL DE ALIMENTACIÓN",
+        "id": 61
+      },
+      {
+        "descripcion": "SECRETARÍA GENERAL DE PESCA",
+        "id": 59
+      }
+    ]
+  },
+  {
+    "descripcion": "MINISTERIO DE ASUNTOS EXTERIORES, UNIÓN EUROPEA Y COOPERACIÓN",
+    "id": 12,
+    "children": [
+      {
+        "descripcion": "INSTITUTO CERVANTES",
+        "id": 745
+      }
+    ]
+  }
+]

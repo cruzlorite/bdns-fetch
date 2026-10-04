@@ -1,0 +1,20 @@
+[
+  {
+    "idPersona": 9400001,
+    "beneficiario": "99900001 FUNDACION FICTICIA INTERNACIONAL",
+    "ejercicio": 2022,
+    "ayudaETotal": 265984.95
+  },
+  {
+    "idPersona": 9400002,
+    "beneficiario": "99900002 FUNDACION FICTICIA SOLIDARIA",
+    "ejercicio": 2022,
+    "ayudaETotal": 300000
+  },
+  {
+    "idPersona": 9400003,
+    "beneficiario": "99900003 ASOCIACION FICTICIA GLOBAL",
+    "ejercicio": 2023,
+    "ayudaETotal": 180000
+  }
+]

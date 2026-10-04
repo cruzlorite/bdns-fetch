@@ -1,0 +1,157 @@
+# SPDX-License-Identifier: MIT
+
+"""SQL implementation of the Sink interface.
+
+Covers every target with a SQLAlchemy dialect. Verified on SQLite and
+PostgreSQL (test suite) and BigQuery (live service).
+
+Module map: `schema.py` (generic SCD2 table shape + control tables),
+`scd2.py` (staging + bulk-diff apply logic), `bookkeeping.py` (run log,
+watermark, error records), `dialects.py` (per-engine adapters, the only
+code allowed to branch on dialect name).
+"""
+
+from collections.abc import Iterable, Sequence
+from dataclasses import replace
+from datetime import date
+from typing import Any
+
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+
+from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
+from bdns.sync.sinks import DEFAULT_LIMITS, RejectLimits, Sink, SyncStats
+from bdns.sync.sinks.sql.bookkeeping import run_with_bookkeeping
+from bdns.sync.sinks.sql.scd2 import apply_full_reconciliation, apply_incremental
+
+__all__ = ["SQLSink"]
+
+
+class SQLSink(Sink):
+    """Sink backed by a SQLAlchemy engine.
+
+    Implements the batch contract with a staging table plus a fixed number
+    of bulk SQL statements per run, never a per-row loop (scd2.py explains
+    why that matters on BigQuery). Atomicity comes from wrapping each run
+    in a single transaction. Run bookkeeping lives in the `_sync_runs` /
+    `_sync_state` / `_sync_errors` tables next to the synced data.
+    """
+
+    def __init__(self, engine: Engine, limits: RejectLimits = DEFAULT_LIMITS):
+        self.engine = engine
+        # How much of a batch may be unusable before this run refuses it.
+        # An operational tolerance, so it belongs to the run rather than to
+        # the entity, unlike the payload policy.
+        self.limits = limits
+
+    @classmethod
+    def from_url(cls, url: str, limits: RejectLimits = DEFAULT_LIMITS) -> "SQLSink":
+        """Build a sink from a SQLAlchemy URL.
+
+        Args:
+            url: Any SQLAlchemy URL, e.g. `sqlite:///bdns.db`,
+                `postgresql://...`, `bigquery://project/dataset`.
+            limits: How much of a batch may be unusable before a run
+                refuses it.
+
+        Returns:
+            A sink on a new engine for that URL.
+        """
+        return cls(create_engine(url), limits)
+
+    def sync_full(
+        self,
+        endpoint: str,
+        rows: Iterable[dict[str, Any]],
+        key_fields: Sequence[str],
+        *,
+        policy: PayloadPolicy = DEFAULT_POLICY,
+        skipped: list[dict[str, str]] | None = None,
+    ) -> SyncStats:
+        """Reconcile `endpoint` against `rows` as its complete current state.
+
+        See [`bdns.sync.sinks.Sink.sync_full`][] for the contract this
+        implements.
+        """
+        # One list for both sources of skips: the caller's own (malformed
+        # detail responses, which know the key they belong to) and the
+        # sink's own rejections.
+        skips = skipped if skipped is not None else []
+
+        def apply_fn(conn, table, staging, run_id):
+            stats = apply_full_reconciliation(
+                conn,
+                table,
+                staging,
+                rows,
+                key_fields,
+                policy,
+                self.limits,
+                skipped=skips,
+                run_id=run_id,
+            )
+            return _attach_skips(stats, skips)
+
+        return run_with_bookkeeping(
+            self.engine, endpoint, run_type="full", apply_fn=apply_fn, skipped=skips
+        )
+
+    def sync_window(
+        self,
+        endpoint: str,
+        rows: Iterable[dict[str, Any]],
+        key_fields: Sequence[str],
+        *,
+        window_start: date,
+        window_end: date,
+        run_type: str,
+        reg_date_field: str | None = None,
+        policy: PayloadPolicy = DEFAULT_POLICY,
+        skipped: list[dict[str, str]] | None = None,
+    ) -> SyncStats:
+        """Apply `rows` as the slice of `endpoint` registered in a date range.
+
+        See [`bdns.sync.sinks.Sink.sync_window`][] for the contract this
+        implements.
+        """
+        skips = skipped if skipped is not None else []
+
+        def apply_fn(conn, table, staging, run_id):
+            stats = apply_incremental(
+                conn,
+                table,
+                staging,
+                rows,
+                key_fields,
+                policy,
+                self.limits,
+                reg_date_field=reg_date_field,
+                window_start=window_start,
+                window_end=window_end,
+                skipped=skips,
+                run_id=run_id,
+            )
+            return _attach_skips(stats, skips)
+
+        return run_with_bookkeeping(
+            self.engine,
+            endpoint,
+            run_type=run_type,
+            apply_fn=apply_fn,
+            skipped=skips,
+            window=(window_start, window_end),
+        )
+
+
+def _attach_skips(stats: SyncStats, skipped: list[dict[str, str]]) -> SyncStats:
+    """Count the skipped records into `stats`.
+
+    Called only after the rows generator is fully consumed, since that is
+    what populated the list.
+
+    Always present, including as zero: the sink can reject records on its
+    own, so every run has a skip count whether or not the caller passed a
+    list. The records themselves go to `_sync_errors`, written by the
+    bookkeeping, which holds the same list.
+    """
+    return replace(stats, skipped=len(skipped))

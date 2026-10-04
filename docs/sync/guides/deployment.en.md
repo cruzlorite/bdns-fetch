@@ -1,0 +1,111 @@
+# Cloud deployment
+
+How to keep a target synced without a machine of your own. `bdns-sync` is a CLI with no local state — all configuration is one environment variable, and everything persistent lives in the target database — so the pattern is the same on any cloud:
+
+> **container image + scheduled job + `BDNS_SYNC_TARGET_URL`**
+
+## The image
+
+Every release publishes an image to GitHub Container Registry with the BigQuery extra:
+
+```bash
+docker pull ghcr.io/cruzlorite/bdns-sync:latest    # or a given version, :0.6.0
+```
+
+- The default command is `bdns-sync delta`: the daily load, which picks the window by itself and carries on when an entity fails ([scheduled operation](scheduling.md)).
+- Any other command passes through as-is: `docker run ... ghcr.io/cruzlorite/bdns-sync bdns-sync sync sectores`.
+- A Cloud Function-style deployment does not fit: timeout limits (15-60 min) cannot cover the long periods or the initial load (see [initial loads and backfills](backfill.md)).
+
+## Recipe: Google Cloud (Cloud Run Jobs + Cloud Scheduler)
+
+The cloud with a live-verified target (BigQuery). The service account attached to the job makes authentication work by itself (ADC), with no keys and no secrets.
+
+```bash
+PROJECT=my-project REGION=europe-southwest1 DATASET=bdns_sync
+
+# 1. Service account with minimum permissions
+gcloud iam service-accounts create bdns-sync --project $PROJECT
+SA=bdns-sync@$PROJECT.iam.gserviceaccount.com
+gcloud projects add-iam-policy-binding $PROJECT --member serviceAccount:$SA --role roles/bigquery.jobUser
+gcloud projects add-iam-policy-binding $PROJECT --member serviceAccount:$SA --role roles/bigquery.dataEditor
+# (dataEditor can be granted on the dataset alone if preferred)
+
+# 2. Cloud Run cannot pull from ghcr.io directly: a remote repository in
+#    Artifact Registry acts as a pull-through proxy of ghcr
+gcloud artifacts repositories create ghcr \
+  --project $PROJECT --location $REGION \
+  --repository-format docker --mode remote-repository \
+  --remote-docker-repo https://ghcr.io
+
+# 3. The daily delta job
+gcloud run jobs create bdns-sync-delta \
+  --project $PROJECT --region $REGION \
+  --image $REGION-docker.pkg.dev/$PROJECT/ghcr/cruzlorite/bdns-sync:latest \
+  --service-account $SA \
+  --set-env-vars BDNS_SYNC_TARGET_URL=bigquery://$PROJECT/$DATASET \
+  --memory 4Gi --task-timeout 24h --max-retries 0
+gcloud run jobs add-iam-policy-binding bdns-sync-delta \
+  --project $PROJECT --region $REGION \
+  --member serviceAccount:$SA --role roles/run.invoker
+
+# 4. The cron (Cloud Scheduler is not available in every region; any
+#    region works, it only calls the job's API)
+gcloud scheduler jobs create http bdns-sync-delta-daily \
+  --project $PROJECT --location europe-west1 \
+  --schedule "0 2 * * *" --time-zone "Europe/Madrid" \
+  --uri "https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/bdns-sync-delta:run" \
+  --http-method POST \
+  --oauth-service-account-email $SA
+```
+
+Notes:
+
+- `--memory 4Gi`, no less. Consumption is set by the widest window, the `annual` pass over `concesiones_busqueda`, which runs three days a year and stages around 20 million rows: measured peak **2.33 GB**. Both times it has been too small it showed up live, with the same signature — an `exit 137` and no terminal event in `_sync_runs`: at 1 GiB, four consecutive weekly runs died in July 2026; at 2 GiB, the annual run of 1 September died. Going from 2 to 4 GiB costs about $0.18 a month and does not force a higher vCPU tier.
+- `--task-timeout 24h`. One call at a time, as the official good practices ask, the daily weekly run still takes minutes, and Monday's monthly run somewhat more. The annual period is the longest: fetching the detail of the ~74,000 calls for applications of a year alone takes about 2 hours at the API's maximum rate, and longer when the server is loaded, so leave margin. If you need it faster, run the job with `BDNS_SYNC_MAX_WORKERS`, knowing it departs from the official recommendation.
+- `--max-retries 0`: if a run dies, the next cron heals it (idempotent); hot retries only duplicate fetch work.
+
+### Cost and guardrails
+
+Two paid services are involved, and the expected spend is cents per month (the job runs ~20 min/day on 1 vCPU; BigQuery load jobs are free; the diff queries scan a few GB):
+
+- **Budgets**: Google Cloud budgets **only notify, they never cut off**. For a real spending cap the only native lock is the BigQuery quota.
+- **BigQuery hard quota** (this one does cut off): daily limit on bytes scanned by queries. Consumption has two very different regimes: a normal day is ~0.2 GiB, but on the three days a year the `annual` window runs, the diff scans around 127 GiB, of which 115 is `concesiones_busqueda` alone: it correlates the table's 29 million rows against staging's ~20 million, and does so several times across the counts, the `_synced_at` refresh, the version closing, and the insert. Size the cap for those three days, not for the average, and leave room for any manual query that lands the same day. 300,000 MiB (293 GiB) is a bit over twice what was measured and bounds the worst case at under €2/day:
+
+  ```bash
+  gcloud alpha services quota update --service bigquery.googleapis.com \
+    --consumer projects/$PROJECT \
+    --metric bigquery.googleapis.com/quota/query/usage \
+    --unit 1/d/{project} --value 300000 --force
+  ```
+
+- **Job failure alert** (Cloud Monitoring): a policy on the `run.googleapis.com/job/completed_execution_count` metric with `result=failed` towards an email channel. A failed run needs no immediate action — the next day's cron heals it — but you want to know.
+
+## The initial load (bootstrap)
+
+A long operation (see [initial loads and backfills](backfill.md)), launched by hand once. Two options:
+
+- **A second job** with the full-load command and the timeout at its maximum (24 h on Cloud Run Jobs — a tight fit; if an outage cuts it, re-running heals: the one-year slices commit independently):
+
+  ```bash
+  gcloud run jobs create bdns-sync-full ... --command bdns-sync --args backfill --task-timeout 24h
+  gcloud run jobs execute bdns-sync-full --project $PROJECT --region $REGION
+  ```
+
+  Since `convocatorias` takes about 19 hours, and longer when the server is loaded, it is easiest to load everything else first and run `convocatorias` separately, or split it by year with `bdns-sync sync convocatorias --since ... --until ...`.
+
+- **Any machine with Docker**: `docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync bdns-sync backfill`
+
+## Other clouds
+
+Same pattern, same numbers:
+
+| Cloud | Job | Scheduling |
+|---|---|---|
+| AWS | ECS Fargate task (or AWS Batch) | EventBridge Scheduler |
+| Azure | Container Apps Job | the job's built-in cron |
+
+The only real difference is authentication towards the target: outside GCP there is no implicit ADC, so the target's credentials (e.g. `GOOGLE_APPLICATION_CREDENTIALS`, or a Postgres password URL) go in as a job secret.
+
+## No cloud
+
+One cron line on any machine, as described in [scheduled operation](scheduling.md).

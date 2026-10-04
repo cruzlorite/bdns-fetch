@@ -252,6 +252,7 @@ nav:
           - API Python:
               - dataset/reference/api/index.md
               - dataset/reference/api/beneficiaries.md
+              - dataset/reference/api/build.md
               - dataset/reference/api/extract.md
               - dataset/reference/api/privacy.md
   - Proyecto:

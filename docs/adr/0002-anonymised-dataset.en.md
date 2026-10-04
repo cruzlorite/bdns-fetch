@@ -20,7 +20,7 @@ Official statistics solve this same problem by publishing aggregates and suppres
 
 The dataset **holds no personal data**. It may identify legal persons and public bodies, never natural persons.
 
-1. **Each beneficiary is classified** as a natural person, an entity made of persons (communities of property and civil partnerships, often named after their members), a legal person, a public body or doubtful. The classification is conservative: anything doubtful is treated as a natural person ([`classify`][bdns.dataset.beneficiaries.classify]).
+1. **Each beneficiary is classified** as a natural person, an entity made of persons (communities of property and civil partnerships, often named after their members), a legal person, a public body or doubtful. The classification is conservative: anything doubtful is treated as a natural person ([the SQL](../dataset/index.md#sql)).
 2. **What is published, and at what detail:**
 
     | Data | Level |

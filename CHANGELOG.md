@@ -30,9 +30,11 @@ now `bdns-tools` (`pip install bdns-tools`, or `pip install "bdns-tools[bigquery
 The start of the anonymised, aggregated dataset ([ADR 0002](https://cruzlorite.github.io/bdns-tools/adr/0002-anonymised-dataset/),
 still a proposal). Experimental: any of it may change until the first version of the dataset is published.
 
-- `beneficiaries`: classifies a BDNS beneficiary as a natural person, an entity made of persons, a legal person, a
-  public body or unknown, from its tax ID alone, and treats anything unrecognised as a natural person. The rule is
-  defined once and runs both in Python and as a DuckDB SQL expression.
+- The transforms are plain SQL files run in DuckDB in name order (`bdns/dataset/sql/`, run by `build`), so the
+  method can be read and reviewed as it is; the site shows them straight from the code.
+- `00_beneficiaries.sql`: classifies a BDNS beneficiary as a natural person, an entity made of persons, a legal
+  person, a public body or unknown, from its tax ID alone, and treats anything unrecognised as a natural person.
+- `10_concesiones.sql`: awards with typed columns, the beneficiary's kind and whether the API has withdrawn them.
 - `privacy`: SQL checks that stop the build if a table about to be published holds something shaped like a natural
   person's tax ID, a column that identifies people, or an aggregated cell below the minimum count.
 - `extract`: copies each key's last known version from a bdns-sync table (the current one, or the one closed as

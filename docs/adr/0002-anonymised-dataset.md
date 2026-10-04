@@ -20,7 +20,7 @@ Las estadísticas oficiales resuelven este mismo problema publicando agregados y
 
 El dataset **no contiene ningún dato personal**. Puede identificar a personas jurídicas y entidades públicas, pero nunca a personas físicas.
 
-1. **Cada beneficiario se clasifica** como persona física, entidad formada por personas (comunidades de bienes y sociedades civiles, que suelen llevar el nombre de sus miembros), persona jurídica, entidad pública o dudoso. La clasificación es conservadora: lo dudoso se trata como persona física ([`classify`][bdns.dataset.beneficiaries.classify]).
+1. **Cada beneficiario se clasifica** como persona física, entidad formada por personas (comunidades de bienes y sociedades civiles, que suelen llevar el nombre de sus miembros), persona jurídica, entidad pública o dudoso. La clasificación es conservadora: lo dudoso se trata como persona física ([el SQL](../dataset/index.md#sql)).
 2. **Lo que se publica, y con qué detalle:**
 
     | Datos | Nivel |

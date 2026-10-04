@@ -26,11 +26,21 @@ Communities of property and civil partnerships have a tax ID of their own, but a
 
 Before writing anything, the build checks what it is about to publish and **stops** if it finds a value shaped like a DNI, NIE or masked tax ID, a column that identifies someone (`beneficiario`, `idPersona`, `urlBR`...) or an aggregated cell with fewer than ten beneficiaries. It does not clean up what it finds: it reports it, because such a finding points to an earlier fault that needs fixing.
 
+<a id="sql"></a>
+## The SQL
+
+Every transform is an SQL file run in DuckDB, one after another, on a private copy of `bdns-sync`'s tables. They live in [`src/bdns/dataset/sql/`](https://github.com/cruzlorite/bdns-tools/tree/main/src/bdns/dataset/sql), and can be read, reviewed and rerun as they are. This is the one that classifies beneficiaries, shown straight from the code:
+
+```sql
+--8<-- "src/bdns/dataset/sql/00_beneficiaries.sql"
+```
+
 ## Status
 
 - [x] The design decision, as a proposal ([decision 0002](../adr/0002-anonymised-dataset.md))
-- [x] Beneficiary classification ([`beneficiaries`][bdns.dataset.beneficiaries]) and privacy checks ([`privacy`][bdns.dataset.privacy])
+- [x] Beneficiary classification ([in SQL](#sql)) and privacy checks ([`privacy`][bdns.dataset.privacy])
 - [x] Extraction of each record's last known version, including those the API has withdrawn ([`extract`][bdns.dataset.extract])
+- [x] Awards with typed columns and the beneficiary's kind (`10_concesiones.sql`)
 - [ ] The aggregates, with statistical disclosure control
 - [ ] The dataset card, the schema and publication
 - [ ] The risk assessment and legal review, before the first version

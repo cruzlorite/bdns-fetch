@@ -26,11 +26,21 @@ Las comunidades de bienes y las sociedades civiles tienen NIF propio, pero suele
 
 Antes de escribir nada, la generación comprueba lo que va a publicar y **se para** si encuentra un valor con forma de DNI, NIE o NIF enmascarado, una columna que identifica a alguien (`beneficiario`, `idPersona`, `urlBR`...) o una celda agregada con menos de diez beneficiarios. No limpia lo que encuentra: lo señala, porque un fallo así indica un error anterior que hay que corregir.
 
+<a id="sql"></a>
+## El SQL
+
+Todas las transformaciones son ficheros SQL que se ejecutan en DuckDB, uno detrás de otro, sobre una copia privada de las tablas de `bdns-sync`. Están en [`src/bdns/dataset/sql/`](https://github.com/cruzlorite/bdns-tools/tree/main/src/bdns/dataset/sql), y se pueden leer, revisar y volver a ejecutar tal cual. Este es el que clasifica a los beneficiarios, mostrado directamente desde el código:
+
+```sql
+--8<-- "src/bdns/dataset/sql/00_beneficiaries.sql"
+```
+
 ## Estado
 
 - [x] La decisión de diseño, como propuesta ([decisión 0002](../adr/0002-anonymised-dataset.md))
-- [x] La clasificación de beneficiarios ([`beneficiaries`][bdns.dataset.beneficiaries]) y los controles de privacidad ([`privacy`][bdns.dataset.privacy])
+- [x] La clasificación de beneficiarios ([en SQL](#sql)) y los controles de privacidad ([`privacy`][bdns.dataset.privacy])
 - [x] La extracción de la última versión conocida de cada registro, incluidos los que la API ya ha retirado ([`extract`][bdns.dataset.extract])
+- [x] Las concesiones con sus columnas y el tipo de beneficiario (`10_concesiones.sql`)
 - [ ] Los agregados, con control de revelación estadística
 - [ ] La ficha del dataset, el esquema y la publicación
 - [ ] La evaluación de riesgos y la revisión legal, antes de la primera versión

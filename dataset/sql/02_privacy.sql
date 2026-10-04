@@ -27,3 +27,15 @@ CREATE OR REPLACE MACRO identifying_column(name) AS
         'beneficiario', 'nifcif', 'nif_cif', 'idpersona', 'id_persona',
         'urlbr', 'url_br', 'codconcesion', 'cod_concesion', 'id'
     );
+
+-- The two thresholds of statistical disclosure control, in one place.
+-- A published aggregate counts at least this many beneficiaries...
+CREATE OR REPLACE MACRO min_beneficiarios() AS 10;
+-- ...and no single beneficiary holds more than this share of its amount.
+CREATE OR REPLACE MACRO max_cuota_dominante() AS 0.5;
+
+-- Whether an aggregate may be published, given its number of
+-- beneficiaries, its total amount and its largest beneficiary's amount.
+CREATE OR REPLACE MACRO publicable(beneficiarios, total, mayor) AS
+    beneficiarios >= min_beneficiarios()
+    AND NOT (coalesce(total, 0) > 0 AND mayor > max_cuota_dominante() * total);

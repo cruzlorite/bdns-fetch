@@ -40,3 +40,22 @@ SELECT CASE WHEN count(*) > 0 THEN error(
     'publicar.minimis_entidades: ' || count(*) || ' rows with something shaped like a personal tax ID'
 ) END
 FROM rows_with_personal_ids('publicar.minimis_entidades');
+
+-- concesiones_personas: no column that identifies people, no cell (rest
+-- included) below the minimum, and no personal tax ID anywhere.
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publicar.concesiones_personas: identifying columns: ' || string_agg(column_name, ', ')
+) END
+FROM information_schema.columns
+WHERE table_schema = 'publicar' AND table_name = 'concesiones_personas' AND identifying_column(column_name);
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publicar.concesiones_personas: ' || count(*) || ' rows below ' || min_beneficiarios() || ' beneficiaries'
+) END
+FROM publicar.concesiones_personas
+WHERE beneficiarios < min_beneficiarios();
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publicar.concesiones_personas: ' || count(*) || ' rows with something shaped like a personal tax ID'
+) END
+FROM rows_with_personal_ids('publicar.concesiones_personas');

@@ -27,5 +27,6 @@
 .read dataset/sql/11_ayudas_estado.sql
 .read dataset/sql/12_minimis.sql
 .read dataset/sql/20_entidades.sql
+.read dataset/sql/30_personas.sql
 .read dataset/sql/90_checks.sql
 .read dataset/sql/95_export.sql

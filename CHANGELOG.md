@@ -42,8 +42,12 @@ attached as `sync`:
 - `20_entidades.sql`: awards, state aid and de minimis aid to legal persons and public bodies, record by record, in
   the `publicar` schema that holds everything to be published; without `url_br` (the bulletin usually lists natural
   persons too) or `id_persona`.
+- `30_personas.sql`: awards to natural persons, entities made of persons and unrecognised beneficiaries, only as
+  aggregates by call and award year: a cell is published with at least 10 beneficiaries and none holding more than
+  half its amount; the rest go, per year, into a "rest" row published only if it gathers two or more suppressed cells
+  and meets the same thresholds. Both thresholds are macros in `02_privacy.sql`.
 - `90_checks.sql`: stops the build if a record-level table holds a protected beneficiary or anything shaped like a
-  natural person's tax ID.
+  natural person's tax ID, or an aggregate table has an identifying column or a cell below the minimum.
 - `95_export.sql`: writes each table in `publicar`, and nothing else, as a Parquet file (the dataset's only format)
   in the folder named by the `salida` variable, once the checks have passed.
 

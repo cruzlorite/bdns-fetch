@@ -19,3 +19,6 @@ COPY publicar.ayudas_estado_entidades
 
 COPY publicar.minimis_entidades
     TO (getvariable('salida') || '/minimis_entidades.parquet') (FORMAT parquet, COMPRESSION zstd);
+
+COPY publicar.concesiones_personas
+    TO (getvariable('salida') || '/concesiones_personas.parquet') (FORMAT parquet, COMPRESSION zstd);

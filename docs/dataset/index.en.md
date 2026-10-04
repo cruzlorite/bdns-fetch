@@ -51,6 +51,7 @@ This is the step that classifies beneficiaries, shown straight from the code:
 - [x] Awards, read straight from `bdns-sync` with each one's last known version, including those the API has withdrawn, with typed columns and the beneficiary's kind
 - [x] Awards, state aid and de minimis aid to legal persons and public bodies, record by record, without the bulletin link or the BDNS internal identifier, and the checks that guard them
 - [x] The Parquet export, which only happens if every check passes
-- [ ] Natural-person aggregates, with statistical disclosure control, and the distribution of amounts
+- [x] Aggregates of awards to natural persons by call and year, with cell suppression and a "rest" row (on the real sample, 98.8% of beneficiaries are published)
+- [ ] The same aggregates for state and de minimis aid, and the distribution of amounts
 - [ ] The dataset card, the schema and publication
 - [ ] The risk assessment and legal review, before the first version

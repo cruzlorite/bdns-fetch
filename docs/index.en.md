@@ -72,4 +72,4 @@ $ pip install bdns                # for BigQuery: pip install "bdns[bigquery]"
 
 !!! note "Unofficial project"
 
-    This is a personal project, not affiliated with the IGAE, which runs the BDNS. If you reuse the data, you must meet its reuse conditions, summarised in the [README's legal notice](https://github.com/cruzlorite/bdns/blob/main/README.en.md#legal-notice).
+    This is a personal project, not affiliated with the IGAE, which runs the BDNS. If you reuse the data, you must meet its reuse conditions, summarised in the [legal notice](legal.md).

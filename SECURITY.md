@@ -1,7 +1,5 @@
 # Security policy
 
-*Puedes escribirnos en español.*
-
 ## Supported versions
 
 Security fixes are released for the latest version published on PyPI. Earlier versions are not maintained.

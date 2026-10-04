@@ -89,4 +89,4 @@ Had the award been seen again unchanged in between, there would be no extra row:
 
 ## Notice
 
-A personal, unofficial project with no relationship to the Intervención General de la Administración del Estado (IGAE), which runs the BDNS. Several tables hold names and tax IDs of natural persons, and their reuse is limited by the IGAE's conditions, summarised in the [README's legal notice](https://github.com/cruzlorite/bdns/blob/main/README.en.md#legal-notice).
+A personal, unofficial project with no relationship to the Intervención General de la Administración del Estado (IGAE), which runs the BDNS. Several tables hold names and tax IDs of natural persons, and their reuse is limited by the IGAE's conditions, summarised in the [legal notice](../legal.md).

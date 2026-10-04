@@ -6,7 +6,7 @@ site_url: https://cruzlorite.github.io/bdns/
 repo_url: https://github.com/cruzlorite/bdns
 repo_name: cruzlorite/bdns
 edit_uri: edit/main/docs/
-copyright: "Licencia MIT · Proyecto no oficial, sin relación con la BDNS ni con el Ministerio de Hacienda"
+copyright: 'Licencia MIT · Proyecto no oficial, sin relación con la BDNS ni con el Ministerio de Hacienda · <a href="/bdns/legal/">Aviso legal</a>'
 
 theme:
   name: material
@@ -32,8 +32,8 @@ theme:
     - search.highlight
     - search.suggest
     - toc.follow
-  # Dark by default (black header, indigo accent), with a light variant of
-  # the same style one click away.
+  # Dark by default, with a black header; the light mode keeps Material's
+  # indigo header. The accent is indigo in both.
   palette:
     - scheme: slate
       primary: black
@@ -42,7 +42,7 @@ theme:
         icon: material/brightness-4
         name: Modo claro
     - scheme: default
-      primary: black
+      primary: indigo
       accent: indigo
       toggle:
         icon: material/brightness-7
@@ -94,6 +94,9 @@ markdown_extensions:
 plugins:
   - search:
       lang: [es, en]
+  # Downloads the fonts and any other external asset at build time and
+  # serves them from the site, so visiting it makes no third-party requests.
+  - privacy
   # Spanish is canonical: `foo.md` is Spanish, `foo.en.md` is its English
   # translation. Pages with no translation fall back to the Spanish one.
   - i18n:
@@ -110,7 +113,7 @@ plugins:
           site_description: >-
             Tools to download, keep and reuse the data of Spain's National
             Subsidies Database (BDNS).
-          copyright: "MIT license · Unofficial project, not affiliated with the BDNS or Spain's Ministerio de Hacienda"
+          copyright: 'MIT license · Unofficial project, not affiliated with the BDNS or Spain''s Ministerio de Hacienda · <a href="/bdns/en/legal/">Legal notice</a>'
           # Merged by index into theme.palette: only the toggle labels change.
           theme:
             palette:
@@ -129,6 +132,7 @@ plugins:
             Cómo contribuir: Contributing
             Compatibilidad: Compatibility
             Hoja de ruta: Roadmap
+            Aviso legal: Legal notice
             Proyecto: Project
             Decisiones comunes: Shared decisions
   # The reference is built once per locale, so every symbol has one URL per
@@ -243,6 +247,7 @@ nav:
   - Proyecto:
       - Compatibilidad: compatibility.md
       - Hoja de ruta: roadmap.md
+      - Aviso legal: legal.md
       - Decisiones comunes:
           - adr/index.md
           - adr/0001-one-package.md

@@ -48,6 +48,8 @@ Este es el paso que clasifica a los beneficiarios, mostrado directamente desde e
 - [x] La decisión de diseño, como propuesta ([decisión 0002](../adr/0002-anonymised-dataset.md))
 - [x] La clasificación de beneficiarios y las piezas de los controles de privacidad, en SQL
 - [x] Las concesiones, leídas directamente de `bdns-sync` con la última versión conocida de cada una, incluidas las que la API ya ha retirado, con sus columnas y el tipo de beneficiario
-- [ ] Los agregados, con control de revelación estadística
+- [x] Las concesiones a personas jurídicas y entidades públicas, registro a registro, sin el enlace al boletín ni el identificador interno de la BDNS, y los controles que las vigilan
+- [ ] Las ayudas de Estado y minimis a personas jurídicas y entidades públicas
+- [ ] Los agregados de personas físicas, con control de revelación estadística, y el reparto de importes
 - [ ] La ficha del dataset, el esquema y la publicación
 - [ ] La evaluación de riesgos y la revisión legal, antes de la primera versión

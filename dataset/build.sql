@@ -14,4 +14,7 @@
 
 .read dataset/sql/01_beneficiaries.sql
 .read dataset/sql/02_privacy.sql
+.read dataset/sql/03_publicar.sql
 .read dataset/sql/10_concesiones.sql
+.read dataset/sql/20_entidades.sql
+.read dataset/sql/90_checks.sql

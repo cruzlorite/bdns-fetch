@@ -38,6 +38,10 @@ attached as `sync`:
   something shaped like a natural person's tax ID or a column that identifies people.
 - `10_concesiones.sql`: each award's last known version, read straight from bdns-sync (withdrawn ones included),
   with typed columns and the beneficiary's kind.
+- `20_entidades.sql`: awards to legal persons and public bodies, record by record, in the `publicar` schema that
+  holds everything to be published; without `url_br` (the bulletin usually lists natural persons too) or `id_persona`.
+- `90_checks.sql`: stops the build if a record-level table holds a protected beneficiary or anything shaped like a
+  natural person's tax ID.
 
 ### bdns.fetch
 

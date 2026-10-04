@@ -61,7 +61,7 @@ They are conservative floors, not first records: asking for dates before the ret
 
 | Issue ([details](../../fetch/explanation/api-behavior.md#api-issues)) | What `bdns-sync` does |
 |---|---|
-| Single records arriving as an HTML error page | Skips them with a warning, counts them in `rows_skipped` and keeps the content in `_sync_errors`. If skips cross the threshold, the run fails ([ADR 0005](../adr/0005-per-run-reject-tolerance.md)) |
+| Single records arriving as an HTML error page | Skips them with a warning, counts them in `rows_skipped` and keeps the content in `_sync_errors`. If skips cross the threshold, the run fails ([ADR 0005](../../adr/0005-per-run-reject-tolerance.md)) |
 | `ERR_MANTENIMIENTO_BBDD` on long ranges | 7-day pieces; the client retries it as transient |
 | Inconsistent date semantics | Translation in `bdns-fetch`, daily check with `check-api` |
 | `partidospoliticos_busqueda` without a registration date | No deletion detection for that entity |

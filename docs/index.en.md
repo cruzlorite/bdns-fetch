@@ -1,4 +1,6 @@
 ---
+title: Home
+icon: material/wrench
 hide:
   - toc
 ---

@@ -10,7 +10,7 @@ What counts as public, module by module, is in the
 ## [Unreleased]
 
 Planned as 2.0.0. `bdns-tools` brings bdns-fetch and bdns-sync together in one package
-([ADR 0001](https://cruzlorite.github.io/bdns-tools/adr/0001-one-package/)): the imports (`bdns.fetch`,
+([ADR 0018](https://cruzlorite.github.io/bdns-tools/adr/0018-one-package/)): the imports (`bdns.fetch`,
 `bdns.sync`) and the commands (`bdns-fetch`, `bdns-sync`) stay the same, but the package to install is
 now `bdns-tools` (`pip install bdns-tools`, or `pip install "bdns-tools[bigquery]"`). Numbering continues bdns-fetch's.
 
@@ -20,6 +20,7 @@ now `bdns-tools` (`pip install bdns-tools`, or `pip install "bdns-tools[bigquery
   [cruzlorite/bdns-tools](https://github.com/cruzlorite/bdns-tools), and both tools share one documentation site,
   <https://cruzlorite.github.io/bdns-tools/>.
 - The Docker image (`ghcr.io/cruzlorite/bdns-sync`) is built with uv from the project's lock file.
+- The documentation keeps every design decision in one list, numbered by date, instead of one list per tool.
 
 ### Added
 
@@ -27,7 +28,7 @@ now `bdns-tools` (`pip install bdns-tools`, or `pip install "bdns-tools[bigquery
 
 ### The dataset (experimental)
 
-The start of the anonymised dataset ([ADR 0002](https://cruzlorite.github.io/bdns-tools/adr/0002-anonymised-dataset/),
+The start of the anonymised dataset ([ADR 0020](https://cruzlorite.github.io/bdns-tools/adr/0020-anonymised-dataset/),
 still a proposal). It is DuckDB SQL in `dataset/`, not part of the Python package, and may change until its first
 version is published. `dataset/build.sql` runs the steps with the DuckDB command line against a bdns-sync database
 attached as `sync`, stops at the first error, and writes Parquet files to the `output_dir` folder:

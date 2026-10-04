@@ -57,7 +57,7 @@ Para empezar, cada herramienta tiene sus primeros pasos: [bdns-fetch](https://cr
 
 - **[bdns-fetch](https://cruzlorite.github.io/bdns-tools/fetch/)**: [primeros pasos](https://cruzlorite.github.io/bdns-tools/fetch/getting-started/) · [descargas incrementales](https://cruzlorite.github.io/bdns-tools/fetch/guides/incremental/) · [comportamiento de la API](https://cruzlorite.github.io/bdns-tools/fetch/explanation/api-behavior/) · [línea de comandos](https://cruzlorite.github.io/bdns-tools/fetch/reference/cli/)
 - **[bdns-sync](https://cruzlorite.github.io/bdns-tools/sync/)**: [primeros pasos](https://cruzlorite.github.io/bdns-tools/sync/getting-started/) · [sincronización diaria](https://cruzlorite.github.io/bdns-tools/sync/guides/scheduling/) · [carga inicial](https://cruzlorite.github.io/bdns-tools/sync/guides/backfill/) · [despliegue en la nube](https://cruzlorite.github.io/bdns-tools/sync/guides/deployment/) · [modelo de datos](https://cruzlorite.github.io/bdns-tools/sync/reference/data-model/)
-- **Proyecto**: [compatibilidad](https://cruzlorite.github.io/bdns-tools/compatibility/) · [hoja de ruta](https://cruzlorite.github.io/bdns-tools/roadmap/) · [decisiones comunes](https://cruzlorite.github.io/bdns-tools/adr/) · [changelog](https://github.com/cruzlorite/bdns-tools/blob/main/CHANGELOG.md)
+- **Proyecto**: [compatibilidad](https://cruzlorite.github.io/bdns-tools/compatibility/) · [hoja de ruta](https://cruzlorite.github.io/bdns-tools/roadmap/) · [decisiones de diseño](https://cruzlorite.github.io/bdns-tools/adr/) · [changelog](https://github.com/cruzlorite/bdns-tools/blob/main/CHANGELOG.md)
 
 Hasta la versión 1.3.0 de `bdns-fetch` y la 0.5.0 de `bdns-sync`, cada herramienta se publicaba como un paquete aparte. Los imports y los comandos no han cambiado: basta con instalar `bdns-tools` ([más detalles](https://cruzlorite.github.io/bdns-tools/compatibility/#previous-names)).
 
@@ -67,7 +67,7 @@ Necesitas [uv](https://docs.astral.sh/uv/).
 
 ```bash
 git clone https://github.com/cruzlorite/bdns-tools.git
-cd bdns
+cd bdns-tools
 make install            # el paquete, sus extras y las herramientas de desarrollo
 make test               # tests, sin conexión
 make check-docs         # enlaces, docstrings y generación de la web

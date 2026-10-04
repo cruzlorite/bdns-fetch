@@ -18,7 +18,7 @@ Each synced endpoint has its own table, and all tables share the same generic sc
 | `_closed_run_id` | The run that closed it; `NULL` while current |
 | `_closed_reason` | Why it was closed: `superseded` (a different payload replaced it) or `removed` (the source stopped serving the key); `NULL` while current |
 
-The three run columns are `NULL` on versions written before they existed ([ADR 0008](../adr/0008-run-linked-versions-additive-migrations.md)).
+The three run columns are `NULL` on versions written before they existed ([ADR 0015](../../adr/0015-run-linked-versions-additive-migrations.md)).
 
 If the API adds or removes a field, no migration is required: the change is detected via the hash and versioned like any other.
 

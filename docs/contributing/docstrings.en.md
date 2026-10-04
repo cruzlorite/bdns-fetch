@@ -16,7 +16,7 @@ the constraint this convention exists to satisfy.
 | A measured fact about the BDNS API | bdns-fetch's [API behaviour](../fetch/explanation/api-behavior.md) |
 | What bdns-sync decides because of it | [How it syncs](../sync/explanation/sync-behavior.md) |
 | A warning for whoever consumes the resulting tables | [Before querying the data](../sync/explanation/data-caveats.md) |
-| A decision spanning a whole tool, or several | The tool's decisions, or the [shared decisions](../adr/index.md) |
+| A decision spanning a whole tool, or several | The [design decisions](../adr/index.md) |
 | How to run, deploy, or schedule the tool | The guides |
 
 Duplication is not a style problem here, it is a correctness problem:

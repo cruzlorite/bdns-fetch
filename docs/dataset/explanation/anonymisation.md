@@ -1,6 +1,6 @@
 # Cómo se protege a las personas físicas
 
-El dataset no contiene ningún dato personal. Puede identificar a empresas y entidades públicas, pero nunca a una persona física, y en esta página se explica cómo se consigue, con ejemplos. El porqué, con el marco legal y las alternativas que se descartaron, está en la [decisión de diseño](../../adr/0002-anonymised-dataset.md).
+El dataset no contiene ningún dato personal. Puede identificar a empresas y entidades públicas, pero nunca a una persona física, y en esta página se explica cómo se consigue, con ejemplos. El porqué, con el marco legal y las alternativas que se descartaron, está en la [decisión de diseño](../../adr/0020-anonymised-dataset.md).
 
 <a id="who"></a>
 ## Qué beneficiarios se protegen

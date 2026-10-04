@@ -3,7 +3,7 @@
 """Additive schema migration: add the columns an existing table lacks.
 
 The schema only ever grows by nullable columns (see
-[ADR 0008](../../adr/0008-run-linked-versions-additive-migrations.md)), so
+[ADR 0015](../../../adr/0015-run-linked-versions-additive-migrations.md)), so
 bringing an existing target up to date is one `ALTER TABLE ... ADD COLUMN`
 per missing column, which SQLite, PostgreSQL, DuckDB and BigQuery all
 accept. Nothing is ever renamed, retyped or dropped, which is what keeps

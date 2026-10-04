@@ -145,3 +145,18 @@
   .md-typeset .bdns-retention__axis { display: none; }
   .md-typeset .bdns-retention__row { grid-template-columns: 1fr; row-gap: 0.3rem; }
 }
+
+/* The first section, BDNS Tools, already carries the project's name and
+   icon, so on wide screens the sidebar's own title would only repeat it. */
+@media screen and (min-width: 76.25em) {
+  .md-nav--primary > .md-nav__title {
+    display: none;
+  }
+}
+
+/* An abbreviation in a title or a card heading keeps its tooltip, but not
+   the dotted underline, which would cross every "BDNS Fetch". */
+.md-typeset :is(h1, h2, h3, .grid.cards strong) abbr {
+  text-decoration: none;
+  border-bottom: none;
+}

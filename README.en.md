@@ -57,7 +57,7 @@ To start, each tool has its own get-started page: [bdns-fetch](https://cruzlorit
 
 - **[bdns-fetch](https://cruzlorite.github.io/bdns-tools/en/fetch/)**: [get started](https://cruzlorite.github.io/bdns-tools/en/fetch/getting-started/) · [incremental downloads](https://cruzlorite.github.io/bdns-tools/en/fetch/guides/incremental/) · [API behaviour](https://cruzlorite.github.io/bdns-tools/en/fetch/explanation/api-behavior/) · [CLI](https://cruzlorite.github.io/bdns-tools/en/fetch/reference/cli/)
 - **[bdns-sync](https://cruzlorite.github.io/bdns-tools/en/sync/)**: [get started](https://cruzlorite.github.io/bdns-tools/en/sync/getting-started/) · [daily sync](https://cruzlorite.github.io/bdns-tools/en/sync/guides/scheduling/) · [initial load](https://cruzlorite.github.io/bdns-tools/en/sync/guides/backfill/) · [cloud deployment](https://cruzlorite.github.io/bdns-tools/en/sync/guides/deployment/) · [data model](https://cruzlorite.github.io/bdns-tools/en/sync/reference/data-model/)
-- **Project**: [compatibility](https://cruzlorite.github.io/bdns-tools/en/compatibility/) · [roadmap](https://cruzlorite.github.io/bdns-tools/en/roadmap/) · [shared decisions](https://cruzlorite.github.io/bdns-tools/en/adr/) · [changelog](https://github.com/cruzlorite/bdns-tools/blob/main/CHANGELOG.md)
+- **Project**: [compatibility](https://cruzlorite.github.io/bdns-tools/en/compatibility/) · [roadmap](https://cruzlorite.github.io/bdns-tools/en/roadmap/) · [design decisions](https://cruzlorite.github.io/bdns-tools/en/adr/) · [changelog](https://github.com/cruzlorite/bdns-tools/blob/main/CHANGELOG.md)
 
 Up to `bdns-fetch` 1.3.0 and `bdns-sync` 0.5.0, each tool was published as a separate package. Imports and commands are unchanged: install `bdns-tools` ([details](https://cruzlorite.github.io/bdns-tools/en/compatibility/#previous-names)).
 
@@ -67,7 +67,7 @@ You need [uv](https://docs.astral.sh/uv/).
 
 ```bash
 git clone https://github.com/cruzlorite/bdns-tools.git
-cd bdns
+cd bdns-tools
 make install            # the package, its extras and the development tools
 make test               # tests, offline
 make check-docs         # links, docstrings and the site build

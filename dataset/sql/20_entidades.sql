@@ -1,7 +1,7 @@
 -- Awards, state aid and de minimis aid to legal persons and public bodies,
 -- record by record. They are not personal data, and who receives what from
 -- whom is what the dataset is most useful for.
--- See docs/adr/0002-anonymised-dataset.md.
+-- See docs/adr/0020-anonymised-dataset.md.
 --
 -- Left out even here: url_br, since the bulletin it links to usually lists
 -- natural persons among the beneficiaries, and id_persona, a BDNS internal

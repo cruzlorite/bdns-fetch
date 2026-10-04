@@ -7,7 +7,7 @@ sync of one entity, built from the entity registry. Building the plan is
 separate from running it, so `--dry-run` prints exactly what a run would
 do, and the cadence rules are ordinary tested Python rather than a shell
 script nothing tested
-([ADR 0007](../../adr/0007-cadence-in-the-cli.md)).
+([ADR 0014](../../../adr/0014-cadence-in-the-cli.md)).
 
 Running a plan isolates failures: one entity failing does not stop the
 others. They are independent syncs sharing only the target, and stopping

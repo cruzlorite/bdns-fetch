@@ -6,7 +6,7 @@
 -- ("***1234** NOMBRE APELLIDOS"), so the field identifies them and the
 -- dataset may only publish them aggregated. The rule is conservative: any
 -- shape it does not recognise is 'desconocido', and that is protected
--- exactly like a natural person. See docs/adr/0002-anonymised-dataset.md.
+-- exactly like a natural person. See docs/adr/0020-anonymised-dataset.md.
 
 -- The identifier: the first word of the field, upper-cased.
 CREATE OR REPLACE MACRO beneficiary_id(beneficiary) AS

@@ -27,7 +27,7 @@ Three policies apply to every request:
   rather than growing memory.
 
 Each is explained in [how the client works](../../explanation/policies.md),
-and recorded with its alternatives in the [ADRs](../../adr/index.md).
+and recorded with its alternatives in the [ADRs](../../../adr/index.md).
 """
 
 import collections

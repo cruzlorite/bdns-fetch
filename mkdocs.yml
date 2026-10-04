@@ -56,6 +56,10 @@ extra_css:
 exclude_docs: |
   includes/
 
+# Reached from the contributing page, which links to it where it matters.
+not_in_nav: |
+  contributing/docstrings*.md
+
 # A link to a missing anchor is a broken link; the default only logs it.
 validation:
   anchors: warn
@@ -124,19 +128,16 @@ plugins:
               - toggle:
                   name: Switch to dark mode
           nav_translations:
-            Inicio: Home
             Primeros pasos: Get started
             Guías: How-to guides
             Conceptos: Explanation
             Referencia: Reference
             API Python: Python API
-            Decisiones de diseño: Decisions
+            Decisiones de diseño: Design decisions
             Cómo contribuir: Contributing
             Compatibilidad: Compatibility
             Hoja de ruta: Roadmap
             Aviso legal: Legal notice
-            Proyecto: Project
-            Decisiones comunes: Shared decisions
   # The reference is built once per locale, so every symbol has one URL per
   # language and autorefs sees competing targets. `resolve_closest` picks
   # the one in the same subtree as the linking page, which is the right
@@ -166,7 +167,34 @@ plugins:
             scoped_crossrefs: true
 
 nav:
-  - Inicio: index.md
+  - BDNS Tools:
+      - index.md
+      - Compatibilidad: compatibility.md
+      - Hoja de ruta: roadmap.md
+      - Aviso legal: legal.md
+      - Decisiones de diseño:
+          - adr/index.md
+          - adr/0001-store-whole-record-version-by-hash.md
+          - adr/0002-staging-and-bulk-diff.md
+          - adr/0003-run-event-log.md
+          - adr/0004-beneficiario-out-of-hash.md
+          - adr/0005-per-run-reject-tolerance.md
+          - adr/0006-api-parameter-names-keyword-only.md
+          - adr/0007-retry-only-transient-failures.md
+          - adr/0008-spaced-requests-no-bursts.md
+          - adr/0009-records-as-plain-dicts.md
+          - adr/0010-ordered-bounded-pagination.md
+          - adr/0011-cli-generated-from-client.md
+          - adr/0012-api-knowledge-lives-in-fetch.md
+          - adr/0013-entity-registry.md
+          - adr/0014-cadence-in-the-cli.md
+          - adr/0015-run-linked-versions-additive-migrations.md
+          - adr/0016-natural-key-conflicts-fail-the-run.md
+          - adr/0017-api-semantics-from-bdns-fetch.md
+          - adr/0018-one-package.md
+          - adr/0019-one-call-at-a-time.md
+          - adr/0020-anonymised-dataset.md
+      - Cómo contribuir: contributing/index.md
   - BDNS Fetch:
       - fetch/index.md
       - Primeros pasos: fetch/getting-started.md
@@ -190,16 +218,6 @@ nav:
               - fetch/reference/api/endpoints.md
               - fetch/reference/api/options.md
               - fetch/reference/api/cli.md
-      - Decisiones de diseño:
-          - fetch/adr/index.md
-          - fetch/adr/0001-api-parameter-names-keyword-only.md
-          - fetch/adr/0002-retry-only-transient-failures.md
-          - fetch/adr/0003-spaced-requests-no-bursts.md
-          - fetch/adr/0004-records-as-plain-dicts.md
-          - fetch/adr/0005-ordered-bounded-pagination.md
-          - fetch/adr/0006-cli-generated-from-client.md
-          - fetch/adr/0007-api-knowledge-lives-in-fetch.md
-          - fetch/adr/0008-one-call-at-a-time.md
   - BDNS Sync:
       - sync/index.md
       - Primeros pasos: sync/getting-started.md
@@ -234,18 +252,6 @@ nav:
               - sync/reference/api/sinks.sql.bookkeeping.md
               - sync/reference/api/sinks.sql.migrate.md
               - sync/reference/api/sinks.sql.dialects.md
-      - Decisiones de diseño:
-          - sync/adr/index.md
-          - sync/adr/0001-store-whole-record-version-by-hash.md
-          - sync/adr/0002-staging-and-bulk-diff.md
-          - sync/adr/0003-run-event-log.md
-          - sync/adr/0004-beneficiario-out-of-hash.md
-          - sync/adr/0005-per-run-reject-tolerance.md
-          - sync/adr/0006-entity-registry.md
-          - sync/adr/0007-cadence-in-the-cli.md
-          - sync/adr/0008-run-linked-versions-additive-migrations.md
-          - sync/adr/0009-natural-key-conflicts-fail-the-run.md
-          - sync/adr/0010-api-semantics-from-bdns-fetch.md
   - BDNS Dataset:
       - dataset/index.md
       - Primeros pasos: dataset/getting-started.md
@@ -256,13 +262,3 @@ nav:
       - Referencia:
           - dataset/reference/tables.md
           - dataset/reference/build.md
-  - Proyecto:
-      - Compatibilidad: compatibility.md
-      - Hoja de ruta: roadmap.md
-      - Aviso legal: legal.md
-      - Decisiones comunes:
-          - adr/index.md
-          - adr/0001-one-package.md
-          - adr/0002-anonymised-dataset.md
-      - Cómo contribuir:
-          - contributing/docstrings.md

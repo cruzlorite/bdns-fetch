@@ -13,7 +13,7 @@ Los docstrings de este paquete se leen dos veces: en el editor, por quien está 
 | Algo que se ha medido sobre la API de la BDNS | En el [comportamiento de la API](../fetch/explanation/api-behavior.md) de bdns-fetch |
 | Lo que bdns-sync decide a partir de ello | En [cómo sincroniza](../sync/explanation/sync-behavior.md) |
 | Un aviso para quien consulta las tablas | En [antes de consultar los datos](../sync/explanation/data-caveats.md) |
-| Una decisión que afecta a toda una herramienta o a varias | En las decisiones de diseño de la herramienta o en las [decisiones comunes](../adr/index.md) |
+| Una decisión que afecta a toda una herramienta o a varias | En las [decisiones de diseño](../adr/index.md) |
 | Cómo ejecutar, desplegar o programar la herramienta | En las guías |
 
 Aquí repetir información no es una cuestión de estilo, sino de corrección: dos copias de una medición acaban siendo distintas, y nada te dice cuál está desactualizada.

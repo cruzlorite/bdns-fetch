@@ -14,7 +14,7 @@ What does not change incompatibly without a major release:
 
 Everything else may change in any release: underscore names; the [`cli`][bdns.fetch.cli], [`options`][bdns.fetch.options], [`endpoints`][bdns.fetch.endpoints] and [`utils`][bdns.fetch.utils] modules (except [`RateLimiter`][bdns.fetch.utils.RateLimiter]); message texts and logs.
 
-**Records** are the API's own ([ADR 0004](fetch/adr/0004-records-as-plain-dicts.md)), so a field the API changes arrives changed without a new `bdns-tools` release in between.
+**Records** are the API's own ([ADR 0009](adr/0009-records-as-plain-dicts.md)), so a field the API changes arrives changed without a new `bdns-tools` release in between.
 
 ## What is public in bdns.sync
 
@@ -27,7 +27,7 @@ Underscore names, messages and logs may change in any release.
 <a id="schema"></a>
 ### The schema only grows
 
-The target schema changes only by **adding nullable columns**, and each run adds on its own the columns a target created by an earlier version lacks ([ADR 0008](sync/adr/0008-run-linked-versions-additive-migrations.md)). No column is ever renamed, retyped or dropped: upgrading `bdns-tools` needs no manual migration. A non-additive change would be a major release with migration instructions.
+The target schema changes only by **adding nullable columns**, and each run adds on its own the columns a target created by an earlier version lacks ([ADR 0015](adr/0015-run-linked-versions-additive-migrations.md)). No column is ever renamed, retyped or dropped: upgrading `bdns-tools` needs no manual migration. A non-additive change would be a major release with migration instructions.
 
 Changing an entity's natural key or hash rules does not change the schema, but it does change the hashes: the next run re-versions the affected rows. Such changes are announced in the CHANGELOG.
 

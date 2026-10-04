@@ -1,6 +1,6 @@
 -- Builds the anonymised BDNS dataset from a bdns-sync database, in DuckDB
 -- SQL and nothing else. What may be published, and why, is in
--- docs/adr/0002-anonymised-dataset.md.
+-- docs/adr/0020-anonymised-dataset.md.
 --
 -- Run it from the repository root, in a private DuckDB file (it holds
 -- personal data until the published tables are written), with the

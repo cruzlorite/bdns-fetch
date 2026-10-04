@@ -3,7 +3,7 @@
 -- about to be published (90_checks.sql), and they fail instead of cleaning
 -- up: a check that quietly dropped what it found would hide the real fault
 -- upstream behind a dataset that looks fine.
--- See docs/adr/0002-anonymised-dataset.md.
+-- See docs/adr/0020-anonymised-dataset.md.
 
 -- A natural person's tax ID anywhere in a text: masked (***1234**), a DNI,
 -- an NIE or a K/L/M one. A legal person's ID (B12345678) matches none.

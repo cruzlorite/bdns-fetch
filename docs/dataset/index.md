@@ -78,7 +78,7 @@ $ duckdb -c "
 
 ## Estado
 
-- [x] La decisión de diseño, como propuesta ([decisión 0002](../adr/0002-anonymised-dataset.md))
+- [x] La decisión de diseño, como propuesta ([decisión 0020](../adr/0020-anonymised-dataset.md))
 - [x] La clasificación de beneficiarios y las piezas de los controles de privacidad, en SQL
 - [x] Las concesiones, leídas directamente de `bdns-sync` con la última versión conocida de cada una, incluidas las que la API ya ha retirado, con sus columnas y el tipo de beneficiario
 - [x] Las concesiones, ayudas de Estado y minimis a personas jurídicas y entidades públicas, registro a registro, sin el enlace al boletín ni el identificador interno de la BDNS, y los controles que las vigilan

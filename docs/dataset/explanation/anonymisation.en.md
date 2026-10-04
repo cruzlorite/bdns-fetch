@@ -1,6 +1,6 @@
 # How natural persons are protected
 
-The dataset holds no personal data. It may identify companies and public bodies, but never a natural person, and this page explains how, with examples. The why, with the legal framework and the alternatives that were turned down, is in the [design decision](../../adr/0002-anonymised-dataset.md).
+The dataset holds no personal data. It may identify companies and public bodies, but never a natural person, and this page explains how, with examples. The why, with the legal framework and the alternatives that were turned down, is in the [design decision](../../adr/0020-anonymised-dataset.md).
 
 <a id="who"></a>
 ## Which beneficiaries are protected

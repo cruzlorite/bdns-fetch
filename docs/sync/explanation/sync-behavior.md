@@ -61,7 +61,7 @@ Son fechas prudentes, no la del primer registro: pedir fechas anteriores al peri
 
 | Problema ([detalle](../../fetch/explanation/api-behavior.md#api-issues)) | Qué hace `bdns-sync` |
 |---|---|
-| Registros sueltos que llegan como una página de error en HTML | Los descarta con un aviso, los cuenta en `rows_skipped` y guarda su contenido en `_sync_errors`. Si se descartan demasiados, la ejecución falla ([decisión 0005](../adr/0005-per-run-reject-tolerance.md)) |
+| Registros sueltos que llegan como una página de error en HTML | Los descarta con un aviso, los cuenta en `rows_skipped` y guarda su contenido en `_sync_errors`. Si se descartan demasiados, la ejecución falla ([decisión 0005](../../adr/0005-per-run-reject-tolerance.md)) |
 | `ERR_MANTENIMIENTO_BBDD` en rangos largos | Divide las consultas en semanas, y el cliente lo reintenta como fallo pasajero |
 | Las fechas no se comportan igual en todos los endpoints | Las traduce `bdns-fetch`, y `check-api` lo comprueba cada día |
 | `partidospoliticos_busqueda` no trae fecha de registro | Esa entidad no detecta bajas |

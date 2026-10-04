@@ -7,7 +7,7 @@ Gracias por tu interés. BDNS Tools es un proyecto pequeño que se mantiene en e
 ## Antes de empezar
 
 - **Si has encontrado un fallo**, abre un issue con la plantilla de errores y cuenta lo justo para poder reproducirlo.
-- **Si quieres cambiar cómo funciona algo o añadir una funcionalidad**, abre antes un issue para comentarlo. Las decisiones se registran en las [decisiones comunes](https://cruzlorite.github.io/bdns-tools/adr/) y en las de cada herramienta.
+- **Si quieres cambiar cómo funciona algo o añadir una funcionalidad**, abre antes un issue para comentarlo. Las decisiones se registran en las [decisiones de diseño](https://cruzlorite.github.io/bdns-tools/adr/).
 - **Si quieres mejorar la documentación**, adelante: los cambios que la corrigen o la aclaran siempre son bienvenidos.
 
 ## Preparar el entorno
@@ -16,7 +16,7 @@ Necesitas [uv](https://docs.astral.sh/uv/), que instala por su cuenta la versió
 
 ```bash
 git clone https://github.com/cruzlorite/bdns-tools.git
-cd bdns
+cd bdns-tools
 make install            # el paquete, sus extras y las herramientas de desarrollo
 make test               # tests unitarios, sin conexión
 make test-integration   # tests contra la API real (opcional)
@@ -33,9 +33,9 @@ make check-docs         # enlaces, docstrings y generación de la web
 - **Documentación en español**: tiene que leerse como algo escrito directamente en español, no como una traducción.
 - **Commits**: en inglés, con el formato de [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`...) y explicando el porqué en el cuerpo cuando no sea evidente. Si el cambio rompe la compatibilidad, márcalo con `!` y `BREAKING CHANGE:`.
 - **CHANGELOG**: añade una entrada en `[Unreleased]` si el cambio lo va a notar quien use la herramienta.
-- **Compatibilidad**: respeta la [política de compatibilidad](https://cruzlorite.github.io/bdns-tools/compatibility/). `bdns.fetch` nunca importa `bdns.sync`, y un test lo comprueba.
+- **Compatibilidad**: respeta la [política de compatibilidad](https://cruzlorite.github.io/bdns-tools/compatibility/). [`bdns.fetch`](https://cruzlorite.github.io/bdns-tools/fetch/reference/api/) nunca importa [`bdns.sync`](https://cruzlorite.github.io/bdns-tools/sync/reference/api/), y un test lo comprueba.
 
-La integración continua ejecuta lo mismo que `make lint`, `make check-docs` y `make test` (los tests de `bdns.sync`, además, con PostgreSQL y DuckDB) y construye la imagen de Docker, y un pull request en rojo no se revisa hasta que esté en verde.
+La integración continua ejecuta lo mismo que `make lint`, `make check-docs` y `make test` (los de la sincronización, además, con PostgreSQL y DuckDB) y construye la imagen de Docker, y un pull request en rojo no se revisa hasta que esté en verde.
 
 ## Publicar una versión
 
@@ -49,4 +49,4 @@ El resto lo hace `publish.yml`: comprueba que la etiqueta coincide con la versi�
 
 ## Licencia
 
-Al contribuir aceptas que tu aportación se distribuya con la [licencia MIT](LICENSE) del proyecto.
+Al contribuir aceptas que tu aportación se distribuya con la [licencia MIT](https://github.com/cruzlorite/bdns-tools/blob/main/LICENSE) del proyecto.

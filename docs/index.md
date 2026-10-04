@@ -1,4 +1,6 @@
 ---
+title: Inicio
+icon: material/wrench
 hide:
   - toc
 ---

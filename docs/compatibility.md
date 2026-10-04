@@ -14,7 +14,7 @@ Esto no cambia de forma incompatible sin una versión mayor:
 
 Todo lo demás puede cambiar en cualquier versión: los nombres que empiezan por guion bajo; los módulos [`cli`][bdns.fetch.cli], [`options`][bdns.fetch.options], [`endpoints`][bdns.fetch.endpoints] y [`utils`][bdns.fetch.utils] (salvo [`RateLimiter`][bdns.fetch.utils.RateLimiter]); los textos de los mensajes y los logs.
 
-Los **registros** son los de la API tal cual ([decisión 0004](fetch/adr/0004-records-as-plain-dicts.md)), así que si la API cambia un campo, el cambio llega sin que haya una nueva versión de `bdns-tools` por medio.
+Los **registros** son los de la API tal cual ([decisión 0009](adr/0009-records-as-plain-dicts.md)), así que si la API cambia un campo, el cambio llega sin que haya una nueva versión de `bdns-tools` por medio.
 
 ## Qué se considera público en bdns.sync
 
@@ -27,7 +27,7 @@ Los nombres que empiezan por guion bajo, los mensajes y los logs pueden cambiar 
 <a id="schema"></a>
 ### El esquema solo crece
 
-El esquema de la base de datos solo cambia **añadiendo columnas que admiten valores nulos**, y cada ejecución añade por su cuenta las que le falten a una base de datos creada con una versión anterior ([decisión 0008](sync/adr/0008-run-linked-versions-additive-migrations.md)). Nunca se renombra una columna, se le cambia el tipo ni se borra, así que actualizar `bdns-tools` no te obliga a migrar nada a mano. Un cambio que no fuera de este tipo llegaría en una versión mayor, con instrucciones para migrar.
+El esquema de la base de datos solo cambia **añadiendo columnas que admiten valores nulos**, y cada ejecución añade por su cuenta las que le falten a una base de datos creada con una versión anterior ([decisión 0015](adr/0015-run-linked-versions-additive-migrations.md)). Nunca se renombra una columna, se le cambia el tipo ni se borra, así que actualizar `bdns-tools` no te obliga a migrar nada a mano. Un cambio que no fuera de este tipo llegaría en una versión mayor, con instrucciones para migrar.
 
 Cambiar la clave natural o las reglas de hash de una entidad no cambia el esquema, pero sí los hashes, de modo que la siguiente ejecución volvería a crear versiones de las filas afectadas. Cambios así se anuncian siempre en el CHANGELOG.
 

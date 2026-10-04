@@ -17,7 +17,7 @@ Todas las tablas de entidad tienen las mismas columnas, sin campos propios de ca
 | `_closed_run_id` | La ejecución que la cerró; `NULL` mientras está vigente |
 | `_closed_reason` | Por qué se cerró: `superseded` (la sustituyó un contenido distinto) o `removed` (la API dejó de devolver la clave); `NULL` mientras está vigente |
 
-Las tres columnas de ejecución valen `NULL` en las versiones escritas antes de que existieran ([decisión 0008](../adr/0008-run-linked-versions-additive-migrations.md)).
+Las tres columnas de ejecución valen `NULL` en las versiones escritas antes de que existieran ([decisión 0015](../../adr/0015-run-linked-versions-additive-migrations.md)).
 
 Si la API añade o quita un campo no hay que cambiar nada: el cambio se detecta por el hash y se guarda como una versión más.
 

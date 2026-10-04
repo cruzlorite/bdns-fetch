@@ -2,7 +2,7 @@
 -- and unrecognised beneficiaries, only as one summary row per call (and
 -- per instrument, should a call mix several): how many awards, to how many
 -- people, and how their amounts and dates are distributed. No row says
--- anything about a single person. See docs/adr/0002-anonymised-dataset.md.
+-- anything about a single person. See docs/adr/0020-anonymised-dataset.md.
 --
 -- The rules, with their thresholds as macros in 02_privacy.sql:
 --

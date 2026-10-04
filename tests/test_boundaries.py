@@ -2,7 +2,7 @@
 
 bdns.sync builds on bdns.fetch, never the other way round, so the client
 keeps working, and could ship on its own, without anything sync needs. See
-docs/adr/0001-one-package.md.
+docs/adr/0018-one-package.md.
 """
 
 import ast

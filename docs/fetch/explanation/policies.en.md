@@ -1,20 +1,20 @@
 # How the client works
 
-Three policies apply to every request, whatever the endpoint, and one design rule wraps them. This page explains the whole; each decision, with the alternatives it rejected, is in its [ADR](../adr/index.md).
+Three policies apply to every request, whatever the endpoint, and one design rule wraps them. This page explains the whole; each decision, with the alternatives it rejected, is in its [ADR](../../adr/index.md).
 
 ## Rate limit: spaced, not bursty
 
-Every request first goes through a [`RateLimiter`][bdns.fetch.utils.RateLimiter]. By default there is one per process ([`DEFAULT_RATE_LIMITER`][bdns.fetch.client.DEFAULT_RATE_LIMITER]), shared by every client and paging thread, spacing requests at 9.5 per second. It allows no bursts because the API rejects them even when the average complies ([measurement](api-behavior.md#rate-limit)). See [ADR 0003](../adr/0003-spaced-requests-no-bursts.md).
+Every request first goes through a [`RateLimiter`][bdns.fetch.utils.RateLimiter]. By default there is one per process ([`DEFAULT_RATE_LIMITER`][bdns.fetch.client.DEFAULT_RATE_LIMITER]), shared by every client and paging thread, spacing requests at 9.5 per second. It allows no bursts because the API rejects them even when the average complies ([measurement](api-behavior.md#rate-limit)). See [ADR 0008](../../adr/0008-spaced-requests-no-bursts.md).
 
 ## Retries: transient failures only
 
-What may succeed when repeated is retried (network, `429`, `5xx`, `ERR_MANTENIMIENTO_BBDD`), with exponential, jittered backoff, and nothing else. A repeated `400` is still a `400`. See the [errors guide](../guides/errors.md) and [ADR 0002](../adr/0002-retry-only-transient-failures.md).
+What may succeed when repeated is retried (network, `429`, `5xx`, `ERR_MANTENIMIENTO_BBDD`), with exponential, jittered backoff, and nothing else. A repeated `400` is still a `400`. See the [errors guide](../guides/errors.md) and [ADR 0007](../../adr/0007-retry-only-transient-failures.md).
 
 ## Pagination: one call at a time, in order, with bounded memory
 
-By default pages are requested one at a time, as the official good practices recommend ([decision 0008](../adr/0008-one-call-at-a-time.md)). Large downloads are possible because they are split by date into week-long ranges, not because calls run in parallel.
+By default pages are requested one at a time, as the official good practices recommend ([decision 0019](../../adr/0019-one-call-at-a-time.md)). Large downloads are possible because they are split by date into week-long ranges, not because calls run in parallel.
 
-If you still want to go faster, `max_workers` allows several threads. Then at most `2 × max_workers` requests are pending, and pages are delivered **in page order**. A slow consumer slows the download instead of piling pages up in memory; a consumer that stops iterating cancels the pending requests. See [ADR 0005](../adr/0005-ordered-bounded-pagination.md).
+If you still want to go faster, `max_workers` allows several threads. Then at most `2 × max_workers` requests are pending, and pages are delivered **in page order**. A slow consumer slows the download instead of piling pages up in memory; a consumer that stops iterating cancels the pending requests. See [ADR 0010](../../adr/0010-ordered-bounded-pagination.md).
 
 For example, with `max_workers=2` and a six-page search:
 
@@ -25,4 +25,4 @@ For example, with `max_workers=2` and a six-page search:
 
 ## The rule around it: the client knows nothing about the CLI
 
-The `fetch_*` methods are plain Python: keyword parameters named as the API names them ([ADR 0001](../adr/0001-api-parameter-names-keyword-only.md)), real defaults, accurate types and records as `dict` ([ADR 0004](../adr/0004-records-as-plain-dicts.md)). The CLI is generated from those signatures ([ADR 0006](../adr/0006-cli-generated-from-client.md)): adding an endpoint to the client adds the command.
+The `fetch_*` methods are plain Python: keyword parameters named as the API names them ([ADR 0006](../../adr/0006-api-parameter-names-keyword-only.md)), real defaults, accurate types and records as `dict` ([ADR 0009](../../adr/0009-records-as-plain-dicts.md)). The CLI is generated from those signatures ([ADR 0011](../../adr/0011-cli-generated-from-client.md)): adding an endpoint to the client adds the command.

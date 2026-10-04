@@ -78,7 +78,7 @@ $ duckdb -c "
 
 ## Status
 
-- [x] The design decision, as a proposal ([decision 0002](../adr/0002-anonymised-dataset.md))
+- [x] The design decision, as a proposal ([decision 0020](../adr/0020-anonymised-dataset.md))
 - [x] Beneficiary classification and the building blocks of the privacy checks, in SQL
 - [x] Awards, read straight from `bdns-sync` with each one's last known version, including those the API has already withdrawn, with their columns and the beneficiary's kind
 - [x] Awards, state aid and de minimis aid to legal persons and public bodies, record by record, without the bulletin link or the BDNS internal identifier, and the checks that guard them

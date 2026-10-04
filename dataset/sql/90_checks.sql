@@ -2,7 +2,7 @@
 -- natural person is published. Each one calls error(), which ends the run
 -- with a message, as soon as it finds something; none cleans up, because a
 -- finding points to a fault earlier in the build that has to be fixed.
--- See docs/adr/0002-anonymised-dataset.md.
+-- See docs/adr/0020-anonymised-dataset.md.
 
 -- Record-level tables: only legal persons and public bodies, and no
 -- personal tax ID anywhere.

@@ -1,4 +1,4 @@
-# CLI
+# Command line
 
 ```console
 $ bdns-fetch [GLOBAL OPTIONS] COMMAND [COMMAND OPTIONS]
@@ -15,7 +15,7 @@ They go **before** the command.
 | `--output-file`, `-o` | `-` (stdout) | Output file |
 | `--max-retries` | `3` | Retries for transient failures; 0 disables them |
 | `--wait-time` | `2` | Initial wait between retries (s); doubles, up to 60 |
-| `--max-workers` | `5` | Threads fetching pages (1-20) |
+| `--max-workers` | `1` | Concurrent calls when paging (1-20). The official good practices ask for no concurrent calls |
 | `--rate-limit` | `9.5` | Requests per second (at most 10). Lower it when several processes share an IP |
 | `--progress` / `--no-progress` | automatic | Progress bar; by default only when stderr is a terminal |
 | `--verbose`, `-v` | off | Log every HTTP request and error details |

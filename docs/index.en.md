@@ -69,4 +69,4 @@ flowchart LR
 
 ## Notice
 
-Unofficial project, not affiliated with the BDNS or Spain's Ministerio de Hacienda. Some endpoints return names and tax IDs of natural persons; whoever downloads them is responsible for processing them under the GDPR. Details in the [README](https://github.com/cruzlorite/bdns-fetch/blob/main/README.en.md#legal-notice).
+A personal, unofficial project with no relationship to the Intervención General de la Administración del Estado (IGAE), which runs the BDNS. Some endpoints return names and tax IDs of natural persons, and their reuse is limited by the IGAE's conditions, summarised in the [README's legal notice](https://github.com/cruzlorite/bdns-fetch/blob/main/README.en.md#legal-notice).

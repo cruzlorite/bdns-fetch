@@ -1,31 +1,22 @@
-# 0005. Paginación concurrente, en orden y con memoria acotada
+# 0005. Paginación en orden y sin acumular memoria
 
 **Estado:** aceptada · **Fecha:** 2026-10-03
 
 ## Contexto
 
-Una búsqueda grande tiene miles de páginas. Pedirlas en serie desperdicia
-el cupo de peticiones esperando latencia, así que se piden en paralelo.
-La forma ingenua (enviar todas las peticiones y entregar cada página
-cuando llega) tiene tres problemas:
+Una búsqueda grande tiene miles de páginas. Cuando se piden varias en paralelo, la forma más sencilla de hacerlo (lanzar todas las peticiones y entregar cada página según llega) tiene tres problemas:
 
-- el resultado sale en el orden en que **terminan** las peticiones, es
-  decir, barajado;
-- con un consumidor lento, el resultado entero se acumula en memoria;
-- si el consumidor deja de iterar, se descargan igualmente todas.
+- el resultado sale en el orden en que **terminan** las peticiones, es decir, desordenado;
+- si el código que recorre los resultados va más despacio que la descarga, el resultado entero se acaba acumulando en memoria;
+- si se deja de recorrer a medias, se descargan igualmente todas las páginas.
 
 ## Decisión
 
-Una ventana deslizante con `2 × max_workers` peticiones en vuelo. Las
-páginas se entregan en orden de página: si la `k` llega antes que la
-`k-1`, espera. Cada página entregada libera un hueco para la siguiente.
-Al cerrar el iterador, las peticiones pendientes se cancelan.
+Cuando se usan varios hilos, como mucho hay `2 × max_workers` peticiones pendientes. Las páginas se entregan en su orden: si la `k` llega antes que la `k-1`, espera. Cada página entregada deja sitio para pedir la siguiente, y al cerrar el iterador se cancelan las peticiones que quedaban.
 
 ## Consecuencias
 
-- El resultado es determinista para un mismo conjunto de datos.
-- La memoria está acotada por la ventana, no por el tamaño del resultado.
-- Un consumidor lento frena la descarga (contrapresión) en vez de
-  acumular.
-- Una página lenta retiene la entrega de las siguientes hasta que llega;
-  con la ventana, los hilos siguen trabajando mientras tanto.
+- Para unos mismos datos, el resultado siempre sale en el mismo orden.
+- La memoria que se usa depende del número de hilos, no del tamaño del resultado.
+- Si el código que recorre los resultados va despacio, la descarga se frena en vez de acumular páginas.
+- Una página lenta retrasa la entrega de las siguientes hasta que llega, aunque mientras tanto los demás hilos siguen descargando.

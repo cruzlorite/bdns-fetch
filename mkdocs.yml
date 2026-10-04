@@ -108,13 +108,13 @@ plugins:
                   name: Switch to light mode
           nav_translations:
             Inicio: Home
-            Empezar: Get started
+            Primeros pasos: Get started
             Guías: How-to guides
-            Explicación: Explanation
+            Conceptos: Explanation
             Referencia: Reference
             API Python: Python API
-            Decisiones: Decisions
-            Contribuir: Contributing
+            Decisiones de diseño: Decisions
+            Cómo contribuir: Contributing
             Compatibilidad: Compatibility
   - autorefs:
       resolve_closest: true
@@ -140,12 +140,12 @@ plugins:
 
 nav:
   - Inicio: index.md
-  - Empezar: getting-started.md
+  - Primeros pasos: getting-started.md
   - Guías:
       - guides/incremental.md
       - guides/errors.md
       - guides/other-endpoints.md
-  - Explicación:
+  - Conceptos:
       - explanation/api-behavior.md
       - explanation/policies.md
   - Referencia:
@@ -161,7 +161,7 @@ nav:
           - reference/api/endpoints.md
           - reference/api/options.md
           - reference/api/cli.md
-  - Decisiones:
+  - Decisiones de diseño:
       - adr/index.md
       - adr/0001-api-parameter-names-keyword-only.md
       - adr/0002-retry-only-transient-failures.md
@@ -170,6 +170,7 @@ nav:
       - adr/0005-ordered-bounded-pagination.md
       - adr/0006-cli-generated-from-client.md
       - adr/0007-api-knowledge-lives-in-fetch.md
+      - adr/0008-one-call-at-a-time.md
   - Compatibilidad: compatibility.md
-  - Contribuir:
+  - Cómo contribuir:
       - contributing/docstrings.md

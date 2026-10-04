@@ -68,11 +68,18 @@ How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md). Vulnerabilities: [SECURIT
 
 ## Legal notice
 
-Unofficial project, not affiliated in any way with the Base de Datos Nacional de Subvenciones (BDNS) or Spain's Ministerio de Hacienda. Distributed under the MIT license, which expressly excludes any warranty: use it at your own risk, with no warranty of any kind and no liability of the author for damages, data loss or misuse.
+This is a personal, unofficial project. It has no relationship with the Intervención General de la Administración del Estado (IGAE), the body that runs the BDNS, and is not endorsed by it. It is distributed under the MIT license, which excludes any warranty: you use it at your own risk and the author is not liable for damages, data loss or misuse.
 
-The data comes from the [Sistema Nacional de Publicidad de Subvenciones y Ayudas Públicas](https://www.infosubvenciones.es) and is subject to its own [legal notice](https://www.infosubvenciones.es/bdnstrans/GE/es/avisolegal) and the [API good practices](https://www.infosubvenciones.es/bdnstrans/estaticos/ayuda/Buenas%20pr%C3%A1cticas%20API%20SNPSAP.pdf).
+The data you download comes from the [Sistema Nacional de Publicidad de Subvenciones y Ayudas Públicas](https://www.infosubvenciones.es), and reusing it is subject to the [portal's legal notice](https://www.infosubvenciones.es/bdnstrans/GE/es/avisolegal). In short, if you reuse it:
 
-**Personal data.** Some endpoints (`concesiones-busqueda`, `sanciones-busqueda`, `terceros`, among others) return names and tax IDs of natural persons. `bdns-fetch` delivers them exactly as the API publishes them, untransformed. Whoever downloads and stores them is responsible for processing them in accordance with the GDPR and with the transparency purpose for which they are published.
+- cite the source (for example, "Origen de los datos: Intervención General de la Administración del Estado") and the date of the last update when the data carries it;
+- do not change the meaning of the information;
+- do not suggest that the IGAE takes part in, sponsors or supports your reuse;
+- personal data may only be reused to scrutinise the actions of public officials, or for historical, statistical or scientific purposes, in which case you must dissociate it first and state that you did and who did it.
+
+This summary does not replace the official text or [Law 37/2007 on the reuse of public sector information](https://www.boe.es/eli/es/l/2007/11/16/37/con), which provides for penalties. If in doubt, ask a legal adviser.
+
+**Personal data.** Some endpoints (`concesiones-busqueda`, `sanciones-busqueda` or `terceros`, among others) return names and tax IDs of natural persons, which the BDNS publishes partially anonymised. `bdns-fetch` delivers them exactly as the API publishes them, untransformed, and whoever downloads and stores them is responsible for processing them under the GDPR and the conditions above.
 
 ## License and links
 

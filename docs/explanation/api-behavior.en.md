@@ -49,6 +49,8 @@ The official limit is 10 requests per second per IP. On top of that, the server 
 
 That is why `bdns-fetch`'s limiter ([`RateLimiter`][bdns.fetch.utils.RateLimiter]) spaces requests instead of allowing bursts, with a margin by default: 9.5 per second, one every ~105 ms. The limit is per IP: several processes on one IP share it and must split it (`--rate-limit`).
 
+The official good practices also ask for no concurrent calls, so `bdns-fetch` makes one at a time unless told otherwise with `--max-workers`.
+
 <a id="latency"></a>
 ## Latency varies with load
 

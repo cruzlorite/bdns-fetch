@@ -1,123 +1,125 @@
 # Comportamiento de la API
 
-Cómo se comporta de verdad la API de la BDNS, comprobado contra el servicio real. Son comportamientos que la [documentación oficial](https://www.infosubvenciones.es/bdnstrans/api) no recoge, o que contradice, y que hacen perder o duplicar datos en silencio si se manejan mal.
+En esta página está recogido cómo se comporta de verdad la API de la BDNS, comprobado contra el servicio real. Nada de esto aparece en la [documentación oficial](https://www.infosubvenciones.es/bdnstrans/api), o aparece de otra manera, y si no se tiene en cuenta se pierden o se duplican datos sin que nadie se entere.
 
-Cada afirmación indica la medición en la que se apoya. La mayoría se hicieron mientras se construía [`bdns-sync`](https://cruzlorite.github.io/bdns-sync/), que es quien descarga la API entera a diario; esta página es su hogar porque hablan de la API, no del almacenamiento. Lo que `bdns-sync` hace con cada una está en su propia documentación.
+Cada afirmación va acompañada de la prueba en la que se basa. Casi todas se hicieron mientras se desarrollaba [`bdns-sync`](https://cruzlorite.github.io/bdns-sync/), que descarga la API entera todos los días, pero están aquí porque hablan de la API y no de cómo se guardan los datos. Lo que `bdns-sync` hace con cada una lo explica su propia documentación.
 
 <a id="upper-bound"></a>
-## Los dos filtros de fecha discrepan en el extremo superior
+## Las dos familias de fechas no tratan igual el último día
 
-La API tiene dos familias de parámetros de fecha, y el extremo superior se comporta justo **al revés** en cada una:
+La API tiene dos familias de parámetros de fecha, y cada una trata el último día del rango justo al revés que la otra:
 
-| Familia | Parámetros | Endpoints | Extremo superior | Comprobado (día `D`) |
+| Familia | Parámetros | Endpoints | ¿Incluye el último día? | Comprobación (día `D`) |
 |---|---|---|---|---|
-| Fecha de registro | `fechaRegInicio` / `fechaRegFin` | `concesiones-busqueda`, `ayudasestado-busqueda`, `minimis-busqueda`, `partidospoliticos-busqueda` | **Exclusivo** | `fechaRegFin=D` devuelve ~0 filas del día `D`; `fechaRegFin=D+1` lo devuelve entero (en `concesiones`, 1 fila frente a 58.488) |
-| Periodo | `fechaDesde` / `fechaHasta` | el resto de búsquedas, entre ellas `convocatorias-busqueda` | **Inclusivo** | `fechaHasta=D` devuelve todas las convocatorias con `fechaRecepcion == D`; `fechaHasta=D+1` devuelve `D` y `D+1` |
+| Fecha de registro | `fechaRegInicio` / `fechaRegFin` | `concesiones-busqueda`, `ayudasestado-busqueda`, `minimis-busqueda`, `partidospoliticos-busqueda` | **No** | Con `fechaRegFin=D` apenas llega nada del día `D`; con `fechaRegFin=D+1` llega entero (en `concesiones`, 1 fila frente a 58.488) |
+| Periodo | `fechaDesde` / `fechaHasta` | el resto de búsquedas, entre ellas `convocatorias-busqueda` | **Sí** | Con `fechaHasta=D` llegan todas las convocatorias con `fechaRecepcion` igual a `D`; con `fechaHasta=D+1` llegan las de `D` y `D+1` |
 
-Equivocarse cuesta caro. Sin sumar un día a `fechaRegFin`, una consulta de un solo día no devuelve prácticamente nada y cualquier rango más ancho pierde su último día. Al trocear un rango el error se multiplica, un día por cada frontera: un rango de 28 días partido en días devolvió 8 filas en lugar de ~1,2 millones.
+Equivocarse sale caro. Si no se suma un día a `fechaRegFin`, una consulta de un solo día no devuelve prácticamente nada y cualquier rango más largo pierde su último día. Y si además el rango se divide en tramos, se pierde un día en cada corte: un rango de 28 días dividido en días sueltos devolvió 8 filas en lugar de cerca de 1,2 millones.
 
-`bdns-fetch` deja los parámetros tal cual los define la API, y ofrece [`registration_range`][bdns.fetch.dates.registration_range] y [`period_range`][bdns.fetch.dates.period_range]: reciben un rango inclusivo `[primero, último]` y devuelven los argumentos correctos para cada familia.
+`bdns-fetch` deja los parámetros tal y como los define la API, pero te da [`registration_range`][bdns.fetch.dates.registration_range] y [`period_range`][bdns.fetch.dates.period_range], que reciben un rango con los dos extremos incluidos y devuelven los parámetros correctos para cada familia.
 
 <a id="range-reliability"></a>
-## Los rangos largos fallan; los de una semana no
+## Los rangos largos fallan y los semanales no
 
-Medido contra `concesiones-busqueda`:
+Lo comprobamos con `concesiones-busqueda`:
 
-- **Fiabilidad.** Un rango de 4 años (27,4 millones de filas) devuelve `ERR_MANTENIMIENTO_BBDD` de forma intermitente, a cualquier profundidad de página. Una ventana semanal sobre esas mismas fechas no falló ni una vez en 6 intentos, y un rango de 7 días trajo 147.856 filas sin errores.
-- **Velocidad.** Un rango de 30 días consultado de golpe tardó 286,7 s; partido en semanas, 142,5 s. Ninguno dio errores.
+- **Fiabilidad.** Un rango de cuatro años (27,4 millones de filas) devuelve `ERR_MANTENIMIENTO_BBDD` de vez en cuando, en cualquier página. Las mismas fechas pedidas semana a semana no fallaron ni una vez en seis intentos, y un rango de siete días trajo 147.856 filas sin un solo error.
+- **Velocidad.** Un rango de 30 días pedido de una vez tardó 286,7 segundos; dividido en semanas, 142,5. Ninguno de los dos dio errores.
 
-El tamaño exacto del tramo no es crítico. Sobre un rango fijo de 14 días (~530.000 filas), tramos de 1, 3, 7 y 14 días tardaron 51, 41, 47 y 57 s, diferencias dentro del ruido de carga del servicio. Siete días es un buen equilibrio, y es lo que usa [`split_range`][bdns.fetch.dates.split_range] por defecto ([`MAX_RANGE_DAYS`][bdns.fetch.dates.MAX_RANGE_DAYS]).
+El tamaño exacto del tramo no es crítico. Con un rango fijo de 14 días (unas 530.000 filas), los tramos de 1, 3, 7 y 14 días tardaron 51, 41, 47 y 57 segundos, diferencias que entran dentro de lo que varía la carga del servicio. Siete días es un buen término medio y es lo que usa [`split_range`][bdns.fetch.dates.split_range] por defecto ([`MAX_RANGE_DAYS`][bdns.fetch.dates.MAX_RANGE_DAYS]).
 
-El resultado tampoco depende del tamaño del tramo, siempre que el extremo superior se trate bien en cada uno: un rango de 14 días de `partidospoliticos-busqueda` devuelve las mismas 36 filas partido en tramos de 1, 7 o 14 días.
+El resultado tampoco depende del tamaño del tramo, siempre que en cada uno se trate bien el último día: un rango de 14 días de `partidospoliticos-busqueda` devuelve las mismas 36 filas dividido en tramos de 1, 7 o 14 días.
 
 <a id="boundary-check"></a>
-## Días consecutivos: disjuntos y aditivos
+## Dos días seguidos no comparten registros ni dejan huecos
 
-Para descartar tanto un solapamiento (traer un día de más) como un hueco (perder uno), se comprobó en las cinco búsquedas incrementales que dos días consecutivos `X` y `X+1`, consultados con el extremo superior correcto en cada familia, cumplen dos propiedades:
+Para descartar tanto que se cuele un día de más como que se pierda uno, comprobamos en las cinco búsquedas incrementales que dos días seguidos `X` y `X+1`, pedidos con el extremo correcto en cada familia, cumplen dos condiciones:
 
-1. son **disjuntos**: ningún registro aparece en los dos;
-2. su unión es exactamente la consulta de `[X, X+1]` (**aditividad**).
+1. no tienen ningún registro en común;
+2. juntos dan exactamente lo mismo que la consulta de `[X, X+1]`.
 
-Las cuentas cuadran fila a fila: en `concesiones`, 115.862 + 68.457 = 184.319, sin solapamiento.
+Las cuentas cuadran fila a fila: en `concesiones`, 115.862 + 68.457 = 184.319, sin ningún registro repetido.
 
-Estas dos propiedades, más la semántica de cada extremo, son lo que comprueba [`check_api_contract`][bdns.fetch.contract.check_api_contract] (`bdns-fetch check-api`) contra el servicio real. Los tests unitarios solo pueden fijar el modelo que tenemos de la API; esta comprobación es la que avisa si la API cambia.
+Estas dos condiciones, junto con el comportamiento de cada extremo, son lo que comprueba [`check_api_contract`][bdns.fetch.contract.check_api_contract] (`bdns-fetch check-api`) contra el servicio real. Los tests solo pueden comprobar la idea que nosotros tenemos de la API; esta comprobación es la que avisa si la API cambia.
 
 <a id="rate-limit"></a>
-## El límite de peticiones rechaza ráfagas
+## El límite de peticiones no admite ráfagas
 
-El límite oficial son 10 peticiones por segundo y por IP. El servidor, además, responde `429` cuando varias peticiones **arrancan a la vez**, aunque la media quede por debajo del límite: 10 hilos que solo respetaban la media se cayeron en segundos. El mismo servidor acepta 9,8 peticiones por segundo sostenidas cuando los arranques van espaciados (probado con 100 ms entre arranques).
+El límite oficial es de 10 peticiones por segundo y por IP. Pero además el servidor responde con un `429` cuando varias peticiones **empiezan a la vez**, aunque la media quede por debajo del límite: diez hilos que solo respetaban la media dejaron de funcionar en cuestión de segundos. En cambio, con las peticiones espaciadas (una cada 100 milisegundos), el mismo servidor aguantó 9,8 peticiones por segundo de forma continuada.
 
-Por eso el limitador de `bdns-fetch` ([`RateLimiter`][bdns.fetch.utils.RateLimiter]) espacia las peticiones en vez de permitir ráfagas, y por defecto deja margen: 9,5 por segundo, una cada ~105 ms. El límite es por IP: varios procesos desde la misma IP lo comparten y tienen que repartírselo (`--rate-limit`).
+Por eso el limitador de `bdns-fetch` ([`RateLimiter`][bdns.fetch.utils.RateLimiter]) espacia las peticiones en lugar de permitir ráfagas y, por defecto, deja algo de margen: 9,5 por segundo, una cada 105 milisegundos aproximadamente. El límite es por IP, así que si lanzas varios procesos desde la misma máquina tendrás que repartirlo entre ellos con `--rate-limit`.
+
+Las buenas prácticas oficiales piden también no hacer llamadas en paralelo, y por eso `bdns-fetch` hace una cada vez salvo que le indiques lo contrario con `--max-workers`.
 
 <a id="latency"></a>
-## Latencia variable según la carga
+## El tiempo de respuesta depende mucho de la carga
 
-La latencia de una llamada sencilla, como el detalle de una convocatoria, depende mucho de la carga del servidor: ~0,22 s por llamada en horas buenas, ~1,9 s en malas. Un mismo lote de 6.186 detalles (mayo de 2026) tardó entre 23 minutos y 3 h 12 min en serie; en paralelo, con 8 hilos y los arranques espaciados, 10 min 54 s, sin un solo `429`.
+Una llamada sencilla, como pedir el detalle de una convocatoria, tarda unos 0,22 segundos cuando el servidor va bien y alrededor de 1,9 cuando va cargado. Un mismo lote de 6.186 detalles (mayo de 2026) tardó entre 23 minutos y 3 horas y 12 minutos haciendo las llamadas una detrás de otra; con ocho hilos y las peticiones espaciadas tardó 10 minutos y 54 segundos, sin un solo `429`.
 
 <a id="history-depth"></a>
-## Retención distinta en cada endpoint
+## Cada endpoint guarda un histórico distinto
 
-Hasta dónde llegan los datos lo marca la retención de cada endpoint:
+Hasta dónde llegan los datos depende del periodo de visualización de cada endpoint:
 
-| Endpoint | Datos disponibles | Limitado por |
+| Endpoint | Datos disponibles | Por qué |
 |---|---|---|
-| `concesiones-busqueda` | ~4 años | retención de 4 años naturales |
-| `partidospoliticos-busqueda` | ~4 años | va con concesiones |
-| `ayudasestado-busqueda` | ~9-10 años | retención de 10 años |
-| `minimis-busqueda` | ~10 años | retención de 10 años |
-| `convocatorias-busqueda`, `convocatorias` | ~12 años | arranque del portal (~2014) |
+| `concesiones-busqueda` | unos 4 años | se publican durante los cuatro años naturales siguientes a la concesión |
+| `partidospoliticos-busqueda` | unos 4 años | sigue el mismo criterio que las concesiones |
+| `ayudasestado-busqueda` | entre 9 y 10 años | la normativa europea obliga a 10 años |
+| `minimis-busqueda` | unos 10 años | la normativa europea obliga a 10 años |
+| `convocatorias-busqueda`, `convocatorias` | unos 12 años | el portal empezó a funcionar hacia 2014 |
 
-Consultar fechas anteriores no da error: devuelve semanas vacías, con una llamada barata cada una.
+Pedir fechas anteriores no da error, simplemente devuelve semanas vacías, y cada una cuesta una sola llamada.
 
 <a id="api-issues"></a>
 ## Problemas conocidos
 
-- **Registros sueltos malformados.** El backend rechaza a veces un registro concreto y devuelve una página de error HTML en vez de JSON. No es un límite de peticiones ni un problema de parámetros: las llamadas de justo antes y justo después funcionan. En `planesestrategicos`, entre el 8 de julio y el 30 de agosto de 2026, los mismos 10 `idPES` fallaron en las 57 ejecuciones; el 30 de agosto fueron 114 de 2.029. Un registro roto tiende a seguir roto, pero el conjunto no es fijo.
-- **Errores dentro de una respuesta 200.** Algunos errores llegan con estado 200 y un cuerpo `{"codigo": ..., "error": ...}`. `bdns-fetch` los trata como errores.
-- **`ERR_MANTENIMIENTO_BBDD` en rangos largos.** Ver [arriba](#range-reliability). `bdns-fetch` lo considera transitorio y lo reintenta.
-- **Fechas con semántica inconsistente.** `fechaRegFin` exclusivo, `fechaHasta` inclusivo, sin que la documentación oficial lo diga. Ver [arriba](#upper-bound).
-- **`partidospoliticos-busqueda` sin fecha de registro.** Su payload no trae ningún campo de fecha de registro, aunque la documentación oficial afirme que funciona igual que `concesiones-busqueda`. Comprobado con más de 70 filas reales en dos rangos distintos.
-- **Arrays anidados en orden cambiante.** `regiones` devuelve el mismo árbol con los `children` en distinto orden entre llamadas, sin que cambie ningún dato.
-- **Paginación inestable en fechas que reciben altas.** La paginación es por offset. Si entran registros nuevos mientras se pagina un rango reciente, una fila cercana al borde de una página puede venir en dos páginas seguidas. Los rangos ya cerrados paginan de forma estable.
-- **`terceros` es redundante.** Las [buenas prácticas oficiales](https://www.infosubvenciones.es/bdnstrans/estaticos/ayuda/Buenas%20pr%C3%A1cticas%20API%20SNPSAP.pdf) recomiendan no usarlo: `concesiones-busqueda` ya trae los datos del beneficiario.
+- **Registros sueltos que llegan mal.** A veces el servidor falla con un registro concreto y devuelve una página de error en HTML en lugar de JSON. No tiene que ver con el límite de peticiones ni con los parámetros, porque las llamadas de justo antes y justo después funcionan. En `planesestrategicos`, entre el 8 de julio y el 30 de agosto de 2026, los mismos 10 `idPES` fallaron en las 57 ejecuciones; el 30 de agosto fallaron 114 de 2.029. Un registro roto suele seguir roto, pero el conjunto va cambiando.
+- **Errores dentro de una respuesta 200.** Algunos errores llegan con estado 200 y un cuerpo del tipo `{"codigo": ..., "error": ...}`. `bdns-fetch` los trata como errores.
+- **`ERR_MANTENIMIENTO_BBDD` en rangos largos.** Explicado [más arriba](#range-reliability). `bdns-fetch` lo considera un fallo pasajero y lo reintenta.
+- **Las fechas no se comportan igual en todos los endpoints.** `fechaRegFin` no incluye el último día y `fechaHasta` sí, y la documentación oficial no lo dice. Explicado [más arriba](#upper-bound).
+- **`partidospoliticos-busqueda` no trae fecha de registro.** Su respuesta no incluye ningún campo con la fecha de registro, aunque la documentación oficial diga que funciona igual que `concesiones-busqueda`. Lo comprobamos con más de 70 filas reales de dos rangos de fechas distintos.
+- **Listas anidadas que cambian de orden.** `regiones` devuelve el mismo árbol con los `children` en distinto orden de una llamada a otra, sin que haya cambiado ningún dato.
+- **Paginación inestable en fechas recientes.** La paginación funciona por posición (offset). Si entran registros nuevos mientras se recorre un rango reciente, una fila cercana al final de una página puede aparecer también en la siguiente. Con fechas ya cerradas la paginación es estable.
+- **`terceros` no aporta nada.** Las [buenas prácticas oficiales](https://www.infosubvenciones.es/bdnstrans/estaticos/ayuda/Buenas%20pr%C3%A1cticas%20API%20SNPSAP.pdf) desaconsejan usarlo, porque `concesiones-busqueda` ya trae los datos del beneficiario.
 
 <a id="spurious-changes"></a>
-## El mismo dato, escrito de otra forma
+## El mismo dato, escrito de otra manera
 
-Entre una llamada y otra, la API puede devolver un registro idéntico escrito de otra manera. No hubo corrección administrativa: solo cambió cómo se compuso la respuesta. Para quien guarda histórico (como `bdns-sync`) esto genera versiones falsas; medido en la pasada anual de `bdns-sync` del 1 de septiembre de 2026, el 60% de las versiones nuevas eran de este tipo. Hay tres familias.
+De una llamada a otra, la API puede devolver un registro idéntico pero escrito de otra forma. No ha habido ninguna corrección administrativa; solo ha cambiado la manera en que se ha montado la respuesta. Si guardas histórico (como hace `bdns-sync`), cada uno de estos casos genera una versión falsa: en la pasada anual de `bdns-sync` del 1 de septiembre de 2026, el 60% de las versiones nuevas eran de este tipo. Hay tres casos distintos.
 
 <a id="unstable-names"></a>
-### Nombres que se reconstruyen de forma inestable
+### Nombres que cambian de grafía
 
-El campo `beneficiario` de `concesiones-busqueda` y `grandesbeneficiarios-busqueda` vuelve escrito de otra forma para el mismo beneficiario, con el mismo importe y el mismo identificador:
+El campo `beneficiario` de `concesiones-busqueda` y de `grandesbeneficiarios-busqueda` llega escrito de distinta forma para el mismo beneficiario, con el mismo importe y el mismo identificador:
 
 ```
-GONZALEZ                      →  GONZÁLEZ            (acentos, en ambas direcciones)
+GONZALEZ                      →  GONZÁLEZ            (con y sin tilde, en los dos sentidos)
 REMEDIOS BENITEZ BASILIO .    →  REMEDIOS BENITEZ BASILIO . .
 MONTSERRAT LOPEZ REYNOSO MECA →  MONTSERRAT LOPEZ-REYNOSO MECA
 LIMMAT M&M, S.L.              →  LIMMAT MM SL        (seis variantes en once días)
 ```
 
-En `concesiones-busqueda`, 230.878 cambios de `beneficiario` conservan **el mismo `idPersona` en el 100% de los casos**, y 213.176 son idénticos tras quitar acentos y puntuación. El valor además **oscila**: vuelve a grafías que ya tuvo (`ASOCIACIÓN INCLUDD → ASOCIACION INCLUDD → ASOCIACIÓN INCLUDD`). En `grandesbeneficiarios-busqueda`, tres descargas en cuatro minutos dieron los 148.170 nombres idénticos, pero entre las 00:03 y las 15:20 del mismo día cambiaron 79.000: apunta a una reagregación periódica en origen, no a azar por petición. El nombre probablemente se compone a partir de los registros subyacentes, donde cada órgano lo tecleó a su modo.
+En `concesiones-busqueda`, los 230.878 cambios de `beneficiario` mantienen **el mismo `idPersona` en el 100% de los casos**, y 213.176 son idénticos una vez quitadas las tildes y los signos de puntuación. Además, el valor **va y vuelve**: recupera grafías que ya había tenido (`ASOCIACIÓN INCLUDD → ASOCIACION INCLUDD → ASOCIACIÓN INCLUDD`). En `grandesbeneficiarios-busqueda`, tres descargas en cuatro minutos devolvieron los 148.170 nombres idénticos, pero entre las 00:03 y las 15:20 del mismo día cambiaron 79.000, lo que apunta a un recálculo periódico en origen y no a algo aleatorio en cada petición. Lo más probable es que el nombre se construya a partir de los registros de concesión, donde cada órgano lo escribió a su manera.
 
 <a id="shuffled-lists"></a>
-### Listas barajadas dentro de una cadena
+### Listas que cambian de orden dentro de un texto
 
-`sectorActividad` en `minimis-busqueda` (separado por `;`) y `sectores` en `ayudasestado-busqueda` (separado por `#`) traen varios valores concatenados en un orden que cambia entre llamadas, con los mismos elementos:
+`sectorActividad` en `minimis-busqueda` (separado por `;`) y `sectores` en `ayudasestado-busqueda` (separado por `#`) contienen varios valores en un mismo texto, y su orden cambia de una llamada a otra aunque los elementos sean los mismos:
 
 ```
 '52.3 - Intermediación del transporte; 52.2 - Auxiliares del transporte'
 '52.2 - Auxiliares del transporte; 52.3 - Intermediación del transporte'
 ```
 
-Ojo al partir: en `minimis` varias descripciones CNAE llevan un `;` propio ("Administración Pública y defensa; Seguridad Social obligatoria"), así que partir por cada `;` corta 374 de 15.931 elementos por la mitad. Hay que partir antes del inicio de cada elemento (un código seguido de guion). En `ayudasestado`, el `#` sí es inequívoco.
+Cuidado al separarlos: en `minimis` hay descripciones de la CNAE que llevan su propio `;` ("Administración Pública y defensa; Seguridad Social obligatoria"), y cortar en cada `;` parte por la mitad 374 de 15.931 elementos. Hay que cortar justo antes de donde empieza cada elemento (un código seguido de un guion). En `ayudasestado` el `#` no da problemas.
 
 <a id="intermittent-fields"></a>
-### Campos que dejan de venir y vuelven
+### Campos que desaparecen y vuelven
 
-Un campo que normalmente trae valor vuelve `null` en una llamada y con valor en la siguiente. Medido sobre 3.000 pares de versiones de `convocatorias` y otros tantos del resto:
+Un campo que normalmente trae valor llega vacío (`null`) en una llamada y vuelve a tener valor en la siguiente. Lo medimos sobre 3.000 parejas de versiones de `convocatorias` y otras tantas del resto:
 
-| Endpoint | Campo | `null→valor` | `valor→null` | % de pares |
+| Endpoint | Campo | `null→valor` | `valor→null` | % de parejas |
 |---|---|---|---|---|
 | `convocatorias` | `fechaInicioSolicitud` | 209 | 55 | 8,8% |
 | `convocatorias` | `fechaFinSolicitud` | 123 | 61 | 6,1% |
@@ -128,17 +130,17 @@ Un campo que normalmente trae valor vuelve `null` en una llamada y con valor en 
 | `convocatorias` | `sedeElectronica` | 6 | 7 | 0,4% |
 | `minimis-busqueda` | `sectorActividad` | 23 | 40 | 2,1% |
 
-Los repartos simétricos delatan que no es información completándose. Y los nulos llegan en bloque: 54 pares pierden a la vez `fechaInicioSolicitud` y `fechaFinSolicitud`, y 25 `textInicio` y `textFin`. Es el bloque entero del plazo de solicitud desapareciendo y volviendo, lo que apunta a respuestas parciales del backend en el endpoint de detalle. Un campo que normalmente viene relleno **puede llegar `null`**.
+Que las cifras sean tan parecidas en los dos sentidos indica que no se trata de información que se va completando. Además, los vacíos llegan juntos: en 54 parejas desaparecen a la vez `fechaInicioSolicitud` y `fechaFinSolicitud`, y en 25 lo hacen `textInicio` y `textFin`. Es el bloque entero del plazo de solicitud el que desaparece y vuelve, lo que hace pensar en respuestas incompletas del servidor en el endpoint de detalle. Ten en cuenta, por tanto, que un campo que normalmente viene relleno **puede llegar vacío**.
 
-### Lo que no está afectado
+### Lo que no se ve afectado
 
-`convocatorias` y `convocatorias-busqueda` no tienen ruido de nombres ni de listas: sus cambios son administrativos de verdad (presupuestos que suben, plazos que se amplían, documentos que se añaden, órganos que se reorganizan). El problema es de cómo se compone la respuesta en unos endpoints concretos, no de la API en general.
+`convocatorias` y `convocatorias-busqueda` no tienen este problema con los nombres ni con las listas: sus cambios son administrativos de verdad (presupuestos que suben, plazos que se amplían, documentos que se añaden, órganos que se reorganizan). El problema está en cómo se montan las respuestas de unos endpoints concretos, no en la API en general.
 
-### Cómo se midió
+### Cómo lo medimos
 
-Sobre pares (versión anterior, versión nueva) del mismo registro:
+Sobre parejas formadas por la versión anterior y la nueva de un mismo registro:
 
-- **Formato**: normalizar los dos payloads a NFD, quitar diacríticos y todo lo que no sea alfanumérico, y comparar.
-- **Reordenamiento**: partir el campo por su separador, ordenar los trozos, volver a unirlos y comparar.
+- **Cambios de escritura**: se normalizan los dos registros a NFD, se quitan las tildes y todo lo que no sea letra o número, y se comparan.
+- **Cambios de orden**: se separa el campo por su separador, se ordenan los trozos, se vuelven a unir y se comparan.
 
-La primera no detecta la segunda, porque barajar una lista cambia la secuencia de caracteres.
+La primera prueba no detecta la segunda, porque cambiar el orden de una lista cambia la secuencia de caracteres.

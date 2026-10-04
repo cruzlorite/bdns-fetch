@@ -2,37 +2,38 @@
 
 *English: issues and pull requests in English are welcome. Code, comments, docstrings and commit messages are always in English.*
 
-Gracias por el interés. BDNS Fetch es un proyecto pequeño mantenido en el tiempo libre, así que lo que más ayuda es un cambio fácil de revisar.
+Gracias por tu interés. BDNS Fetch es un proyecto pequeño que se mantiene en el tiempo libre, así que lo que más ayuda es un cambio fácil de revisar.
 
 ## Antes de empezar
 
-- **Fallos**: abre un issue con la plantilla de bug, con lo justo para reproducirlo.
-- **Cambios de comportamiento o funcionalidades nuevas**: abre antes un issue para hablarlo. Una decisión de diseño se registra como [ADR](https://cruzlorite.github.io/bdns-fetch/adr/).
-- **Documentación**: los PR que corrigen o aclaran la documentación son siempre bienvenidos.
+- **Si has encontrado un fallo**, abre un issue con la plantilla de errores y cuenta lo justo para poder reproducirlo.
+- **Si quieres cambiar cómo funciona algo o añadir una funcionalidad**, abre antes un issue para comentarlo. Las decisiones de diseño se registran en las [decisiones de diseño](https://cruzlorite.github.io/bdns-fetch/adr/).
+- **Si quieres mejorar la documentación**, adelante: los cambios que la corrigen o la aclaran siempre son bienvenidos.
 
-## Entorno
+## Preparar el entorno
 
 ```bash
 git clone https://github.com/cruzlorite/bdns-fetch.git
 cd bdns-fetch
 poetry install
 make test               # tests unitarios
-make test-integration   # contra la API real (opcional)
+make test-integration   # tests contra la API real (opcional)
 make lint && make format
-make check-docs         # referencias, docstrings y build del sitio
+make check-docs         # enlaces, docstrings y generación de la web
 ```
 
-## Qué se espera de un PR
+## Qué debe tener un pull request
 
-- **Tests**: todo cambio de comportamiento trae su test. Los tests unitarios no acceden a la red.
-- **Estilo**: `ruff check` y `ruff format --check` pasan; la configuración es la misma en toda la familia.
-- **Docstrings**: estilo Google, según la [convención de docstrings](https://cruzlorite.github.io/bdns-fetch/contributing/docstrings/). Un hecho tiene un solo sitio: el código enlaza a la documentación, no la copia.
-- **Commits**: [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`...), en inglés, explicando el porqué en el cuerpo cuando no es obvio. Un cambio incompatible se marca con `!` y `BREAKING CHANGE:`.
-- **CHANGELOG**: añade una entrada en `[Unreleased]` si el cambio lo nota quien usa la herramienta.
+- **Tests**: cualquier cambio de comportamiento viene con su test. Los tests unitarios no se conectan a internet.
+- **Estilo**: tienen que pasar `ruff check` y `ruff format --check`, con la misma configuración que en bdns-sync.
+- **Docstrings**: en estilo Google, siguiendo las [normas de documentación](https://cruzlorite.github.io/bdns-fetch/contributing/docstrings/). Cada cosa se explica en un solo sitio, y desde el código se enlaza a la documentación en lugar de copiarla.
+- **Documentación en español**: tiene que leerse como algo escrito directamente en español, no como una traducción.
+- **Commits**: en inglés, con el formato de [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`...) y explicando el porqué en el cuerpo cuando no sea evidente. Si el cambio rompe la compatibilidad, márcalo con `!` y `BREAKING CHANGE:`.
+- **CHANGELOG**: añade una entrada en `[Unreleased]` si el cambio lo va a notar quien use la herramienta.
 - **Compatibilidad**: respeta la [política de compatibilidad](https://cruzlorite.github.io/bdns-fetch/compatibility/).
 
-El CI ejecuta lo mismo que `make lint`, `make check-docs` y `make test`; un PR en rojo no se revisa hasta que pase.
+La integración continua ejecuta lo mismo que `make lint`, `make check-docs` y `make test`, y un pull request en rojo no se revisa hasta que esté en verde.
 
 ## Licencia
 
-Al contribuir aceptas que tu aportación se distribuya bajo la [licencia MIT](LICENSE) del proyecto.
+Al contribuir aceptas que tu aportación se distribuya con la [licencia MIT](LICENSE) del proyecto.

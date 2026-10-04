@@ -10,9 +10,11 @@ Every request first goes through a [`RateLimiter`][bdns.fetch.utils.RateLimiter]
 
 What may succeed when repeated is retried (network, `429`, `5xx`, `ERR_MANTENIMIENTO_BBDD`), with exponential, jittered backoff, and nothing else. A repeated `400` is still a `400`. See the [errors guide](../guides/errors.md) and [ADR 0002](../adr/0002-retry-only-transient-failures.md).
 
-## Pagination: in order, with bounded memory
+## Pagination: one call at a time, in order, with bounded memory
 
-Pages are requested in parallel (`max_workers` threads) through a sliding window of `2 × max_workers` requests in flight, and delivered **in page order**. A slow consumer slows the download instead of piling pages up in memory; a consumer that stops iterating cancels the pending requests. See [ADR 0005](../adr/0005-ordered-bounded-pagination.md).
+By default pages are requested one at a time, as the official good practices recommend ([decision 0008](../adr/0008-one-call-at-a-time.md)). Large downloads are possible because they are split by date into week-long ranges, not because calls run in parallel.
+
+If you still want to go faster, `max_workers` allows several threads. Then at most `2 × max_workers` requests are pending, and pages are delivered **in page order**. A slow consumer slows the download instead of piling pages up in memory; a consumer that stops iterating cancels the pending requests. See [ADR 0005](../adr/0005-ordered-bounded-pagination.md).
 
 ```mermaid
 sequenceDiagram

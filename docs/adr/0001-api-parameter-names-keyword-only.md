@@ -1,30 +1,20 @@
-# 0001. Parámetros con el nombre de la API, solo por nombre
+# 0001. Los parámetros se llaman como en la API y se pasan por nombre
 
 **Estado:** aceptada · **Fecha:** 2026-10-03
 
 ## Contexto
 
-Cada endpoint acepta entre cero y veinticinco parámetros, con nombres en
-camelCase y en español (`fechaRegInicio`, `tipoAdministracion`). Si se
-pueden pasar por posición, nadie recuerda el orden de veinte parámetros:
-un argumento en el sitio equivocado manda un filtro distinto sin ningún
-error.
+Cada endpoint admite entre cero y veinticinco parámetros, con nombres en español y en camelCase (`fechaRegInicio`, `tipoAdministracion`). Si se pudieran pasar por posición, nadie recordaría el orden de veinte parámetros, y un argumento colocado en el sitio equivocado enviaría un filtro distinto sin dar ningún error.
 
-Traducir los nombres a `snake_case` o al inglés haría el código más
-"pythónico", pero rompería la correspondencia con la documentación
-oficial, que es la única referencia de qué hace cada parámetro.
+Traducir los nombres al inglés o a `snake_case` haría el código más "pythónico", pero rompería la correspondencia con la documentación oficial, que es la única referencia de lo que hace cada parámetro.
 
 ## Decisión
 
-Los parámetros de los métodos `fetch_*` llevan **exactamente el nombre
-que les da la API** y son **solo por nombre** (keyword-only). Los
-obligatorios no tienen valor por defecto. El CLI sigue la misma regla:
-`--fechaDesde`, no `--fecha-desde`.
+Los parámetros de los métodos `fetch_*` se llaman **exactamente igual que en la API** y solo se pueden pasar **por nombre**. Los obligatorios no tienen valor por defecto. La línea de comandos sigue la misma regla: `--fechaDesde`, no `--fecha-desde`.
 
 ## Consecuencias
 
-- La documentación oficial se aplica tal cual, al cliente y al CLI.
-- Una llamada se lee sola: `fetch_organos(idAdmon="C")`.
-- Añadir o reordenar parámetros nunca rompe a nadie.
-- Los nombres no siguen PEP 8. Es deliberado, y `ruff` no lo marca porque
-  la regla de nombres no está activada.
+- La documentación oficial sirve tal cual, tanto para el cliente como para la línea de comandos.
+- Una llamada se entiende sola: `fetch_organos(idAdmon="C")`.
+- Añadir o reordenar parámetros no rompe nada a nadie.
+- Los nombres no siguen la PEP 8. Es intencionado, y `ruff` no lo señala porque esa regla no está activada.

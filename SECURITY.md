@@ -1,19 +1,19 @@
-# Política de seguridad
+# Security policy
 
-*English: please report vulnerabilities privately as described below; reports in English are welcome.*
+*Puedes escribirnos en español.*
 
-## Versiones con soporte
+## Supported versions
 
-Se corrigen fallos de seguridad en la última versión publicada en PyPI. No hay ramas de mantenimiento de versiones anteriores.
+Security fixes are released for the latest version published on PyPI. Earlier versions are not maintained.
 
-## Cómo informar de una vulnerabilidad
+## Reporting a vulnerability
 
-**No abras un issue público.** Usa el [reporte privado de vulnerabilidades de GitHub](https://github.com/cruzlorite/bdns-fetch/security/advisories/new) (pestaña *Security* → *Report a vulnerability*). Incluye qué versión usas, cómo reproducirlo y qué impacto tiene.
+**Please do not open a public issue.** Use [GitHub's private vulnerability reporting](https://github.com/cruzlorite/bdns-fetch/security/advisories/new) (the *Security* tab, then *Report a vulnerability*), and include the version you use, how to reproduce the problem and its impact.
 
-Recibirás respuesta en un plazo de 7 días. Si se confirma, se publica una versión corregida y un aviso de seguridad en el repositorio, con crédito a quien informó si así lo desea.
+You will get an answer within 7 days. If the report is confirmed, a fixed release and a security advisory are published, crediting the reporter if they wish.
 
-## Alcance
+## Scope
 
-Entra en el alcance cualquier fallo de `bdns-fetch` que comprometa la confidencialidad, integridad o disponibilidad de los sistemas o datos de quien lo usa: por ejemplo, credenciales o datos personales que acaben en logs o trazas, o ejecución de código a partir de una respuesta manipulada.
+In scope: any flaw in bdns-fetch that compromises the confidentiality, integrity or availability of its users' systems or data, for instance credentials or personal data ending up in logs or tracebacks, or code execution triggered by a crafted response.
 
-Fuera de alcance: el contenido de los datos que publica la BDNS (dirígete a la [Intervención General de la Administración del Estado](https://www.infosubvenciones.es)) y la disponibilidad de la propia API.
+Out of scope: the content of the data the BDNS publishes (contact the [Intervención General de la Administración del Estado](https://www.infosubvenciones.es)) and the availability of the API itself.

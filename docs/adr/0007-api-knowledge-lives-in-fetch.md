@@ -1,38 +1,25 @@
-# 0007. El conocimiento de la API vive en bdns-fetch
+# 0007. Lo que se sabe de la API vive en bdns-fetch
 
 **Estado:** aceptada · **Fecha:** 2026-10-03
 
 ## Contexto
 
-La familia tiene dos proyectos: `bdns-fetch` habla con la API y
-`bdns-sync` almacena lo que devuelve. Lo que se sabe del comportamiento
-real de la API (la semántica contraria de `fechaRegFin` y `fechaHasta`,
-los fallos en rangos largos, el rechazo de ráfagas, la retención por
-endpoint, los cambios espurios) le sirve a cualquiera que la use, no solo
-a quien almacena.
+Hay dos proyectos: `bdns-fetch` habla con la API y `bdns-sync` guarda lo que esta devuelve. Lo que se sabe del comportamiento real de la API (que `fechaRegFin` y `fechaHasta` tratan al revés el último día, que los rangos largos fallan, que no admite ráfagas, cuánto histórico guarda cada endpoint o qué datos cambian de forma sin cambiar de verdad) le sirve a cualquiera que la use, no solo a quien guarda los datos.
 
-Si ese conocimiento vive en la capa de almacenamiento, quien usa solo el
-cliente tropieza con todo ello sin aviso, y la capa de almacenamiento
-acaba compensando limitaciones del cliente en vez de corregirlas donde
-tocan.
+Si ese conocimiento estuviera en la parte que guarda los datos, quien usara solo el cliente se encontraría con todos esos problemas sin ningún aviso, y la parte que guarda los datos acabaría compensando las carencias del cliente en lugar de corregirlas donde corresponde.
 
 ## Decisión
 
-Lo que trata de la API vive en `bdns-fetch`:
+Todo lo que tiene que ver con la API está en `bdns-fetch`:
 
 - la documentación de su [comportamiento](../explanation/api-behavior.md);
-- [`dates`][bdns.fetch.dates], que traduce un rango inclusivo a los
-  argumentos de cada familia de fechas y trocea rangos largos;
-- [`contract`][bdns.fetch.contract] y `bdns-fetch check-api`, que
-  comprueban esa semántica contra el servicio real.
+- [`dates`][bdns.fetch.dates], que convierte un rango cerrado en los parámetros que necesita cada familia de fechas y divide los rangos largos;
+- [`contract`][bdns.fetch.contract] y `bdns-fetch check-api`, que comprueban ese comportamiento contra el servicio real.
 
-`bdns-sync` los usa y documenta solo lo que decide él a partir de ellos.
+`bdns-sync` usa todo esto y solo documenta lo que decide a partir de ello.
 
 ## Consecuencias
 
-- Cualquier usuario de `bdns-fetch` descarga bien por fechas sin conocer
-  la historia.
-- Un hecho de la API tiene un solo sitio; la documentación de `bdns-sync`
-  enlaza aquí.
-- Cambiar esa semántica es un cambio de `bdns-fetch`, que `bdns-sync`
-  recoge al subir de versión.
+- Cualquiera que use `bdns-fetch` puede descargar por fechas correctamente sin conocer toda esta historia.
+- Cada dato sobre la API está en un solo sitio, y la documentación de `bdns-sync` enlaza a él.
+- Si cambia el comportamiento de la API, el cambio se hace en `bdns-fetch` y `bdns-sync` lo recibe al actualizarse.

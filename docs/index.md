@@ -1,9 +1,6 @@
 # BDNS Fetch
 
-Cliente Python y CLI para la API de la [Base de Datos Nacional de
-Subvenciones](https://www.infosubvenciones.es/). Los 29 endpoints de
-consulta, con paginación, reintentos y el límite de peticiones de la API
-aplicados por defecto.
+Cliente de Python y herramienta de línea de comandos para descargar datos de la API de la [Base de Datos Nacional de Subvenciones](https://www.infosubvenciones.es/) (BDNS). Cubre los 29 endpoints de consulta y se encarga por ti de la paginación, de los reintentos y del límite de peticiones que fija la API.
 
 ```console
 $ pip install bdns-fetch
@@ -21,47 +18,47 @@ for convocatoria in BDNSClient().fetch_convocatorias_busqueda(descripcion="inves
 
 <div class="grid cards" markdown>
 
-- :material-rocket-launch:{ .lg .middle } **Nunca lo has usado**
+- :material-rocket-launch:{ .lg .middle } **Es la primera vez**
 
     ---
 
-    Primera consulta desde la terminal y desde Python, en cinco minutos.
+    Tu primera consulta desde la terminal y desde Python, en cinco minutos.
 
-    [:octicons-arrow-right-24: Empezar](getting-started.md)
+    [:octicons-arrow-right-24: Primeros pasos](getting-started.md)
 
-- :material-calendar-sync:{ .lg .middle } **Descargar de forma incremental**
+- :material-calendar-sync:{ .lg .middle } **Quiero descargar por fechas**
 
     ---
 
-    Rangos de fechas sin perder ni duplicar días, errores y endpoints sin método propio.
+    Cómo pedir rangos de fechas sin perder ni repetir días, cómo tratar los errores y cómo llamar a endpoints que no tienen método propio.
 
     [:octicons-arrow-right-24: Guías](guides/incremental.md)
 
-- :material-lightbulb-on:{ .lg .middle } **Entender la API**
+- :material-lightbulb-on:{ .lg .middle } **Quiero entender la API**
 
     ---
 
-    Cómo se comporta de verdad la API, medido contra el servicio real, y por qué el cliente hace lo que hace.
+    Cómo se comporta de verdad la API, comprobado contra el servicio real, y por qué el cliente hace lo que hace.
 
-    [:octicons-arrow-right-24: Explicación](explanation/api-behavior.md)
+    [:octicons-arrow-right-24: Conceptos](explanation/api-behavior.md)
 
-- :material-code-braces:{ .lg .middle } **Consultar un detalle**
+- :material-code-braces:{ .lg .middle } **Busco un detalle concreto**
 
     ---
 
-    El CLI y la API Python, generada desde los docstrings.
+    Todos los comandos y opciones, y la referencia de Python generada a partir del código.
 
     [:octicons-arrow-right-24: Referencia](reference/cli.md)
 
 </div>
 
-## La familia
+## Los dos proyectos
 
-`bdns-fetch` es la capa de **extracción**: sabe todo lo que hay que saber de la API y nada de almacenamiento. [`bdns-sync`](https://cruzlorite.github.io/bdns-sync/) se apoya en ella para mantener una copia local versionada (SCD2) de los mismos datos en cualquier base de datos con dialecto de SQLAlchemy.
+`bdns-fetch` se ocupa solo de **descargar**: sabe todo lo necesario sobre la API y nada sobre cómo guardar los datos. [`bdns-sync`](https://cruzlorite.github.io/bdns-sync/) se apoya en él para mantener una copia local con histórico de versiones (SCD2) en cualquier base de datos compatible con SQLAlchemy.
 
 ```mermaid
 flowchart LR
-    API[(API BDNS)] -->|HTTP| F[bdns-fetch<br/>paginación · reintentos · límite]
+    API[(API de la BDNS)] -->|HTTP| F[bdns-fetch<br/>paginación · reintentos · límite]
     F -->|registros| U[tu código / JSONL]
     F -->|registros| S[bdns-sync<br/>SCD2 · bajas · registro de ejecuciones]
     S --> DB[(SQLite · PostgreSQL · BigQuery)]
@@ -69,4 +66,4 @@ flowchart LR
 
 ## Aviso
 
-Proyecto no oficial, sin relación con la BDNS ni con el Ministerio de Hacienda. Algunos endpoints devuelven nombres y NIF de personas físicas; quien los descarga es responsable de tratarlos conforme al RGPD. Detalles en el [README](https://github.com/cruzlorite/bdns-fetch#aviso-legal).
+Es un proyecto personal y no oficial, sin ninguna relación con la Intervención General de la Administración del Estado (IGAE), que es quien gestiona la BDNS. Algunos endpoints devuelven nombres y NIF de personas físicas, y su reutilización está limitada por las condiciones de la IGAE; las tienes resumidas en el [aviso legal del README](https://github.com/cruzlorite/bdns-fetch#aviso-legal).

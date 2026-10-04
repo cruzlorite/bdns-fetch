@@ -1,0 +1,106 @@
+/* Brand colours: a neutral teal with an amber accent, chosen on purpose to
+   stay away from the Spanish administration's palette, so nothing on the
+   site suggests it is official. */
+:root,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #0f766e;
+  --md-primary-fg-color--light: #14b8a6;
+  --md-primary-fg-color--dark: #115e59;
+  --md-accent-fg-color: #d97706;
+  --md-accent-fg-color--transparent: rgba(217, 119, 6, 0.1);
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #134e4a;
+  --md-primary-fg-color--light: #2dd4bf;
+  --md-primary-fg-color--dark: #0f3d3a;
+  --md-accent-fg-color: #f59e0b;
+  --md-accent-fg-color--transparent: rgba(245, 158, 11, 0.1);
+  /* The header's teal is too dark for links on a dark background. */
+  --md-typeset-a-color: #2dd4bf;
+}
+
+/* Home page header. */
+.md-typeset .bdns-hero {
+  padding: 1.2rem 0 0.6rem;
+}
+
+.md-typeset .bdns-hero h1 {
+  font-size: 2.8rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.4rem;
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset .bdns-hero .bdns-tagline {
+  font-size: 1.2rem;
+  line-height: 1.5;
+  max-width: 38rem;
+  margin-top: 0;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset .bdns-hero .md-button {
+  margin: 0.3rem 0.5rem 0.3rem 0;
+}
+
+/* Cards lift slightly on hover, so the grid reads as a set of choices. */
+.md-typeset .grid.cards > ul > li {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  transform: translateY(-2px);
+}
+
+/* Diagrams sit centred in the text column. */
+.md-typeset .mermaid {
+  text-align: center;
+  margin: 1.2em 0;
+}
+
+/* Glossary terms (pymdownx abbr) are marked without shouting. */
+.md-typeset abbr[title] {
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
+  border-bottom: none;
+}
+
+/* No glossary marks in headings, card titles or buttons: there the term is
+   a name, and the dotted line is noise. */
+.md-typeset :is(h1, h2, h3, h4, strong, .md-button) abbr[title] {
+  text-decoration: none;
+}
+
+/* Diagrams in the brand teal rather than the amber accent. */
+:root,
+[data-md-color-scheme="default"] {
+  --md-mermaid-node-bg-color: rgba(15, 118, 110, 0.08);
+  --md-mermaid-node-fg-color: #0f766e;
+  --md-mermaid-edge-color: #64748b;
+  --md-mermaid-label-fg-color: var(--md-default-fg-color);
+}
+
+[data-md-color-scheme="slate"] {
+  --md-mermaid-node-bg-color: rgba(45, 212, 191, 0.1);
+  --md-mermaid-node-fg-color: #2dd4bf;
+  --md-mermaid-edge-color: #94a3b8;
+}
+
+/* In dark mode the header teal is too dark for buttons on the page. */
+[data-md-color-scheme="slate"] .md-typeset .md-button {
+  color: #2dd4bf;
+  border-color: #2dd4bf;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .md-button--primary {
+  color: #042f2e;
+  background-color: #2dd4bf;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .md-button:is(:hover, :focus) {
+  color: #042f2e;
+  background-color: #5eead4;
+  border-color: #5eead4;
+}

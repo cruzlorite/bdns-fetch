@@ -1,12 +1,40 @@
+---
+hide:
+  - toc
+---
+
+<div class="bdns-hero" markdown>
+
 # BDNS
 
-Herramientas para descargar, conservar y reutilizar los datos de la [Base de Datos Nacional de Subvenciones](https://www.infosubvenciones.es/) (BDNS) a través de su API pública.
+<p class="bdns-tagline">Descarga, conserva y reutiliza los datos de la Base de Datos Nacional de Subvenciones a través de su API pública, sin tener que pelearte con ella.</p>
+
+[Empezar con bdns-fetch :octicons-arrow-right-24:](fetch/getting-started.md){ .md-button .md-button--primary }
+[Empezar con bdns-sync :octicons-arrow-right-24:](sync/getting-started.md){ .md-button }
+
+</div>
 
 ```console
 $ pip install bdns                # para BigQuery: pip install "bdns[bigquery]"
 ```
 
-El paquete trae dos herramientas, cada una con su comando y su módulo de Python:
+## Cómo encaja todo
+
+```mermaid
+flowchart LR
+    api(["API de la BDNS"]) --> fetch["`**bdns-fetch**
+    cliente y línea de comandos`"]
+    fetch --> files["`Ficheros JSON Lines
+    o tu propio código`"]
+    fetch --> sync["`**bdns-sync**
+    sincronización diaria`"]
+    sync --> db[("`Tu base de datos
+    con todo el histórico`")]
+    db -.-> dataset["`Dataset anonimizado
+    _próximamente_`"]
+```
+
+## Dos herramientas, un paquete
 
 <div class="grid cards" markdown>
 
@@ -14,7 +42,7 @@ El paquete trae dos herramientas, cada una con su comando y su módulo de Python
 
     ---
 
-    Cliente de Python y herramienta de línea de comandos para la API. Cubre los 29 endpoints de consulta y se encarga de la paginación, los reintentos y el límite de peticiones. Sirve para hacer consultas o descargar datos a ficheros.
+    Cliente de Python y herramienta de línea de comandos para la API. Cubre los 29 endpoints de consulta y se encarga de la paginación, los reintentos y el límite de peticiones.
 
     [:octicons-arrow-right-24: Ir a bdns-fetch](fetch/index.md)
 
@@ -22,14 +50,42 @@ El paquete trae dos herramientas, cada una con su comando y su módulo de Python
 
     ---
 
-    Mantiene en tu base de datos (SQLite, PostgreSQL, DuckDB o BigQuery) una copia de la BDNS con el histórico de todas sus versiones, con un solo comando al día. Usa `bdns-fetch` por debajo.
+    Mantiene en tu base de datos (SQLite, PostgreSQL, DuckDB o BigQuery) una copia de la BDNS con el histórico de todas sus versiones, con un solo comando al día.
 
     [:octicons-arrow-right-24: Ir a bdns-sync](sync/index.md)
 
 </div>
 
-Más adelante habrá también un dataset anonimizado y agregado con todo el histórico, listo para usar ([hoja de ruta](roadmap.md#dataset)).
+## Por qué usarlo
 
-## Aviso
+<div class="grid cards" markdown>
 
-Es un proyecto personal y no oficial, sin ninguna relación con la Intervención General de la Administración del Estado (IGAE), que es quien gestiona la BDNS. Si reutilizas los datos, tienes que cumplir sus condiciones de reutilización, que tienes resumidas en el [aviso legal del README](https://github.com/cruzlorite/bdns#aviso-legal).
+- :material-ruler-square:{ .lg .middle } **Comprobado, no supuesto**
+
+    ---
+
+    Todo lo que se documenta sobre la API (las fechas, los límites, los fallos) se ha medido contra el servicio real, y unas pruebas nocturnas avisan si cambia.
+
+- :material-handshake-outline:{ .lg .middle } **Respetuoso con la API**
+
+    ---
+
+    Una llamada cada vez y peticiones espaciadas, como piden las buenas prácticas oficiales de la IGAE.
+
+- :material-history:{ .lg .middle } **Todo el histórico**
+
+    ---
+
+    `bdns-sync` guarda cada versión de cada registro, incluido lo que el portal acaba retirando.
+
+- :material-cog-off-outline:{ .lg .middle } **Sin configuración**
+
+    ---
+
+    Basta con una URL de base de datos y un comando al día.
+
+</div>
+
+!!! note "Proyecto no oficial"
+
+    Es un proyecto personal, sin ninguna relación con la IGAE, que es quien gestiona la BDNS. Si reutilizas los datos, tienes que cumplir sus condiciones de reutilización, que tienes resumidas en el [aviso legal del README](https://github.com/cruzlorite/bdns#aviso-legal).

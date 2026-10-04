@@ -67,6 +67,19 @@ Cada entidad tiene su tabla, y todas tienen las mismas columnas: el registro se 
 | `_created_run_id` / `_closed_run_id` | La ejecución que escribió la versión y la que la cerró |
 | `_closed_reason` | Por qué se cerró: `superseded` (cambió) o `removed` (desapareció) |
 
+Así es la vida de cada versión. Si el registro se vuelve a ver igual, no se crea nada: solo se actualiza `_synced_at`.
+
+```mermaid
+flowchart LR
+    api(["`La clave aparece
+    en la API`"]) --> cur["Versión vigente"]
+    cur -- "cambia el contenido" --> sup["`Cerrada como
+    **superseded**`"]
+    sup -. "se abre una versión nueva" .-> cur
+    cur -- "la API deja de devolverla" --> rem["`Cerrada como
+    **removed**`"]
+```
+
 Todos los detalles están en el [modelo de datos](reference/data-model.md).
 
 ## Aviso

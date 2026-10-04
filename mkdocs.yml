@@ -18,14 +18,16 @@ theme:
   features:
     # navigation.instant is deliberately absent: it is incompatible with
     # the i18n language switcher's contextual link.
-    - navigation.tabs
     - navigation.sections
+    - navigation.path
     - navigation.tracking
     - navigation.indexes
     - navigation.top
     - navigation.footer
     - content.code.copy
     - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
     - content.action.edit
     - search.highlight
     - search.suggest
@@ -37,18 +39,26 @@ theme:
         name: Seguir el sistema
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: indigo
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-7
         name: Modo oscuro
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: indigo
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-4
         name: Modo claro
+
+# The brand colours and the home page's header; see the file for why.
+extra_css:
+  - assets/stylesheets/extra.css
+
+# Snippets that are appended to pages, not pages themselves.
+exclude_docs: |
+  includes/
 
 # A link to a missing anchor is a broken link; the default only logs it.
 validation:
@@ -80,7 +90,11 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  # Every page gets the glossary, so BDNS, SCD2, NIF... show their meaning
+  # on hover (content.tooltips) wherever they appear in running text.
+  - pymdownx.snippets:
+      auto_append:
+        - docs/includes/abbreviations.md
 
 plugins:
   - search:

@@ -86,6 +86,30 @@ The API sometimes returns the same data written differently ([the three families
 
 Of the 414,395 versions of that pass, about 248,000 were noise: 60%.
 
+```mermaid
+---
+config:
+  themeVariables:
+    xyChart:
+      backgroundColor: "transparent"
+      plotColorPalette: "#14b8a6"
+      titleColor: "#64748b"
+      xAxisLabelColor: "#64748b"
+      xAxisTitleColor: "#64748b"
+      xAxisTickColor: "#94a3b8"
+      xAxisLineColor: "#94a3b8"
+      yAxisLabelColor: "#64748b"
+      yAxisTitleColor: "#64748b"
+      yAxisTickColor: "#94a3b8"
+      yAxisLineColor: "#94a3b8"
+---
+xychart-beta horizontal
+    title "Spurious versions in the annual pass (%)"
+    x-axis ["concesiones", "minimis", "ayudasestado", "convocatorias_busqueda", "convocatorias"]
+    y-axis "% of new versions" 0 --> 100
+    bar [58, 83, 75, 3, 0]
+```
+
 <a id="hash-exclusion-criterion"></a>
 ### The criterion for excluding a field from the hash
 

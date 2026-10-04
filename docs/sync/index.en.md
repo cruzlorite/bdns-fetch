@@ -78,6 +78,19 @@ versions are never deleted — history is append-only.
 | `_created_run_id` / `_closed_run_id` | The run that wrote the version and the one that closed it |
 | `_closed_reason` | Why it was closed: `superseded` or `removed` |
 
+This is the life of each version. If the record is seen again unchanged, nothing is created: only `_synced_at` moves.
+
+```mermaid
+flowchart LR
+    api(["`The key appears
+    in the API`"]) --> cur["Current version"]
+    cur -- "the content changes" --> sup["`Closed as
+    **superseded**`"]
+    sup -. "a new version opens" .-> cur
+    cur -- "the API stops serving it" --> rem["`Closed as
+    **removed**`"]
+```
+
 ## Notice
 
 A personal, unofficial project with no relationship to the Intervención General de la Administración del Estado (IGAE), which runs the BDNS. Several tables hold names and tax IDs of natural persons, and their reuse is limited by the IGAE's conditions, summarised in the [README's legal notice](https://github.com/cruzlorite/bdns/blob/main/README.en.md#legal-notice).

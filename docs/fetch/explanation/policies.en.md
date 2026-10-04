@@ -16,23 +16,12 @@ By default pages are requested one at a time, as the official good practices rec
 
 If you still want to go faster, `max_workers` allows several threads. Then at most `2 × max_workers` requests are pending, and pages are delivered **in page order**. A slow consumer slows the download instead of piling pages up in memory; a consumer that stops iterating cancels the pending requests. See [ADR 0005](../adr/0005-ordered-bounded-pagination.md).
 
-```mermaid
-sequenceDiagram
-    participant C as Your code
-    participant P as pages()
-    participant W as Threads (max_workers)
-    participant A as API
-    P->>A: page 0
-    A-->>P: totalPages = N
-    P-->>C: records of page 0
-    P->>W: pages 1 … 2·max_workers
-    W->>A: (spaced by the limiter)
-    loop while C iterates
-        W-->>P: page k (may arrive before k-1)
-        P-->>C: records of the next page in order
-        P->>W: one more page
-    end
-```
+For example, with `max_workers=2` and a six-page search:
+
+1. Page 0 is requested; it says how many pages there are, and its records are delivered.
+2. Pages 1 to 4 are requested at once: at most `2 × max_workers` are pending.
+3. If page 3 arrives before page 2, it is held until page 2 arrives, so your code always gets the pages in order.
+4. Each time your code finishes a page, the next one, page 5, is requested, so no more than four ever wait in memory.
 
 ## The rule around it: the client knows nothing about the CLI
 

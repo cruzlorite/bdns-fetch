@@ -86,30 +86,6 @@ A veces la API devuelve el mismo dato escrito de otra manera ([los tres casos](.
 
 De las 414.395 versiones de aquella pasada, unas 248.000 eran ruido, es decir, el 60%.
 
-```mermaid
----
-config:
-  themeVariables:
-    xyChart:
-      backgroundColor: "transparent"
-      plotColorPalette: "#14b8a6"
-      titleColor: "#64748b"
-      xAxisLabelColor: "#64748b"
-      xAxisTitleColor: "#64748b"
-      xAxisTickColor: "#94a3b8"
-      xAxisLineColor: "#94a3b8"
-      yAxisLabelColor: "#64748b"
-      yAxisTitleColor: "#64748b"
-      yAxisTickColor: "#94a3b8"
-      yAxisLineColor: "#94a3b8"
----
-xychart-beta horizontal
-    title "Versiones espurias en la pasada anual (%)"
-    x-axis ["concesiones", "minimis", "ayudasestado", "convocatorias_busqueda", "convocatorias"]
-    y-axis "% de las versiones nuevas" 0 --> 100
-    bar [58, 83, 75, 3, 0]
-```
-
 <a id="hash-exclusion-criterion"></a>
 ### Cuándo se saca un campo del hash
 

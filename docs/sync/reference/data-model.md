@@ -21,54 +21,6 @@ Las tres columnas de ejecución valen `NULL` en las versiones escritas antes de 
 
 Si la API añade o quita un campo no hay que cambiar nada: el cambio se detecta por el hash y se guarda como una versión más.
 
-```mermaid
-erDiagram
-    "<entidad> (una por endpoint)" {
-        string  _natural_key   "clave del registro (JSON)"
-        string  _row_hash      "SHA-256 del registro normalizado"
-        datetime _valid_from   "desde cuándo es válida esta versión"
-        datetime _valid_to     "NULL si es la versión vigente"
-        bool    _is_current    "TRUE solo en la versión vigente"
-        datetime _synced_at    "última vez que se vio en el origen"
-        date    _reg_date      "solo si detecta bajas por periodo"
-        json    payload        "registro entero de la API"
-        int     _created_run_id "ejecución que escribió la versión"
-        int     _closed_run_id "ejecución que la cerró"
-        string  _closed_reason "superseded / removed"
-    }
-    _sync_state {
-        string   table_name PK "una fila por tabla sincronizada"
-        datetime last_synced_at "última ejecución correcta"
-        int      last_run_id FK "ejecución que la dejó"
-    }
-    _sync_runs {
-        int      run_id        "microsegundos desde 1970, los genera la aplicación"
-        string   table_name    "tabla a la que pertenece el evento"
-        string   run_type      "full / daily / weekly / monthly / annual / backfill"
-        string   event         "started / success / failed"
-        datetime occurred_at   "cuándo ocurrió el evento"
-        int      rows_fetched  "contadores, solo en el evento final"
-        int      rows_inserted "versiones escritas: claves nuevas más cambiadas"
-        int      rows_changed  "claves cuyo contenido cambió"
-        int      rows_unchanged "claves que se vieron de nuevo sin cambios"
-        int      rows_soft_deleted "claves cerradas como removed"
-        int      rows_skipped  "registros descartados por estar mal formados"
-        string   error         "mensaje de error, solo en failed"
-        date     window_start  "primer día del periodo, en las incrementales"
-        date     window_end    "último día del periodo"
-    }
-    _sync_errors {
-        int      error_id PK   "microsegundos desde 1970, los genera la aplicación"
-        int      run_id FK     "ejecución en la que se descartó"
-        string   table_name    "tabla afectada"
-        string   context       "paso en el que se descartó el registro"
-        string   content       "primeros 200 caracteres del registro"
-        datetime occurred_at   "cuándo se descartó"
-    }
-    _sync_runs ||--o{ _sync_errors : "run_id"
-    _sync_runs ||--o| _sync_state : "last_run_id"
-```
-
 ## Tablas de control
 
 Son comunes a todas las entidades y empiezan por `_sync_`:
@@ -99,13 +51,14 @@ El esquema solo crece, y siempre con columnas que admiten valores nulos. Al empe
 
 ## Cómo transcurre una ejecución
 
-```mermaid
-flowchart TD
-    A(["evento <b>started</b><br/>se confirma antes de tocar los datos"]) --> B["descarga → staging → comparación SCD2"]
-    B -->|todo bien| C(["evento <b>success</b><br/>se escribe después de confirmar los datos"])
-    B -->|error| D(["evento <b>failed</b><br/>con el error anotado"])
-    B -->|caída, kill o corte| E(["sin evento final<br/>el proceso se quedó a medias"])
-```
+Cada ejecución anota un evento al empezar y otro al terminar. Por ejemplo, una sincronización semanal de `concesiones_busqueda` que sale bien deja estas dos filas en `_sync_runs`:
+
+| `run_id` | `table_name` | `run_type` | `event` | `occurred_at` | `rows_fetched` | `rows_inserted` |
+|---|---|---|---|---|---|---|
+| 1791093602000000 | `concesiones_busqueda` | `weekly` | `started` | 04/10/2026 06:00:02 | | |
+| 1791093602000000 | `concesiones_busqueda` | `weekly` | `success` | 04/10/2026 06:04:51 | 236113 | 1203 |
+
+Si algo falla, el segundo evento es `failed`, con el mensaje en `error`. Si el proceso se corta (una caída, un `kill`, un corte de red), no llega a haber segundo evento y solo queda el `started`.
 
 El estado de una ejecución es su **último evento**, y lo que garantiza cada uno depende de la base de datos:
 

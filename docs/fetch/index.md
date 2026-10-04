@@ -57,14 +57,6 @@ for convocatoria in client.fetch_convocatorias_busqueda(descripcion="investigaci
 
 `bdns-fetch` se ocupa solo de **descargar**: sabe todo lo necesario sobre la API y nada sobre cómo guardar los datos. [`bdns-sync`](../sync/index.md) se apoya en él para mantener una copia local con histórico de versiones (SCD2) en cualquier base de datos compatible con SQLAlchemy.
 
-```mermaid
-flowchart LR
-    API[(API de la BDNS)] -->|HTTP| F[bdns-fetch<br/>paginación · reintentos · límite]
-    F -->|registros| U[tu código / JSONL]
-    F -->|registros| S[bdns-sync<br/>SCD2 · bajas · registro de ejecuciones]
-    S --> DB[(SQLite · PostgreSQL · BigQuery)]
-```
-
 ## Aviso
 
 Es un proyecto personal y no oficial, sin ninguna relación con la Intervención General de la Administración del Estado (IGAE), que es quien gestiona la BDNS. Algunos endpoints devuelven nombres y NIF de personas físicas, y su reutilización está limitada por las condiciones de la IGAE; las tienes resumidas en el [aviso legal del README](https://github.com/cruzlorite/bdns#aviso-legal).

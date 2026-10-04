@@ -67,18 +67,14 @@ Cada entidad tiene su tabla, y todas tienen las mismas columnas: el registro se 
 | `_created_run_id` / `_closed_run_id` | La ejecución que escribió la versión y la que la cerró |
 | `_closed_reason` | Por qué se cerró: `superseded` (cambió) o `removed` (desapareció) |
 
-Así es la vida de cada versión. Si el registro se vuelve a ver igual, no se crea nada: solo se actualiza `_synced_at`.
+Por ejemplo, una concesión se registra el 10 de enero con 1.000 €, el 5 de marzo se corrige el importe a 1.200 € y el 20 de junio la API deja de devolverla. Esto es lo que queda en la tabla:
 
-```mermaid
-flowchart LR
-    api(["`La clave aparece
-    en la API`"]) --> cur["Versión vigente"]
-    cur -- "cambia el contenido" --> sup["`Cerrada como
-    **superseded**`"]
-    sup -. "se abre una versión nueva" .-> cur
-    cur -- "la API deja de devolverla" --> rem["`Cerrada como
-    **removed**`"]
-```
+| `_valid_from` | `_valid_to` | `_is_current` | `_closed_reason` | Importe en `payload` |
+|---|---|---|---|---|
+| 10/01/2026 | 05/03/2026 | no | `superseded` | 1.000 € |
+| 05/03/2026 | 20/06/2026 | no | `removed` | 1.200 € |
+
+Si la concesión se hubiera vuelto a ver igual entre medias, no habría ninguna fila más: solo se actualiza `_synced_at`.
 
 Todos los detalles están en el [modelo de datos](reference/data-model.md).
 

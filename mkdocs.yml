@@ -10,8 +10,6 @@ copyright: "Licencia MIT · Proyecto no oficial, sin relación con la BDNS ni co
 
 theme:
   name: material
-  # main.html loads the icon pack for diagrams; see the file.
-  custom_dir: overrides
   language: es
   favicon: assets/favicon.svg
   icon:
@@ -34,27 +32,23 @@ theme:
     - search.highlight
     - search.suggest
     - toc.follow
+  # Dark by default (black header, indigo accent), with a light variant of
+  # the same style one click away.
   palette:
-    - media: "(prefers-color-scheme)"
-      toggle:
-        icon: material/brightness-auto
-        name: Seguir el sistema
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: custom
-      accent: custom
-      toggle:
-        icon: material/brightness-7
-        name: Modo oscuro
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: custom
-      accent: custom
+    - scheme: slate
+      primary: black
+      accent: indigo
       toggle:
         icon: material/brightness-4
         name: Modo claro
+    - scheme: default
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Modo oscuro
 
-# The brand colours and the home page's header; see the file for why.
+# The home page's header, tables and cards; see the file.
 extra_css:
   - assets/stylesheets/extra.css
 
@@ -82,11 +76,7 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.highlight:
@@ -125,11 +115,9 @@ plugins:
           theme:
             palette:
               - toggle:
-                  name: Follow the system
+                  name: Switch to light mode
               - toggle:
                   name: Switch to dark mode
-              - toggle:
-                  name: Switch to light mode
           nav_translations:
             Inicio: Home
             Primeros pasos: Get started

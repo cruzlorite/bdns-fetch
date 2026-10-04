@@ -16,23 +16,12 @@ Por defecto las páginas se piden de una en una, como recomiendan las buenas pr�
 
 Si aun así quieres ir más rápido, `max_workers` permite varios hilos. En ese caso, como mucho hay `2 × max_workers` peticiones pendientes y las páginas se entregan **en su orden**, aunque terminen desordenadas. Si tu código va más despacio que la descarga, la descarga espera en lugar de acumular páginas en memoria, y si dejas de recorrer los resultados, las peticiones que quedaban se cancelan ([decisión 0005](../adr/0005-ordered-bounded-pagination.md)).
 
-```mermaid
-sequenceDiagram
-    participant C as Tu código
-    participant P as pages()
-    participant W as Hilos (max_workers)
-    participant A as API
-    P->>A: página 0
-    A-->>P: totalPages = N
-    P-->>C: registros de la página 0
-    P->>W: páginas 1 … 2·max_workers
-    W->>A: (espaciadas por el limitador)
-    loop mientras C siga leyendo
-        W-->>P: página k (puede llegar antes que la k-1)
-        P-->>C: registros de la siguiente página, en orden
-        P->>W: una página más
-    end
-```
+Por ejemplo, con `max_workers=2` y una búsqueda de seis páginas:
+
+1. Se pide la página 0, que dice cuántas hay en total, y se entregan sus registros.
+2. Se piden a la vez las páginas 1 a 4: como mucho hay `2 × max_workers` pendientes.
+3. Si la 3 llega antes que la 2, se guarda hasta que llegue la 2, de modo que tu código recibe siempre las páginas en orden.
+4. Cada vez que tu código termina con una página se pide la siguiente, la 5, así que nunca hay más de cuatro esperando en memoria.
 
 ## El principio que lo engloba: el cliente no sabe nada de la terminal
 

@@ -22,54 +22,6 @@ The three run columns are `NULL` on versions written before they existed ([ADR 0
 
 If the API adds or removes a field, no migration is required: the change is detected via the hash and versioned like any other.
 
-```mermaid
-erDiagram
-    "<entity> (one per endpoint)" {
-        string  _natural_key   "business key (JSON)"
-        string  _row_hash      "SHA-256 of canonical payload"
-        datetime _valid_from   "when this version became current"
-        datetime _valid_to     "NULL while current version"
-        bool    _is_current    "TRUE only on the current version"
-        datetime _synced_at    "last time observed at the source"
-        date    _reg_date      "only for window-scoped deletion detection"
-        json    payload        "full record from the API"
-        int     _created_run_id "run that wrote this version"
-        int     _closed_run_id "run that closed it"
-        string  _closed_reason "superseded / removed"
-    }
-    _sync_state {
-        string   table_name PK "one row per synced table"
-        datetime last_synced_at "watermark of the last successful run"
-        int      last_run_id FK "run that set the watermark"
-    }
-    _sync_runs {
-        int      run_id        "epoch microseconds, app-generated"
-        string   table_name    "table the event belongs to"
-        string   run_type      "full / daily / weekly / monthly / annual / backfill"
-        string   event         "started / success / failed"
-        datetime occurred_at   "when the event happened"
-        int      rows_fetched  "counters, terminal event only"
-        int      rows_inserted "versions written: new keys plus changed ones"
-        int      rows_changed  "keys whose payload changed"
-        int      rows_unchanged "keys seen again unchanged"
-        int      rows_soft_deleted "keys closed as removed"
-        int      rows_skipped  "malformed records discarded"
-        string   error         "message, failed only"
-        date     window_start  "first day of a windowed run's range"
-        date     window_end    "last day of that range"
-    }
-    _sync_errors {
-        int      error_id PK   "epoch microseconds, app-generated"
-        int      run_id FK     "run that discarded the record"
-        string   table_name    "affected table"
-        string   context       "step where the record was discarded"
-        string   content       "offending record, truncated to 200 characters"
-        datetime occurred_at   "when it was discarded"
-    }
-    _sync_runs ||--o{ _sync_errors : "run_id"
-    _sync_runs ||--o| _sync_state : "last_run_id"
-```
-
 ## Control tables
 
 Shared across all endpoints, with the `_sync_` prefix:
@@ -104,13 +56,14 @@ migrated by hand. See [compatibility](../../compatibility.md).
 
 ## Run lifecycle
 
-```mermaid
-flowchart TD
-    A(["<b>started</b> event<br/>committed before any data work"]) --> B["fetch → staging → SCD2 diff"]
-    B -->|all OK| C(["<b>success</b> event<br/>written after the data commit"])
-    B -->|error| D(["<b>failed</b> event<br/>error recorded"])
-    B -->|crash / kill / outage| E(["no terminal event<br/>process died mid-run"])
-```
+Each run records one event when it starts and another when it ends. For example, a weekly sync of `concesiones_busqueda` that goes well leaves these two rows in `_sync_runs`:
+
+| `run_id` | `table_name` | `run_type` | `event` | `occurred_at` | `rows_fetched` | `rows_inserted` |
+|---|---|---|---|---|---|---|
+| 1791093602000000 | `concesiones_busqueda` | `weekly` | `started` | 2026-10-04 06:00:02 | | |
+| 1791093602000000 | `concesiones_busqueda` | `weekly` | `success` | 2026-10-04 06:04:51 | 236113 | 1203 |
+
+If something fails, the second event is `failed`, with the message in `error`. If the process dies (a crash, a `kill`, a network outage), there is no second event and only `started` remains.
 
 A run's state is its **latest event**. Guarantees, per engine:
 

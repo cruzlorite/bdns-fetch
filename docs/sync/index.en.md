@@ -78,18 +78,14 @@ versions are never deleted — history is append-only.
 | `_created_run_id` / `_closed_run_id` | The run that wrote the version and the one that closed it |
 | `_closed_reason` | Why it was closed: `superseded` or `removed` |
 
-This is the life of each version. If the record is seen again unchanged, nothing is created: only `_synced_at` moves.
+For example, an award is registered on 10 January with €1,000, on 5 March its amount is corrected to €1,200, and on 20 June the API stops serving it. This is what the table holds:
 
-```mermaid
-flowchart LR
-    api(["`The key appears
-    in the API`"]) --> cur["Current version"]
-    cur -- "the content changes" --> sup["`Closed as
-    **superseded**`"]
-    sup -. "a new version opens" .-> cur
-    cur -- "the API stops serving it" --> rem["`Closed as
-    **removed**`"]
-```
+| `_valid_from` | `_valid_to` | `_is_current` | `_closed_reason` | Amount in `payload` |
+|---|---|---|---|---|
+| 2026-01-10 | 2026-03-05 | no | `superseded` | €1,000 |
+| 2026-03-05 | 2026-06-20 | no | `removed` | €1,200 |
+
+Had the award been seen again unchanged in between, there would be no extra row: only `_synced_at` moves.
 
 ## Notice
 

@@ -18,23 +18,6 @@ hide:
 $ pip install bdns                # para BigQuery: pip install "bdns[bigquery]"
 ```
 
-## Cómo encaja todo
-
-```mermaid
-flowchart LR
-    api@{ icon: "mdi:api", form: "circle", label: "API de la BDNS", pos: "b", h: 42 }
-    fetch@{ icon: "mdi:cloud-download", form: "circle", label: "bdns-fetch", pos: "b", h: 42 }
-    files@{ icon: "mdi:file-document-multiple", form: "circle", label: "Ficheros o tu código", pos: "b", h: 42 }
-    sync@{ icon: "mdi:database-sync", form: "circle", label: "bdns-sync", pos: "b", h: 42 }
-    db@{ icon: "mdi:database", form: "circle", label: "Tu base de datos, con el histórico", pos: "b", h: 42 }
-    dataset@{ icon: "mdi:chart-box", form: "circle", label: "Dataset anonimizado (próximamente)", pos: "b", h: 42 }
-    api --> fetch
-    fetch --> files
-    fetch --> sync
-    sync --> db
-    db -.-> dataset
-```
-
 ## Dos herramientas, un paquete
 
 <div class="grid cards" markdown>

@@ -124,14 +124,9 @@ FROM 'concesiones_personas.parquet'
 WHERE numero_convocatoria = '900101';
 ```
 
-```text
-┌─────────────┬───────────────┬───────────────┬───────────────┬─────────────────┬───────────────┬───────────────┐
-│ concesiones │ beneficiarios │  importe_p10  │  importe_p25  │ importe_mediana │  importe_p75  │  importe_p90  │
-│    int64    │     int64     │ decimal(18,2) │ decimal(18,2) │  decimal(18,2)  │ decimal(18,2) │ decimal(18,2) │
-├─────────────┼───────────────┼───────────────┼───────────────┼─────────────────┼───────────────┼───────────────┤
-│         250 │           250 │       1200.00 │       1800.00 │         2400.00 │       2400.00 │       3600.00 │
-└─────────────┴───────────────┴───────────────┴───────────────┴─────────────────┴───────────────┴───────────────┘
-```
+| concesiones | beneficiarios | importe_p10 | importe_p25 | importe_mediana | importe_p75 | importe_p90 |
+|------------:|--------------:|------------:|------------:|----------------:|------------:|------------:|
+| 250         | 250           | 1200.00     | 1800.00     | 2400.00         | 2400.00     | 3600.00     |
 
 La mitad de las concesiones fue de entre 1.800 y 2.400 euros, y el 80 %, de entre 1.200 y 3.600. En las convocatorias con menos de 20 personas, el percentil 10 y el 90 vienen vacíos.
 
@@ -150,15 +145,10 @@ GROUP BY ALL
 ORDER BY ejercicio;
 ```
 
-```text
-┌───────────┬─────────────┬───────────────┐
-│ ejercicio │ concesiones │    importe    │
-│   int64   │   int128    │ decimal(38,2) │
-├───────────┼─────────────┼───────────────┤
-│      2025 │          40 │       8580.00 │
-│      2026 │         277 │     734000.00 │
-└───────────┴─────────────┴───────────────┘
-```
+| ejercicio | concesiones |  importe  |
+|----------:|------------:|----------:|
+| 2025      | 40          | 8580.00   |
+| 2026      | 277         | 734000.00 |
 
 Aun así, el total se queda algo corto, porque las concesiones que no llegan a ninguna fila publicable (por ejemplo, las de una convocatoria pequeña que es la única de su año) no están en el dataset.
 
@@ -185,15 +175,10 @@ WHERE NOT p.es_resto
 ORDER BY p.numero_convocatoria;
 ```
 
-```text
-┌─────────────────────┬──────────────────────┬──────────────────┬───────────────────────┬───────────────────┐
-│ numero_convocatoria │ concesiones_personas │ importe_personas │ concesiones_entidades │ importe_entidades │
-│       varchar       │        int64         │  decimal(38,2)   │         int64         │   decimal(38,2)   │
-├─────────────────────┼──────────────────────┼──────────────────┼───────────────────────┼───────────────────┤
-│ 900101              │                  250 │        588000.00 │                  NULL │              NULL │
-│ 900102              │                   40 │          8580.00 │                  NULL │              NULL │
-│ 900103              │                   14 │         51000.00 │                     1 │          90000.00 │
-└─────────────────────┴──────────────────────┴──────────────────┴───────────────────────┴───────────────────┘
-```
+| numero_convocatoria | concesiones_personas | importe_personas | concesiones_entidades | importe_entidades |
+|---------------------|---------------------:|-----------------:|----------------------:|------------------:|
+| 900101              | 250                  | 588000.00        | NULL                  | NULL              |
+| 900102              | 40                   | 8580.00          | NULL                  | NULL              |
+| 900103              | 14                   | 51000.00         | 1                     | 90000.00          |
 
 Si una convocatoria usa varios instrumentos (por ejemplo, subvenciones y préstamos), tiene un resumen por cada uno, y entonces conviene agrupar también por `instrumento`.

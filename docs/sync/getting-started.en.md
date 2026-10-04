@@ -7,7 +7,7 @@ file.
 ## 1. Install
 
 ```console
-$ pip install bdns
+$ pip install bdns-tools
 $ bdns-sync --version
 bdns-sync 2.0.0
 ```

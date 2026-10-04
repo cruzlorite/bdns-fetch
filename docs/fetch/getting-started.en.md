@@ -7,7 +7,7 @@ Five minutes: install, one query from the terminal, the same from Python, and wh
 Python 3.11 to 3.14.
 
 ```console
-$ pip install bdns
+$ pip install bdns-tools
 $ bdns-fetch --version
 bdns-fetch 2.0.0
 ```

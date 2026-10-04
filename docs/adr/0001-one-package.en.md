@@ -14,11 +14,13 @@ Besides, what people programming with these tools actually use are the import pa
 
 ## Decision
 
-Every tool lives in one repository and is released in one package, `bdns`, with one version and one CHANGELOG. Each tool is a module ([`bdns.fetch`](../fetch/reference/api/index.md), [`bdns.sync`](../sync/reference/api/index.md)) with its own command and its own section of the site, and heavy optional dependencies go in extras, such as `bdns[bigquery]`.
+Every tool lives in one repository and is released in one package, `bdns-tools`, with one version and one CHANGELOG. Each tool is a module ([`bdns.fetch`](../fetch/reference/api/index.md), [`bdns.sync`](../sync/reference/api/index.md)) with its own command and its own section of the site, and heavy optional dependencies go in extras, such as `bdns-tools[bigquery]`.
 
-`bdns` is a namespace with no `__init__.py` of its own, so each module stands on its own. The boundary between them is kept: [`bdns.fetch`](../fetch/reference/api/index.md) never imports [`bdns.sync`](../sync/reference/api/index.md), and a test checks it.
+The package is called `bdns-tools`, not plain `bdns`: BDNS is the official database's name, and a package or site called exactly that would suggest it is the official tool, which is what the IGAE's reuse conditions ask to avoid. The name keeps the word people search for and makes clear these are third-party tools.
 
-Numbering continues `bdns-fetch`'s, whose `v1.x` tags already exist, so the first `bdns` release is 2.0.0. Generated data is not kept in the repository: it is published separately, under its own license.
+Imports hang from `bdns`, a namespace with no `__init__.py` of its own, so each module stands on its own. The boundary between them is kept: [`bdns.fetch`](../fetch/reference/api/index.md) never imports [`bdns.sync`](../sync/reference/api/index.md), and a test checks it.
+
+Numbering continues `bdns-fetch`'s, whose `v1.x` tags already exist, so the first `bdns-tools` release is 2.0.0. Generated data is not kept in the repository: it is published separately, under its own license.
 
 ## Consequences
 
@@ -27,4 +29,4 @@ Numbering continues `bdns-fetch`'s, whose `v1.x` tags already exist, so the firs
 - Not every module is equally mature, so the [compatibility policy](../compatibility.md) details what is public in each.
 - Someone using only [`bdns.fetch`](../fetch/reference/api/index.md) also installs SQLAlchemy, a few megabytes.
 - If one day a module has an audience of its own, it can ship as a separate package without changing a single import, thanks to the namespace.
-- Whoever installed `bdns-fetch` or `bdns-sync` has to install `bdns` instead; the releases already published under those names stay on PyPI.
+- Whoever installed `bdns-fetch` or `bdns-sync` has to install `bdns-tools` instead; the releases already published under those names stay on PyPI.

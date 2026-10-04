@@ -1,7 +1,7 @@
 [project]
-name = "bdns"
+name = "bdns-tools"
 version = "2.0.0rc1"
-description = "Tools to download, keep and reuse the data of Spain's National Subsidies Database (BDNS): an API client and CLI, and an SCD2 sync engine"
+description = "Unofficial tools to download, keep and reuse the data of Spain's National Subsidies Database (BDNS): an API client and CLI, and an SCD2 sync engine"
 readme = "README.md"
 authors = [{ name = "José María Cruz Lorite", email = "josemariacruzlorite@gmail.com" }]
 license = "MIT"
@@ -35,7 +35,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# BigQuery support is opt-in (`pip install "bdns[bigquery]"`), so the
+# BigQuery support is opt-in (`pip install "bdns-tools[bigquery]"`), so the
 # google-cloud stack stays out of SQLite, DuckDB and PostgreSQL installs.
 bigquery = [
     "sqlalchemy-bigquery>=1.17.0,<2",
@@ -43,10 +43,10 @@ bigquery = [
 ]
 
 [project.urls]
-Documentation = "https://cruzlorite.github.io/bdns/"
-Repository = "https://github.com/cruzlorite/bdns"
-Changelog = "https://github.com/cruzlorite/bdns/blob/main/CHANGELOG.md"
-Issues = "https://github.com/cruzlorite/bdns/issues"
+Documentation = "https://cruzlorite.github.io/bdns-tools/"
+Repository = "https://github.com/cruzlorite/bdns-tools"
+Changelog = "https://github.com/cruzlorite/bdns-tools/blob/main/CHANGELOG.md"
+Issues = "https://github.com/cruzlorite/bdns-tools/issues"
 
 [project.scripts]
 bdns-fetch = "bdns.fetch.__main__:app"

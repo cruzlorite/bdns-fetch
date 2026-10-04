@@ -1,3 +1,7 @@
+---
+icon: material/database-sync
+---
+
 # BDNS Sync
 
 Sync engine that keeps target databases in **SCD2** form from the
@@ -9,7 +13,7 @@ not changed, syncs the 22 entities with the window that day calls for,
 and records every run. No configuration file.
 
 ```console
-$ pip install bdns
+$ pip install bdns-tools
 $ export BDNS_SYNC_TARGET_URL=sqlite:///bdns.db
 $ bdns-sync backfill        # once: the history
 $ bdns-sync delta           # daily
@@ -18,6 +22,40 @@ $ bdns-sync delta           # daily
 It builds on [`bdns-fetch`](../fetch/index.md),
 which knows everything there is to know about the API; `bdns-sync` adds
 versioned history, deletion detection and the run log.
+
+<a id="why-history"></a>
+## Why keep the history
+
+The API only shows a window of time, and each kind of data has its own. What leaves that window (the hatched part) is no longer available, and only whoever saved it while it was published still has it:
+
+<div class="bdns-retention" role="img" aria-label="How long the API returns each kind of data: calls for applications, about 12 years; state aid and de minimis aid, about 10; awards and political parties, about 4; awards to natural persons, the award year and the next." style="--span: 12">
+  <div class="bdns-retention__axis">
+    <span>12 years ago</span>
+    <span class="bdns-retention__today">today</span>
+  </div>
+  <div class="bdns-retention__row">
+    <span class="bdns-retention__label">Calls for applications</span>
+    <span class="bdns-retention__track"><span class="bdns-retention__bar" style="--years: 12"></span></span>
+    <span class="bdns-retention__note">about 12 years</span>
+  </div>
+  <div class="bdns-retention__row">
+    <span class="bdns-retention__label">State aid and de minimis</span>
+    <span class="bdns-retention__track"><span class="bdns-retention__bar" style="--years: 10"></span></span>
+    <span class="bdns-retention__note">about 10 years</span>
+  </div>
+  <div class="bdns-retention__row">
+    <span class="bdns-retention__label">Awards and political parties</span>
+    <span class="bdns-retention__track"><span class="bdns-retention__bar" style="--years: 4"></span></span>
+    <span class="bdns-retention__note">about 4 years</span>
+  </div>
+  <div class="bdns-retention__row">
+    <span class="bdns-retention__label">Awards to natural persons</span>
+    <span class="bdns-retention__track"><span class="bdns-retention__bar" style="--years: 2"></span></span>
+    <span class="bdns-retention__note">the award year and the next</span>
+  </div>
+</div>
+
+`bdns-sync` saves every record while it is published, so your history keeps growing even when the API withdraws it. The figures and where they come from are in [each endpoint keeps a different history](../fetch/explanation/api-behavior.md#history-depth).
 
 ## Where to start
 

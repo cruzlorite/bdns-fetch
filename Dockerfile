@@ -1,4 +1,4 @@
-# bdns with the BigQuery extra, to run bdns-sync on a schedule:
+# bdns-tools with the BigQuery extra, to run bdns-sync on a schedule:
 #
 #   docker build -t bdns-sync .
 #

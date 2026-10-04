@@ -40,7 +40,7 @@ from bdns.fetch.utils import RateLimiter, smart_open
 __all__ = ["app"]
 
 try:
-    __version__ = version("bdns")
+    __version__ = version("bdns-tools")
 except PackageNotFoundError:
     __version__ = "0.0.0+unknown"
 

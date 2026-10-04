@@ -29,7 +29,7 @@ wheels = [
 ]
 
 [[package]]
-name = "bdns"
+name = "bdns-tools"
 version = "2.0.0rc1"
 source = { editable = "." }
 default-groups = ["dev", "docs"]

@@ -1,6 +1,6 @@
 # Roadmap
 
-What remains to be done, in rough order of priority within each section. What is done is in the [CHANGELOG](https://github.com/cruzlorite/bdns/blob/main/CHANGELOG.md); source API issues, in [what bdns-sync does about each known API issue](sync/explanation/sync-behavior.md#api-issues).
+What remains to be done, in rough order of priority within each section. What is done is in the [CHANGELOG](https://github.com/cruzlorite/bdns-tools/blob/main/CHANGELOG.md); source API issues, in [what bdns-sync does about each known API issue](sync/explanation/sync-behavior.md#api-issues).
 
 <a id="dataset"></a>
 ## An anonymised dataset with the whole history

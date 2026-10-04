@@ -1,6 +1,6 @@
 # Compatibilidad
 
-`bdns` sigue el [versionado semántico](https://semver.org/lang/es/): una versión mayor (`3.0.0`) puede romper la compatibilidad, una menor (`2.1.0`) añade cosas sin romper nada y un parche (`2.0.1`) solo corrige errores. La versión es la misma para todo el paquete, así que un cambio incompatible en cualquiera de sus módulos supone una versión mayor. Todos los cambios se anotan en el [CHANGELOG](https://github.com/cruzlorite/bdns/blob/main/CHANGELOG.md), y los incompatibles van marcados.
+`bdns-tools` sigue el [versionado semántico](https://semver.org/lang/es/): una versión mayor (`3.0.0`) puede romper la compatibilidad, una menor (`2.1.0`) añade cosas sin romper nada y un parche (`2.0.1`) solo corrige errores. La versión es la misma para todo el paquete, así que un cambio incompatible en cualquiera de sus módulos supone una versión mayor. Todos los cambios se anotan en el [CHANGELOG](https://github.com/cruzlorite/bdns-tools/blob/main/CHANGELOG.md), y los incompatibles van marcados.
 
 ## Qué se considera público en bdns.fetch
 
@@ -14,7 +14,7 @@ Esto no cambia de forma incompatible sin una versión mayor:
 
 Todo lo demás puede cambiar en cualquier versión: los nombres que empiezan por guion bajo; los módulos [`cli`][bdns.fetch.cli], [`options`][bdns.fetch.options], [`endpoints`][bdns.fetch.endpoints] y [`utils`][bdns.fetch.utils] (salvo [`RateLimiter`][bdns.fetch.utils.RateLimiter]); los textos de los mensajes y los logs.
 
-Los **registros** son los de la API tal cual ([decisión 0004](fetch/adr/0004-records-as-plain-dicts.md)), así que si la API cambia un campo, el cambio llega sin que haya una nueva versión de `bdns` por medio.
+Los **registros** son los de la API tal cual ([decisión 0004](fetch/adr/0004-records-as-plain-dicts.md)), así que si la API cambia un campo, el cambio llega sin que haya una nueva versión de `bdns-tools` por medio.
 
 ## Qué se considera público en bdns.sync
 
@@ -27,7 +27,7 @@ Los nombres que empiezan por guion bajo, los mensajes y los logs pueden cambiar 
 <a id="schema"></a>
 ### El esquema solo crece
 
-El esquema de la base de datos solo cambia **añadiendo columnas que admiten valores nulos**, y cada ejecución añade por su cuenta las que le falten a una base de datos creada con una versión anterior ([decisión 0008](sync/adr/0008-run-linked-versions-additive-migrations.md)). Nunca se renombra una columna, se le cambia el tipo ni se borra, así que actualizar `bdns` no te obliga a migrar nada a mano. Un cambio que no fuera de este tipo llegaría en una versión mayor, con instrucciones para migrar.
+El esquema de la base de datos solo cambia **añadiendo columnas que admiten valores nulos**, y cada ejecución añade por su cuenta las que le falten a una base de datos creada con una versión anterior ([decisión 0008](sync/adr/0008-run-linked-versions-additive-migrations.md)). Nunca se renombra una columna, se le cambia el tipo ni se borra, así que actualizar `bdns-tools` no te obliga a migrar nada a mano. Un cambio que no fuera de este tipo llegaría en una versión mayor, con instrucciones para migrar.
 
 Cambiar la clave natural o las reglas de hash de una entidad no cambia el esquema, pero sí los hashes, de modo que la siguiente ejecución volvería a crear versiones de las filas afectadas. Cambios así se anuncian siempre en el CHANGELOG.
 
@@ -38,7 +38,7 @@ Se da soporte a las versiones de Python que se prueban en la integración contin
 <a id="previous-names"></a>
 ## Los nombres anteriores
 
-Hasta la versión 1.3.0 de `bdns-fetch` y la 0.5.0 de `bdns-sync`, las dos herramientas se publicaban en PyPI como paquetes separados. Ahora vienen juntas en `bdns`, con los mismos módulos ([`bdns.fetch`](fetch/reference/api/index.md) y [`bdns.sync`](sync/reference/api/index.md)) y los mismos comandos (`bdns-fetch` y `bdns-sync`), así que para actualizar basta con instalar `bdns` en lugar de los paquetes anteriores. La numeración sigue la de `bdns-fetch`, de modo que la primera versión de `bdns` es la 2.0.0.
+Hasta la versión 1.3.0 de `bdns-fetch` y la 0.5.0 de `bdns-sync`, las dos herramientas se publicaban en PyPI como paquetes separados. Ahora vienen juntas en `bdns-tools`, con los mismos módulos ([`bdns.fetch`](fetch/reference/api/index.md) y [`bdns.sync`](sync/reference/api/index.md)) y los mismos comandos (`bdns-fetch` y `bdns-sync`), así que para actualizar basta con instalar `bdns-tools` en lugar de los paquetes anteriores. La numeración sigue la de `bdns-fetch`, de modo que la primera versión de `bdns-tools` es la 2.0.0.
 
 ## Cómo se publica una versión
 

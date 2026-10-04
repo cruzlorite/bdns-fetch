@@ -1,3 +1,7 @@
+---
+icon: material/database-sync
+---
+
 # BDNS Sync
 
 Mantiene en tu base de datos una copia de la [Base de Datos Nacional de Subvenciones](https://www.infosubvenciones.es/) (BDNS) con el histórico de todas sus versiones (lo que se conoce como **SCD2**).
@@ -5,13 +9,47 @@ Mantiene en tu base de datos una copia de la [Base de Datos Nacional de Subvenci
 Basta con un comando al día: comprueba que la API no ha cambiado, sincroniza las 22 entidades con el periodo que toque y deja anotada cada ejecución. No necesita fichero de configuración.
 
 ```console
-$ pip install bdns
+$ pip install bdns-tools
 $ export BDNS_SYNC_TARGET_URL=sqlite:///bdns.db
 $ bdns-sync backfill        # una sola vez, para cargar el histórico
 $ bdns-sync delta           # todos los días
 ```
 
 Para hablar con la API se apoya en [`bdns-fetch`](../fetch/index.md), que sabe todo lo necesario sobre ella; `bdns-sync` se encarga de guardar el histórico de versiones, detectar las bajas y llevar el registro de ejecuciones.
+
+<a id="why-history"></a>
+## Por qué guardar el histórico
+
+La API solo muestra una ventana de tiempo, y cada tipo de dato tiene la suya. Lo que sale de esa ventana (la parte rayada) deja de estar disponible, y solo lo conserva quien lo guardó mientras estaba publicado:
+
+<div class="bdns-retention" role="img" aria-label="Cuánto tiempo devuelve la API cada tipo de dato: las convocatorias, unos 12 años; las ayudas de Estado y minimis, unos 10; las concesiones y los partidos políticos, unos 4; las concesiones a personas físicas, el año de la concesión y el siguiente." style="--span: 12">
+  <div class="bdns-retention__axis">
+    <span>hace 12 años</span>
+    <span class="bdns-retention__today">hoy</span>
+  </div>
+  <div class="bdns-retention__row">
+    <span class="bdns-retention__label">Convocatorias</span>
+    <span class="bdns-retention__track"><span class="bdns-retention__bar" style="--years: 12"></span></span>
+    <span class="bdns-retention__note">unos 12 años</span>
+  </div>
+  <div class="bdns-retention__row">
+    <span class="bdns-retention__label">Ayudas de Estado y minimis</span>
+    <span class="bdns-retention__track"><span class="bdns-retention__bar" style="--years: 10"></span></span>
+    <span class="bdns-retention__note">unos 10 años</span>
+  </div>
+  <div class="bdns-retention__row">
+    <span class="bdns-retention__label">Concesiones y partidos políticos</span>
+    <span class="bdns-retention__track"><span class="bdns-retention__bar" style="--years: 4"></span></span>
+    <span class="bdns-retention__note">unos 4 años</span>
+  </div>
+  <div class="bdns-retention__row">
+    <span class="bdns-retention__label">Concesiones a personas físicas</span>
+    <span class="bdns-retention__track"><span class="bdns-retention__bar" style="--years: 2"></span></span>
+    <span class="bdns-retention__note">el año de la concesión y el siguiente</span>
+  </div>
+</div>
+
+`bdns-sync` guarda cada registro mientras está publicado, así que tu histórico sigue creciendo aunque la API lo retire. Las cifras y de dónde salen están en [cada endpoint guarda un histórico distinto](../fetch/explanation/api-behavior.md#history-depth).
 
 ## Por dónde empezar
 

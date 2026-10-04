@@ -120,7 +120,7 @@ jobs:
           case "$version" in *[a-z]*) prerelease="--prerelease" ;; esac
           gh release create "$GITHUB_REF_NAME" dist/* \
             --verify-tag \
-            --title "bdns $version" \
+            --title "bdns-tools $version" \
             --notes-file notes.md \
             $prerelease
 

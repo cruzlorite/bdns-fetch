@@ -1,6 +1,6 @@
 # Compatibility
 
-`bdns` follows [semantic versioning](https://semver.org/): a major release (`3.0.0`) may break; a minor one (`2.1.0`) adds without breaking; a patch (`2.0.1`) only fixes. The version is shared by the whole package, so an incompatible change in any of its modules means a major release. Every change is recorded in the [CHANGELOG](https://github.com/cruzlorite/bdns/blob/main/CHANGELOG.md), with incompatible ones marked.
+`bdns-tools` follows [semantic versioning](https://semver.org/): a major release (`3.0.0`) may break; a minor one (`2.1.0`) adds without breaking; a patch (`2.0.1`) only fixes. The version is shared by the whole package, so an incompatible change in any of its modules means a major release. Every change is recorded in the [CHANGELOG](https://github.com/cruzlorite/bdns-tools/blob/main/CHANGELOG.md), with incompatible ones marked.
 
 ## What is public in bdns.fetch
 
@@ -14,7 +14,7 @@ What does not change incompatibly without a major release:
 
 Everything else may change in any release: underscore names; the [`cli`][bdns.fetch.cli], [`options`][bdns.fetch.options], [`endpoints`][bdns.fetch.endpoints] and [`utils`][bdns.fetch.utils] modules (except [`RateLimiter`][bdns.fetch.utils.RateLimiter]); message texts and logs.
 
-**Records** are the API's own ([ADR 0004](fetch/adr/0004-records-as-plain-dicts.md)), so a field the API changes arrives changed without a new `bdns` release in between.
+**Records** are the API's own ([ADR 0004](fetch/adr/0004-records-as-plain-dicts.md)), so a field the API changes arrives changed without a new `bdns-tools` release in between.
 
 ## What is public in bdns.sync
 
@@ -27,7 +27,7 @@ Underscore names, messages and logs may change in any release.
 <a id="schema"></a>
 ### The schema only grows
 
-The target schema changes only by **adding nullable columns**, and each run adds on its own the columns a target created by an earlier version lacks ([ADR 0008](sync/adr/0008-run-linked-versions-additive-migrations.md)). No column is ever renamed, retyped or dropped: upgrading `bdns` needs no manual migration. A non-additive change would be a major release with migration instructions.
+The target schema changes only by **adding nullable columns**, and each run adds on its own the columns a target created by an earlier version lacks ([ADR 0008](sync/adr/0008-run-linked-versions-additive-migrations.md)). No column is ever renamed, retyped or dropped: upgrading `bdns-tools` needs no manual migration. A non-additive change would be a major release with migration instructions.
 
 Changing an entity's natural key or hash rules does not change the schema, but it does change the hashes: the next run re-versions the affected rows. Such changes are announced in the CHANGELOG.
 
@@ -38,7 +38,7 @@ The Python versions CI tests are supported (today, 3.11 to 3.14). Dropping one, 
 <a id="previous-names"></a>
 ## Previous names
 
-Up to `bdns-fetch` 1.3.0 and `bdns-sync` 0.5.0, the two tools were published on PyPI as separate packages. They now come together in `bdns`, with the same modules ([`bdns.fetch`](fetch/reference/api/index.md) and [`bdns.sync`](sync/reference/api/index.md)) and the same commands (`bdns-fetch` and `bdns-sync`), so upgrading only means installing `bdns` instead of the previous packages. Numbering continues `bdns-fetch`'s, so the first `bdns` release is 2.0.0.
+Up to `bdns-fetch` 1.3.0 and `bdns-sync` 0.5.0, the two tools were published on PyPI as separate packages. They now come together in `bdns-tools`, with the same modules ([`bdns.fetch`](fetch/reference/api/index.md) and [`bdns.sync`](sync/reference/api/index.md)) and the same commands (`bdns-fetch` and `bdns-sync`), so upgrading only means installing `bdns-tools` instead of the previous packages. Numbering continues `bdns-fetch`'s, so the first `bdns-tools` release is 2.0.0.
 
 ## How releases happen
 

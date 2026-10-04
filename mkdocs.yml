@@ -1,12 +1,12 @@
-site_name: BDNS
+site_name: BDNS Tools
 site_description: >-
   Herramientas para descargar, conservar y reutilizar los datos de la Base
   de Datos Nacional de Subvenciones (BDNS).
-site_url: https://cruzlorite.github.io/bdns/
-repo_url: https://github.com/cruzlorite/bdns
-repo_name: cruzlorite/bdns
+site_url: https://cruzlorite.github.io/bdns-tools/
+repo_url: https://github.com/cruzlorite/bdns-tools
+repo_name: cruzlorite/bdns-tools
 edit_uri: edit/main/docs/
-copyright: 'Licencia MIT · Proyecto no oficial, sin relación con la BDNS ni con el Ministerio de Hacienda · <a href="/bdns/legal/">Aviso legal</a>'
+copyright: 'Licencia MIT · Proyecto no oficial, sin relación con la BDNS ni con el Ministerio de Hacienda · <a href="/bdns-tools/legal/">Aviso legal</a>'
 
 theme:
   name: material
@@ -14,7 +14,7 @@ theme:
   favicon: assets/favicon.svg
   icon:
     repo: fontawesome/brands/github
-    logo: material/database-sync
+    logo: material/wrench
   features:
     # navigation.instant is deliberately absent: it is incompatible with
     # the i18n language switcher's contextual link.
@@ -113,7 +113,7 @@ plugins:
           site_description: >-
             Tools to download, keep and reuse the data of Spain's National
             Subsidies Database (BDNS).
-          copyright: 'MIT license · Unofficial project, not affiliated with the BDNS or Spain''s Ministerio de Hacienda · <a href="/bdns/en/legal/">Legal notice</a>'
+          copyright: 'MIT license · Unofficial project, not affiliated with the BDNS or Spain''s Ministerio de Hacienda · <a href="/bdns-tools/en/legal/">Legal notice</a>'
           # Merged by index into theme.palette: only the toggle labels change.
           theme:
             palette:

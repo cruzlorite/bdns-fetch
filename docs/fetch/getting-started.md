@@ -7,7 +7,7 @@ En cinco minutos vas a instalar el paquete, hacer una consulta desde la terminal
 Necesitas Python 3.11 o posterior (hasta la 3.14).
 
 ```console
-$ pip install bdns
+$ pip install bdns-tools
 $ bdns-fetch --version
 bdns-fetch 2.0.0
 ```

@@ -5,9 +5,9 @@ hide:
 
 <div class="bdns-hero" markdown>
 
-# BDNS
+# BDNS Tools
 
-<p class="bdns-tagline">Descarga, conserva y reutiliza los datos de la Base de Datos Nacional de Subvenciones a través de su API pública, sin tener que pelearte con ella.</p>
+<p class="bdns-tagline">Herramientas no oficiales para descargar, conservar y reutilizar los datos de la Base de Datos Nacional de Subvenciones a través de su API pública, sin tener que pelearte con ella.</p>
 
 [Empezar con bdns-fetch :octicons-arrow-right-24:](fetch/getting-started.md){ .md-button .md-button--primary }
 [Empezar con bdns-sync :octicons-arrow-right-24:](sync/getting-started.md){ .md-button }
@@ -15,7 +15,7 @@ hide:
 </div>
 
 ```console
-$ pip install bdns                # para BigQuery: pip install "bdns[bigquery]"
+$ pip install bdns-tools                # para BigQuery: pip install "bdns-tools[bigquery]"
 ```
 
 ## Dos herramientas, un paquete
@@ -61,6 +61,8 @@ $ pip install bdns                # para BigQuery: pip install "bdns[bigquery]"
     ---
 
     `bdns-sync` guarda cada versión de cada registro, incluido lo que el portal acaba retirando.
+
+    [:octicons-arrow-right-24: Por qué importa](sync/index.md#why-history)
 
 - :material-cog-off-outline:{ .lg .middle } **Sin configuración**
 

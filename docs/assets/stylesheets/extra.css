@@ -83,3 +83,65 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+/* How long the API keeps each kind of data (sync's overview). The axis is
+   relative, from --span years ago to today, so the chart never ages: each
+   bar ends today and is --years long. */
+.md-typeset .bdns-retention {
+  margin: 2em 0;
+  font-size: 0.75rem;
+}
+.md-typeset .bdns-retention__axis,
+.md-typeset .bdns-retention__row {
+  display: grid;
+  grid-template-columns: 11rem 1fr 9rem;
+  align-items: center;
+  column-gap: 1rem;
+}
+.md-typeset .bdns-retention__axis {
+  position: relative;
+  height: 1.6rem;
+  margin-bottom: 0.4rem;
+}
+.md-typeset .bdns-retention__axis > span {
+  position: absolute;
+  white-space: nowrap;
+  color: var(--md-default-fg-color--light);
+}
+/* Only the two ends are labelled: the oldest aligned with the start of the
+   bars' column, today with its end. */
+.md-typeset .bdns-retention__axis > span:first-child { left: 12rem; }
+.md-typeset .bdns-retention__today {
+  right: 10rem;
+  font-weight: 700;
+  color: var(--md-accent-fg-color) !important;
+}
+.md-typeset .bdns-retention__row {
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+}
+.md-typeset .bdns-retention__label { font-weight: 600; }
+.md-typeset .bdns-retention__note { color: var(--md-default-fg-color--light); }
+.md-typeset .bdns-retention__track {
+  position: relative;
+  height: 0.85rem;
+  border-radius: 0.45rem;
+  /* The hatched part is what the API no longer returns. */
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--md-default-fg-color--lightest) 0 4px,
+    transparent 4px 8px
+  );
+}
+.md-typeset .bdns-retention__bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: calc(100% * (var(--span) - var(--years)) / var(--span));
+  border-radius: 0.45rem;
+  background: var(--md-accent-fg-color);
+}
+@media screen and (max-width: 44em) {
+  .md-typeset .bdns-retention__axis { display: none; }
+  .md-typeset .bdns-retention__row { grid-template-columns: 1fr; row-gap: 0.3rem; }
+}

@@ -1,6 +1,6 @@
 # Hoja de ruta
 
-Esto es lo que queda por hacer, más o menos por orden de prioridad dentro de cada apartado. Lo que ya está hecho lo tienes en el [CHANGELOG](https://github.com/cruzlorite/bdns/blob/main/CHANGELOG.md), y los problemas de la propia API, en [qué hace bdns-sync con cada problema conocido de la API](sync/explanation/sync-behavior.md#api-issues).
+Esto es lo que queda por hacer, más o menos por orden de prioridad dentro de cada apartado. Lo que ya está hecho lo tienes en el [CHANGELOG](https://github.com/cruzlorite/bdns-tools/blob/main/CHANGELOG.md), y los problemas de la propia API, en [qué hace bdns-sync con cada problema conocido de la API](sync/explanation/sync-behavior.md#api-issues).
 
 <a id="dataset"></a>
 ## Un dataset anonimizado con todo el histórico

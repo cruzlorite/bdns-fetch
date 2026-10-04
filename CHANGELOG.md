@@ -5,20 +5,20 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 What counts as public, module by module, is in the
-[compatibility policy](https://cruzlorite.github.io/bdns/compatibility/).
+[compatibility policy](https://cruzlorite.github.io/bdns-tools/compatibility/).
 
 ## [Unreleased]
 
-Planned as 2.0.0. `bdns` brings bdns-fetch and bdns-sync together in one package
-([ADR 0001](https://cruzlorite.github.io/bdns/adr/0001-one-package/)): the imports (`bdns.fetch`,
+Planned as 2.0.0. `bdns-tools` brings bdns-fetch and bdns-sync together in one package
+([ADR 0001](https://cruzlorite.github.io/bdns-tools/adr/0001-one-package/)): the imports (`bdns.fetch`,
 `bdns.sync`) and the commands (`bdns-fetch`, `bdns-sync`) stay the same, but the package to install is
-now `bdns` (`pip install bdns`, or `pip install "bdns[bigquery]"`). Numbering continues bdns-fetch's.
+now `bdns-tools` (`pip install bdns-tools`, or `pip install "bdns-tools[bigquery]"`). Numbering continues bdns-fetch's.
 
 ### Changed
 
-- **Breaking.** One package, `bdns`, replaces `bdns-fetch` and `bdns-sync` on PyPI. The repository is now
-  [cruzlorite/bdns](https://github.com/cruzlorite/bdns), and both tools share one documentation site,
-  <https://cruzlorite.github.io/bdns/>.
+- **Breaking.** One package, `bdns-tools`, replaces `bdns-fetch` and `bdns-sync` on PyPI. The repository is now
+  [cruzlorite/bdns-tools](https://github.com/cruzlorite/bdns-tools), and both tools share one documentation site,
+  <https://cruzlorite.github.io/bdns-tools/>.
 - The Docker image (`ghcr.io/cruzlorite/bdns-sync`) is built with uv from the project's lock file.
 
 ### Added
@@ -202,7 +202,7 @@ Changes since bdns-sync 0.5.0.
 ## Before bdns
 
 bdns-fetch and bdns-sync were published as separate packages. bdns-sync's full changelog is kept at its last
-tag, [bdns-sync 0.5.0](https://github.com/cruzlorite/bdns/blob/bdns-sync-v0.5.0/packages/bdns-sync/CHANGELOG.md).
+tag, [bdns-sync 0.5.0](https://github.com/cruzlorite/bdns-tools/blob/bdns-sync-v0.5.0/packages/bdns-sync/CHANGELOG.md).
 bdns-fetch had no changelog; this summary is reconstructed from its tags and commit messages:
 
 - **1.3.0** (2026-07-04): `fechaRegInicio` / `fechaRegFin` on the search endpoints that support

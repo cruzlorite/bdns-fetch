@@ -1,12 +1,12 @@
-# Makefile for bdns.
+# Makefile for bdns-tools.
 
 .PHONY: help install test test-sync test-integration lint format check-docs docs clean all
 
 .DEFAULT_GOAL := help
 
 help: ## Show this help message
-	@echo "BDNS - Available Make Targets:"
-	@echo "=============================="
+	@echo "BDNS Tools - Available Make Targets:"
+	@echo "===================================="
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
 install: ## Install the package, its extras and the development tools

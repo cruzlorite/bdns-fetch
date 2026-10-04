@@ -2,9 +2,9 @@
 
 ## Qué es este proyecto
 
-`bdns` es un proyecto personal y no oficial. No tiene ninguna relación con la Intervención General de la Administración del Estado (IGAE), que es el organismo que gestiona la BDNS, ni cuenta con su apoyo.
+`bdns-tools` es un proyecto personal y no oficial. No tiene ninguna relación con la Intervención General de la Administración del Estado (IGAE), que es el organismo que gestiona la BDNS, ni cuenta con su apoyo.
 
-El código se distribuye con [licencia MIT](https://github.com/cruzlorite/bdns/blob/main/LICENSE), que excluye cualquier garantía: lo usas bajo tu responsabilidad, y el autor no responde de daños, pérdidas de datos ni usos indebidos.
+El código se distribuye con [licencia MIT](https://github.com/cruzlorite/bdns-tools/blob/main/LICENSE), que excluye cualquier garantía: lo usas bajo tu responsabilidad, y el autor no responde de daños, pérdidas de datos ni usos indebidos.
 
 ## De dónde vienen los datos y cómo puedes reutilizarlos
 
@@ -34,4 +34,4 @@ La web está alojada en GitHub Pages, y GitHub, como cualquier proveedor de aloj
 
 ## Contacto
 
-Para dudas o problemas, abre un [issue en GitHub](https://github.com/cruzlorite/bdns/issues). Si se trata de una vulnerabilidad, sigue la [política de seguridad](https://github.com/cruzlorite/bdns/blob/main/SECURITY.md).
+Para dudas o problemas, abre un [issue en GitHub](https://github.com/cruzlorite/bdns-tools/issues). Si se trata de una vulnerabilidad, sigue la [política de seguridad](https://github.com/cruzlorite/bdns-tools/blob/main/SECURITY.md).

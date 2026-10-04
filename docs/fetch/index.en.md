@@ -1,3 +1,7 @@
+---
+icon: material/cloud-download
+---
+
 # BDNS Fetch
 
 Python client and CLI for the API of Spain's [National Subsidies
@@ -6,7 +10,7 @@ endpoints, with pagination, retries and the API's rate limit applied by
 default.
 
 ```console
-$ pip install bdns
+$ pip install bdns-tools
 $ bdns-fetch convocatorias-busqueda --fechaDesde 2024-01-01 --num-pages 0 > convocatorias.jsonl
 ```
 

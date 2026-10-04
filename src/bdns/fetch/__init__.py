@@ -21,7 +21,7 @@ from bdns.fetch.types import (
 from bdns.fetch.utils import RateLimiter
 
 try:
-    __version__ = version("bdns")
+    __version__ = version("bdns-tools")
 except PackageNotFoundError:
     # Running from a source tree that was never installed.
     __version__ = "0.0.0+unknown"

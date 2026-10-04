@@ -86,11 +86,11 @@ DEFAULT_RATE_LIMITER = RateLimiter(rate=9.5)
 """Shared by every client that is not given its own limiter. The API allows 10 GET requests per second per IP and rejects bursts, so requests are spaced evenly, with a margin: 9.5 per second, one every ~105 ms."""
 
 try:
-    _VERSION = version("bdns")
+    _VERSION = version("bdns-tools")
 except PackageNotFoundError:
     _VERSION = "0.0.0+unknown"
 
-_USER_AGENT = f"bdns-fetch/{_VERSION} (+https://github.com/cruzlorite/bdns)"
+_USER_AGENT = f"bdns-fetch/{_VERSION} (+https://github.com/cruzlorite/bdns-tools)"
 
 Item = dict[str, Any]
 

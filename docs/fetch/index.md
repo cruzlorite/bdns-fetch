@@ -1,9 +1,13 @@
+---
+icon: material/cloud-download
+---
+
 # BDNS Fetch
 
 Cliente de Python y herramienta de línea de comandos para descargar datos de la API de la [Base de Datos Nacional de Subvenciones](https://www.infosubvenciones.es/) (BDNS). Cubre los 29 endpoints de consulta y se encarga por ti de la paginación, de los reintentos y del límite de peticiones que fija la API.
 
 ```console
-$ pip install bdns
+$ pip install bdns-tools
 $ bdns-fetch convocatorias-busqueda --fechaDesde 2024-01-01 --num-pages 0 > convocatorias.jsonl
 ```
 

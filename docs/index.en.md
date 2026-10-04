@@ -5,9 +5,9 @@ hide:
 
 <div class="bdns-hero" markdown>
 
-# BDNS
+# BDNS Tools
 
-<p class="bdns-tagline">Download, keep and reuse the data of Spain's National Subsidies Database through its public API, without having to fight it.</p>
+<p class="bdns-tagline">Unofficial tools to download, keep and reuse the data of Spain's National Subsidies Database through its public API, without having to fight it.</p>
 
 [Get started with bdns-fetch :octicons-arrow-right-24:](fetch/getting-started.md){ .md-button .md-button--primary }
 [Get started with bdns-sync :octicons-arrow-right-24:](sync/getting-started.md){ .md-button }
@@ -15,7 +15,7 @@ hide:
 </div>
 
 ```console
-$ pip install bdns                # for BigQuery: pip install "bdns[bigquery]"
+$ pip install bdns-tools                # for BigQuery: pip install "bdns-tools[bigquery]"
 ```
 
 ## Two tools, one package
@@ -61,6 +61,8 @@ $ pip install bdns                # for BigQuery: pip install "bdns[bigquery]"
     ---
 
     `bdns-sync` keeps every version of every record, including what the portal eventually withdraws.
+
+    [:octicons-arrow-right-24: Why it matters](sync/index.md#why-history)
 
 - :material-cog-off-outline:{ .lg .middle } **No configuration**
 

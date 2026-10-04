@@ -1,18 +1,16 @@
 name: Docs
 
-# The site documents the latest release, so it is deployed when a release
-# is tagged, not on every push to main (which may hold unreleased changes).
-# workflow_dispatch republishes it by hand, e.g. after a docs-only fix.
+# The site documents the latest release, so publish.yml deploys it once a
+# release has reached PyPI, never on a push to main (which may hold
+# unreleased changes). workflow_dispatch republishes it by hand: run it from
+# the release tag, or from main for a documentation-only fix when main holds
+# nothing unreleased.
 on:
-  push:
-    tags: ["v*"]
+  workflow_call:
   workflow_dispatch:
 
-# One deployment at a time. A newer push queues behind the one in flight
-# rather than cancelling it halfway through publishing.
-concurrency:
-  group: pages
-  cancel-in-progress: false
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -41,6 +39,11 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # One deployment at a time. A newer one queues behind the one in flight
+    # rather than cancelling it halfway through publishing.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     permissions:
       pages: write
       id-token: write  # OIDC token for the Pages deployment; no stored secret

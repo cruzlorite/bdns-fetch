@@ -53,6 +53,9 @@ branch, to catch a break before it is released.
 
 ## How releases happen
 
-A `vX.Y.Z` tag on the main branch publishes to PyPI and the image to
-`ghcr.io`, provided it matches the version in `pyproject.toml`. There is
+A `vX.Y.Z` tag on the main branch releases that version, provided it
+matches the version in `pyproject.toml`, the CHANGELOG has its section
+and the tests pass. PyPI goes first. Only if that succeeds are the image
+pushed to `ghcr.io` and the GitHub release created, with the CHANGELOG
+notes and the same files PyPI received, and this site updated. There is
 no other way to publish.

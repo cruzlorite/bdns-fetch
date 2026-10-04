@@ -11,6 +11,7 @@ Planned as 0.6.0, on bdns-fetch 2.0.
 
 ### Added
 
+- Each release gets a GitHub release, with its changelog section as notes and the same files published to PyPI.
 - `bdns-sync delta`: the daily run as one command. It checks the API's date semantics (and syncs nothing if they
   changed), syncs every full entity, then every windowed one with the window the cadence picks: annual on 1 January,
   1 May and 1 September, monthly on Mondays, weekly otherwise. One entity failing does not stop the others; the exit

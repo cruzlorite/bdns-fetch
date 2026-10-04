@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -102,3 +102,16 @@ jobs:
 
       - name: Test
         run: poetry run pytest --no-cov
+
+  # The image is otherwise built only on release, when a broken Dockerfile
+  # would be found with the version already on PyPI.
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+
+      - name: Build the image
+        run: docker build -t bdns-sync:ci .
+
+      - name: Check the image runs
+        run: docker run --rm bdns-sync:ci bdns-sync --version

@@ -19,60 +19,33 @@ Son ficheros Parquet, uno por tabla, que puedes abrir con DuckDB, pandas, R o cu
 | `minimis_entidades` | Ayudas de minimis a personas jurídicas y entidades públicas | Una fila por ayuda |
 | `concesiones_personas` | Concesiones a personas físicas | Un resumen por convocatoria |
 
-Por ejemplo, para ver qué órganos han concedido más a empresas y entidades basta con consultar el fichero directamente (los datos son inventados):
-
-```console
-$ duckdb -c "
-    SELECT nivel3 AS organo, count(*) AS concesiones, sum(importe) AS importe
-    FROM 'concesiones_entidades.parquet'
-    GROUP BY organo
-    ORDER BY importe DESC
-    LIMIT 3"
-┌─────────────────────────────┬─────────────┬───────────────┐
-│           organo            │ concesiones │    importe    │
-│           varchar           │    int64    │ decimal(38,2) │
-├─────────────────────────────┼─────────────┼───────────────┤
-│ CONSEJERÍA DE AGRICULTURA   │           3 │     145000.00 │
-│ CONSEJERÍA DE EDUCACIÓN     │           1 │      90000.00 │
-│ SERVICIO REGIONAL DE EMPLEO │           3 │      28000.00 │
-└─────────────────────────────┴─────────────┴───────────────┘
-```
-
-## Por dónde empezar
+Las empresas y entidades públicas aparecen registro a registro, con su NIF y su nombre, mientras que de las personas físicas solo se publican resúmenes por convocatoria que no permiten identificar a nadie.
 
 <div class="grid cards" markdown>
 
-- :material-rocket-launch:{ .lg .middle } **Es la primera vez**
+- :material-table:{ .lg .middle } **Qué contiene**
 
     ---
 
-    Genera el dataset a partir de tu copia de `bdns-sync` y haz tu primera consulta.
+    Las tablas, sus columnas y lo que conviene saber para leerlas bien.
 
-    [:octicons-arrow-right-24: Primeros pasos](getting-started.md)
+    [:octicons-arrow-right-24: Contenido](contents.md)
 
-- :material-magnify:{ .lg .middle } **Quiero analizar los datos**
-
-    ---
-
-    Consultas de ejemplo con DuckDB y pandas, y cómo leer los resúmenes de las personas físicas.
-
-    [:octicons-arrow-right-24: Guías](guides/queries.md)
-
-- :material-shield-account:{ .lg .middle } **Quiero saber cómo se protege a las personas**
+- :material-shield-account:{ .lg .middle } **Cómo se protege a las personas**
 
     ---
 
-    Qué beneficiarios se protegen, qué se publica de ellos y qué se comprueba antes de escribir nada.
+    Qué beneficiarios se protegen, qué se publica de ellos y qué se comprueba antes de publicar.
 
-    [:octicons-arrow-right-24: Conceptos](explanation/anonymisation.md)
+    [:octicons-arrow-right-24: Anonimización](privacy.md)
 
-- :material-code-braces:{ .lg .middle } **Busco un detalle concreto**
+- :material-cog:{ .lg .middle } **Cómo se genera**
 
     ---
 
-    Todas las tablas y sus columnas, y los pasos de la generación.
+    Cómo generar el dataset a partir de tu copia de `bdns-sync`, con la línea de comandos de DuckDB.
 
-    [:octicons-arrow-right-24: Referencia](reference/tables.md)
+    [:octicons-arrow-right-24: Generación](build.md)
 
 </div>
 

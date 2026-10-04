@@ -1,6 +1,6 @@
 # How natural persons are protected
 
-The dataset holds no personal data. It may identify companies and public bodies, but never a natural person, and this page explains how, with examples. The why, with the legal framework and the alternatives that were turned down, is in the [design decision](../../adr/0020-anonymised-dataset.md).
+The dataset holds no personal data. It may identify companies and public bodies, but never a natural person, and this page explains how, with examples. The why, with the legal framework and the alternatives that were turned down, is in the [design decision](../adr/0020-anonymised-dataset.md).
 
 <a id="who"></a>
 ## Which beneficiaries are protected
@@ -63,7 +63,7 @@ With it you can tell how much the call gave out, what a typical award was and wh
 
 **Each person counts once.** A person is recognised by their BDNS identifier or, where it is missing, by the whole `beneficiario` field, and neither leaves the private file.
 
-Every statistic covers every award in its row, and no other table summarises the same awards, so nothing can be learnt by subtracting one from the other. The thresholds are defined once, in the SQL, and the [reference](../reference/build.md#thresholds) gives their values.
+Every statistic covers every award in its row, and no other table summarises the same awards, so nothing can be learnt by subtracting one from the other. The thresholds are defined once, in the SQL, and [how it is built](build.md#thresholds) gives their values.
 
 <a id="checks"></a>
 ## What is checked before publishing
@@ -75,7 +75,7 @@ Before writing any file, the build checks what it is about to publish and **stop
 - a column that identifies someone in the summary, such as `beneficiario`, `id_persona`, `url_br` or `cod_concesion`;
 - a summary row with fewer than 10 people, or with the 10th or 90th percentiles and fewer than 20.
 
-It reports what it finds without cleaning it up, because such a finding points to a fault in an earlier step, and quietly cleaning it would hide it behind a dataset that looks right. Each check's message is in the [reference](../reference/build.md#checks).
+It reports what it finds without cleaning it up, because such a finding points to a fault in an earlier step, and quietly cleaning it would hide it behind a dataset that looks right. Each check's message is in [how it is built](build.md#checks).
 
 ## What the dataset does not allow
 

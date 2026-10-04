@@ -1,6 +1,6 @@
 # Cómo se protege a las personas físicas
 
-El dataset no contiene ningún dato personal. Puede identificar a empresas y entidades públicas, pero nunca a una persona física, y en esta página se explica cómo se consigue, con ejemplos. El porqué, con el marco legal y las alternativas que se descartaron, está en la [decisión de diseño](../../adr/0020-anonymised-dataset.md).
+El dataset no contiene ningún dato personal. Puede identificar a empresas y entidades públicas, pero nunca a una persona física, y en esta página se explica cómo se consigue, con ejemplos. El porqué, con el marco legal y las alternativas que se descartaron, está en la [decisión de diseño](../adr/0020-anonymised-dataset.md).
 
 <a id="who"></a>
 ## Qué beneficiarios se protegen
@@ -63,7 +63,7 @@ Con ella puedes saber cuánto repartió la convocatoria, cuánto fue una concesi
 
 **Cada persona cuenta una vez.** Se reconoce por su identificador en la BDNS o, si falta, por el campo `beneficiario` completo, y ninguno de los dos sale del fichero privado.
 
-Cada estadística cubre todas las concesiones de su fila, y ninguna otra tabla resume las mismas concesiones, así que no se puede averiguar nada restando una cosa de otra. Los umbrales están definidos una sola vez, en el SQL, y en la [referencia](../reference/build.md#thresholds) tienes sus valores.
+Cada estadística cubre todas las concesiones de su fila, y ninguna otra tabla resume las mismas concesiones, así que no se puede averiguar nada restando una cosa de otra. Los umbrales están definidos una sola vez, en el SQL, y sus valores están en [cómo se genera](build.md#thresholds).
 
 <a id="checks"></a>
 ## Lo que se comprueba antes de publicar
@@ -75,7 +75,7 @@ Antes de escribir ningún fichero, la generación revisa lo que va a publicar y 
 - una columna que identifica a alguien en el resumen, como `beneficiario`, `id_persona`, `url_br` o `cod_concesion`;
 - una fila del resumen con menos de 10 personas, o con los percentiles 10 o 90 y menos de 20.
 
-Lo que encuentra lo señala sin limpiarlo, porque un hallazgo así indica un error en un paso anterior, y limpiarlo sin avisar lo dejaría escondido detrás de un dataset que parece correcto. Los mensajes de cada control están en la [referencia](../reference/build.md#checks).
+Lo que encuentra lo señala sin limpiarlo, porque un hallazgo así indica un error en un paso anterior, y limpiarlo sin avisar lo dejaría escondido detrás de un dataset que parece correcto. Los mensajes de cada control están en [cómo se genera](build.md#checks).
 
 ## Lo que el dataset no permite
 

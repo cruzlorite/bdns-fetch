@@ -19,60 +19,33 @@ It is a set of Parquet files, one per table, that DuckDB, pandas, R or any other
 | `minimis_entidades` | De minimis aid to legal persons and public bodies | One row per aid |
 | `concesiones_personas` | Awards to natural persons | One summary per call |
 
-The table and column names are in Spanish, like the BDNS data itself. For example, to see which bodies awarded the most to companies and organisations, query the file directly (the data is made up):
-
-```console
-$ duckdb -c "
-    SELECT nivel3 AS organo, count(*) AS concesiones, sum(importe) AS importe
-    FROM 'concesiones_entidades.parquet'
-    GROUP BY organo
-    ORDER BY importe DESC
-    LIMIT 3"
-┌─────────────────────────────┬─────────────┬───────────────┐
-│           organo            │ concesiones │    importe    │
-│           varchar           │    int64    │ decimal(38,2) │
-├─────────────────────────────┼─────────────┼───────────────┤
-│ CONSEJERÍA DE AGRICULTURA   │           3 │     145000.00 │
-│ CONSEJERÍA DE EDUCACIÓN     │           1 │      90000.00 │
-│ SERVICIO REGIONAL DE EMPLEO │           3 │      28000.00 │
-└─────────────────────────────┴─────────────┴───────────────┘
-```
-
-## Where to start
+Companies and public bodies appear record by record, with their tax ID and name, while for natural persons only per-call summaries are published, which identify no one.
 
 <div class="grid cards" markdown>
 
-- :material-rocket-launch:{ .lg .middle } **First time here**
+- :material-table:{ .lg .middle } **What it contains**
 
     ---
 
-    Build the dataset from your `bdns-sync` copy and run your first query.
+    The tables, their columns and what is worth knowing to read them right.
 
-    [:octicons-arrow-right-24: Get started](getting-started.md)
+    [:octicons-arrow-right-24: Contents](contents.md)
 
-- :material-magnify:{ .lg .middle } **I want to analyse the data**
-
-    ---
-
-    Example queries with DuckDB and pandas, and how to read the natural-person summaries.
-
-    [:octicons-arrow-right-24: How-to guides](guides/queries.md)
-
-- :material-shield-account:{ .lg .middle } **I want to know how people are protected**
+- :material-shield-account:{ .lg .middle } **How people are protected**
 
     ---
 
-    Which beneficiaries are protected, what is published about them and what is checked before anything is written.
+    Which beneficiaries are protected, what is published about them and what is checked before publishing.
 
-    [:octicons-arrow-right-24: Explanation](explanation/anonymisation.md)
+    [:octicons-arrow-right-24: Anonymisation](privacy.md)
 
-- :material-code-braces:{ .lg .middle } **I am looking for a detail**
+- :material-cog:{ .lg .middle } **How it is built**
 
     ---
 
-    Every table and its columns, and the build steps.
+    How to build the dataset from your `bdns-sync` copy, with the DuckDB command line.
 
-    [:octicons-arrow-right-24: Reference](reference/tables.md)
+    [:octicons-arrow-right-24: Build](build.md)
 
 </div>
 

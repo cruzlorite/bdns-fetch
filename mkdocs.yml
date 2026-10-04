@@ -134,6 +134,9 @@ plugins:
             Referencia: Reference
             API Python: Python API
             Decisiones de diseño: Design decisions
+            Contenido: Contents
+            Anonimización: Anonymisation
+            Generación: Build
             Cómo contribuir: Contributing
             Compatibilidad: Compatibility
             Hoja de ruta: Roadmap
@@ -254,11 +257,6 @@ nav:
               - sync/reference/api/sinks.sql.dialects.md
   - BDNS Dataset:
       - dataset/index.md
-      - Primeros pasos: dataset/getting-started.md
-      - Guías:
-          - dataset/guides/queries.md
-      - Conceptos:
-          - dataset/explanation/anonymisation.md
-      - Referencia:
-          - dataset/reference/tables.md
-          - dataset/reference/build.md
+      - Contenido: dataset/contents.md
+      - Anonimización: dataset/privacy.md
+      - Generación: dataset/build.md

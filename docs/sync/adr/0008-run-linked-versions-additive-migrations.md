@@ -1,48 +1,25 @@
-# 0008. Versiones enlazadas a su ejecución, y migraciones solo aditivas
+# 0008. Cada versión sabe qué ejecución la creó, y el esquema solo crece
 
 **Estado:** aceptada · **Fecha:** 2026-10-03
 
 ## Contexto
 
-Quien consulta un histórico SCD2 hace preguntas que el esquema tiene que
-poder contestar sin adivinar:
+Quien consulta un histórico SCD2 se hace preguntas que el esquema tiene que poder responder sin adivinar:
 
-- ¿Qué cambió en la ejecución de ayer? Con solo `_valid_from` se
-  aproxima por fecha, y dos ejecuciones el mismo día se confunden.
-- ¿Este registro se dio de baja, o cambió? Una versión cerrada por un
-  cambio y otra cerrada porque el registro desapareció quedan iguales; la
-  diferencia solo se deduce buscando si existe una versión posterior.
-- ¿Qué rango cubrió cada ejecución por ventana? Sin el rango en el
-  registro de ejecuciones, no se puede auditar si falta algún tramo del
-  histórico.
+- ¿Qué cambió en la ejecución de ayer? Con `_valid_from` solo se puede aproximar por la fecha, y dos ejecuciones del mismo día se confunden.
+- ¿Este registro se dio de baja o cambió? Una versión cerrada por un cambio y otra cerrada porque el registro desapareció quedan exactamente igual, y la diferencia solo se puede deducir buscando si hay una versión posterior.
+- ¿Qué periodo cubrió cada ejecución incremental? Si el periodo no queda anotado, no hay forma de comprobar si falta algún trozo del histórico.
 
-Añadir columnas a destinos ya en producción, algunos con decenas de
-millones de filas en BigQuery, exige una migración. Una herramienta de
-migraciones completa (versiones, scripts de subida y bajada) es mucho
-para un esquema que cambia rara vez, y renombrar o cambiar tipos de
-columnas en BigQuery es caro y arriesgado.
+Añadir columnas a bases de datos que ya están en producción, algunas con decenas de millones de filas en BigQuery, exige migrarlas. Una herramienta de migraciones completa (con versiones y scripts para subir y bajar) es demasiado para un esquema que cambia muy de vez en cuando, y en BigQuery renombrar columnas o cambiar su tipo es caro y arriesgado.
 
 ## Decisión
 
-Cada versión registra la ejecución que la creó (`_created_run_id`) y, al
-cerrarse, la que la cerró y por qué (`_closed_run_id`, `_closed_reason`:
-`superseded` si la sustituye un payload distinto, `removed` si la fuente
-dejó de servir la clave). `_sync_runs` registra también las claves
-cambiadas y sin cambios (`rows_changed`, `rows_unchanged`) y el rango de
-una ejecución por ventana (`window_start`, `window_end`).
+Cada versión anota qué ejecución la creó (`_created_run_id`) y, cuando se cierra, qué ejecución la cerró y por qué (`_closed_run_id` y `_closed_reason`, que vale `superseded` si la sustituye un contenido distinto y `removed` si la API ha dejado de devolver la clave). `_sync_runs` anota además cuántas claves cambiaron y cuántas no (`rows_changed`, `rows_unchanged`) y, en las ejecuciones incrementales, el periodo que cubrieron (`window_start`, `window_end`).
 
-El esquema **solo crece, y solo con columnas que admiten nulos**. Al
-empezar cada ejecución,
-[`add_missing_columns`][bdns.sync.sinks.sql.migrate.add_missing_columns]
-añade a las tablas existentes las columnas que les falten. Nunca se
-renombra, se cambia de tipo ni se borra una columna.
+El esquema **solo crece, y siempre con columnas que admiten valores nulos**. Al empezar cada ejecución, [`add_missing_columns`][bdns.sync.sinks.sql.migrate.add_missing_columns] añade a las tablas existentes las columnas que les falten. Nunca se renombra una columna, se le cambia el tipo ni se borra.
 
 ## Consecuencias
 
-- "Qué cambió en la ejecución X" y "qué se dio de baja" son consultas
-  directas.
-- Un destino escrito por una versión anterior se actualiza solo; las
-  filas anteriores tienen `NULL` en las columnas nuevas.
-- Un cambio de esquema que no sea aditivo no cabe en este mecanismo: si
-  alguna vez hace falta, será una versión mayor con instrucciones de
-  migración.
+- «Qué cambió en la ejecución X» y «qué se ha dado de baja» se responden con una consulta directa.
+- Una base de datos creada con una versión anterior se actualiza sola, y las filas que ya había tienen `NULL` en las columnas nuevas.
+- Un cambio de esquema que no consista en añadir columnas no cabe en este mecanismo. Si algún día hace falta, será en una versión mayor y con instrucciones para migrar.

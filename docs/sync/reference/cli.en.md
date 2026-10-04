@@ -1,4 +1,4 @@
-# CLI
+# Command line
 
 No configuration file: everything is an option, each with its
 environment variable for unattended use.
@@ -26,6 +26,7 @@ through the same code path as a real run.
 | `--target-url` | `BDNS_SYNC_TARGET_URL` | *required* | SQLAlchemy URL of the target |
 | `--max-retries` | `BDNS_SYNC_MAX_RETRIES` | `5` | Retries per request on transient API failures |
 | `--wait-time` | `BDNS_SYNC_WAIT_TIME` | `10` | Initial wait between retries (s); doubles, up to 60 |
+| `--max-workers` | `BDNS_SYNC_MAX_WORKERS` | `1` | Concurrent calls (pages and details). The official good practices ask for one; more only go faster |
 | `--rate-limit` | `BDNS_SYNC_RATE_LIMIT` | `9.5` | Requests per second (at most 10). The limit is per IP |
 | `--max-reject-ratio` | | `0.10` | Share of a batch that may be unusable before it is refused |
 | `--max-rejects` | | no cap | Absolute cap on unusable records, whatever the share |

@@ -1,39 +1,25 @@
-# 0002. Staging más diff en bloque, nunca bucle por fila
+# 0002. Staging y comparación en bloque, nunca fila a fila
 
-**Estado:** aceptada · **Fecha:** 2026-07-08 (anterior al historial registrado)
+**Estado:** aceptada · **Fecha:** 2026-07-08 (anterior al primer commit del repositorio)
 
 ## Contexto
 
-Aplicar SCD2 a un lote necesita cuatro operaciones: insertar claves
-nuevas, cerrar versiones cuyo hash cambió, refrescar las que no cambiaron
-y cerrar las ausentes.
+Aplicar SCD2 a un lote requiere cuatro operaciones: insertar las claves nuevas, cerrar las versiones cuyo hash ha cambiado, actualizar las que no han cambiado y cerrar las que han desaparecido.
 
-La forma directa es un bucle: por cada registro, consultar su versión
-vigente y decidir. `concesiones_busqueda` pasa de 20 millones de filas.
+Lo más directo sería un bucle que, para cada registro, consultara su versión vigente y decidiera qué hacer. Pero `concesiones_busqueda` tiene más de 20 millones de filas.
 
-En BigQuery cada sentencia DML paga latencia y coste por sentencia,
-independientemente de cuántas filas toque. Un bucle de miles de UPDATE de
-una fila no escala ahí de ninguna manera.
+Y en BigQuery cada sentencia DML tiene una latencia y un coste fijos, toque las filas que toque, así que un bucle de miles de `UPDATE` de una sola fila no es viable de ninguna manera.
 
 ## Decisión
 
-Cargar el lote en una tabla de staging y aplicar el diff con un **número
-fijo de sentencias en bloque**, sea el lote de 20 filas o de 2 millones.
+El lote se carga en una tabla de staging y la comparación se hace con un **número fijo de sentencias en bloque**, tenga el lote 20 filas o 2 millones.
 
-Solo SQL portable: subconsultas `EXISTS`/`NOT EXISTS` correlacionadas, sin
-`UPDATE...FROM` ni `MERGE` específicos de motor. El mismo camino de código
-corre sin cambios en SQLite, PostgreSQL y BigQuery.
+Solo se usa SQL portable (subconsultas `EXISTS` y `NOT EXISTS` correlacionadas, sin `UPDATE ... FROM` ni `MERGE`, que dependen de cada motor), así que el mismo código funciona sin cambios en SQLite, PostgreSQL y BigQuery.
 
 ## Consecuencias
 
-- El coste en sentencias es constante respecto al tamaño del lote.
-- Los contadores hay que calcularlos **antes** de escribir: cada
-  sentencia cambia lo que la siguiente habría contado.
-- Hace falta una tabla de staging por endpoint, que se vacía al principio
-  y al final de cada ejecución.
-- Las diferencias entre motores se concentran en adaptadores
-  ([`sinks.sql.dialects`][bdns.sync.sinks.sql.dialects]); nada fuera de ahí ramifica por nombre de
-  dialecto.
-- Un destino sin conexión ni UPDATE ni transacción (Parquet, Delta) no
-  encaja en este diseño. Sería otra implementación de [`Sink`][bdns.sync.sinks.Sink], no un
-  adaptador.
+- El número de sentencias no depende del tamaño del lote.
+- Los contadores hay que calcularlos **antes** de escribir, porque cada sentencia cambia lo que contaría la siguiente.
+- Hace falta una tabla de staging por entidad, que se vacía al principio y al final de cada ejecución.
+- Las diferencias entre motores están aisladas en sus adaptadores ([`sinks.sql.dialects`][bdns.sync.sinks.sql.dialects]); fuera de ahí, nada depende del nombre del motor.
+- Un destino sin conexión, sin `UPDATE` y sin transacciones (Parquet o Delta, por ejemplo) no encaja en este diseño. Sería otra implementación de [`Sink`][bdns.sync.sinks.Sink], no un adaptador más.

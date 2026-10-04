@@ -77,3 +77,7 @@ versions are never deleted — history is append-only.
 | `payload` | The record exactly as the API returned it |
 | `_created_run_id` / `_closed_run_id` | The run that wrote the version and the one that closed it |
 | `_closed_reason` | Why it was closed: `superseded` or `removed` |
+
+## Notice
+
+A personal, unofficial project with no relationship to the Intervención General de la Administración del Estado (IGAE), which runs the BDNS. Several tables hold names and tax IDs of natural persons, and their reuse is limited by the IGAE's conditions, summarised in the [README's legal notice](https://github.com/cruzlorite/bdns-sync/blob/main/README.en.md#legal-notice).

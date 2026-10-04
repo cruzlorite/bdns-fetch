@@ -62,11 +62,18 @@ How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md). Vulnerabilities: [SECURIT
 
 ## Legal notice
 
-Unofficial project, not affiliated with the Base de Datos Nacional de Subvenciones (BDNS) or Spain's Ministerio de Hacienda. Distributed under the MIT license, which expressly disclaims any warranty: use is at your own risk, with no warranty of any kind and no liability accepted by the author for damages, data loss, or misuse.
+This is a personal, unofficial project. It has no relationship with the Intervención General de la Administración del Estado (IGAE), the body that runs the BDNS, and is not endorsed by it. It is distributed under the MIT license, which excludes any warranty: you use it at your own risk and the author is not liable for damages, data loss or misuse.
 
-The synced data comes from the [Sistema Nacional de Publicidad de Subvenciones y Ayudas Públicas](https://www.infosubvenciones.es) and is subject to its own [legal notice](https://www.infosubvenciones.es/bdnstrans/GE/es/avisolegal) and to the [API good-practices document](https://www.infosubvenciones.es/bdnstrans/estaticos/ayuda/Buenas%20pr%C3%A1cticas%20API%20SNPSAP.pdf).
+The synced data comes from the [Sistema Nacional de Publicidad de Subvenciones y Ayudas Públicas](https://www.infosubvenciones.es), and reusing it is subject to the [portal's legal notice](https://www.infosubvenciones.es/bdnstrans/GE/es/avisolegal) and its [API good practices](https://www.infosubvenciones.es/bdnstrans/estaticos/ayuda/Buenas%20pr%C3%A1cticas%20API%20SNPSAP.pdf). In short, if you reuse the data:
 
-**Personal data.** Several tables (`concesiones_busqueda`, `sanciones_busqueda`, among others) hold names and tax IDs of natural persons, and the SCD2 history keeps them even after the source withdraws them. `bdns-sync` stores them exactly as the API publishes them. Whoever operates the target database is responsible for processing them in accordance with the GDPR: purpose, retention period and access control.
+- cite the source (for example, "Origen de los datos: Intervención General de la Administración del Estado") and the date of the last update when the data carries it;
+- do not change the meaning of the information;
+- do not suggest that the IGAE takes part in, sponsors or supports your reuse;
+- personal data may only be reused to scrutinise the actions of public officials, or for historical, statistical or scientific purposes, in which case you must dissociate it first and state that you did and who did it.
+
+This summary does not replace the official text or [Law 37/2007 on the reuse of public sector information](https://www.boe.es/eli/es/l/2007/11/16/37/con), which provides for penalties. If in doubt, ask a legal adviser.
+
+**Personal data.** Several tables (`concesiones_busqueda` or `sanciones_busqueda`, among others) hold names and tax IDs of natural persons, which the BDNS publishes partially anonymised. Keep in mind that the history **keeps them after the portal withdraws them**: awards to natural persons, for instance, are only published during the year of the award and the next. Whoever operates the target database is responsible for processing that data under the GDPR (a legitimate purpose, a retention period and access control) and the conditions above.
 
 ## License and links
 

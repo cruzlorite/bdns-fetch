@@ -1,10 +1,10 @@
-# Empezar
+# Primeros pasos
 
-De cero a una tabla sincronizada y consultable. Unos diez minutos, sin
-cuenta en la nube ni base de datos que instalar: se usa SQLite, que es un
-fichero.
+En unos diez minutos vas a tener una tabla sincronizada que puedes consultar, sin cuenta en la nube y sin instalar ninguna base de datos, porque usaremos SQLite, que es un simple fichero.
 
-## 1. Instalar
+## 1. Instalación
+
+Necesitas Python 3.11 o posterior (hasta la 3.14).
 
 ```console
 $ pip install bdns-sync
@@ -12,37 +12,34 @@ $ bdns-sync --version
 bdns-sync 0.6.0
 ```
 
-## 2. Elegir un destino
+## 2. Elegir dónde se guardan los datos
 
-El destino se pasa como URL de SQLAlchemy. Aquí, un fichero local:
+La base de datos de destino se indica con una URL de SQLAlchemy. Para empezar, un fichero local:
 
 ```console
 $ export BDNS_SYNC_TARGET_URL=sqlite:///bdns.db
 ```
 
-Todos los comandos leen esa variable, así que no hay que repetirla. También
-se puede pasar con `--target-url`.
+Todos los comandos leen esa variable, así que no tienes que repetirla en cada uno. Si lo prefieres, también puedes pasarla con `--target-url`.
 
 ## 3. Sincronizar algo pequeño
 
-`sectores` es un catálogo: unas pocas decenas de filas, una sola llamada.
-Buen primer paso porque termina en segundos.
+`sectores` es un catálogo de unas pocas decenas de filas que se descarga con una sola llamada, así que tarda unos segundos y es un buen punto de partida.
 
 ```console
 $ bdns-sync sync sectores
 ```
 
-Ya hay datos. Para mirarlos basta con Python, que ya tienes:
+Ya tienes datos. Para verlos te basta con Python:
 
 ```console
 $ python -c "import sqlite3; print(sqlite3.connect('bdns.db').execute('SELECT COUNT(*) FROM sectores').fetchone()[0])"
 24
 ```
 
-## 4. Mirar cómo se han guardado
+## 4. Ver cómo se han guardado
 
-La tabla no tiene una columna por campo. El registro se guarda entero en
-`payload`, y el resto son metadatos de versionado:
+La tabla no tiene una columna por cada campo: el registro se guarda entero en `payload`, y el resto de columnas sirven para llevar el control de las versiones.
 
 ```python
 import sqlite3
@@ -59,18 +56,17 @@ for key, current, payload in db.execute(
 [11] 1 {"descripcion": "Plátanos (parte XI)", "id": 11}
 ```
 
-Por qué es así, y qué se gana, está en
-[el modelo de datos](reference/data-model.md).
+Por qué se guarda así y qué se gana con ello lo explicamos en [el modelo de datos](reference/data-model.md).
 
 ## 5. Volver a sincronizar
 
-Lanza exactamente el mismo comando otra vez:
+Lanza otra vez exactamente el mismo comando:
 
 ```console
 $ bdns-sync sync sectores
 ```
 
-Compara los contadores. La primera vez:
+Y compara lo que muestra cada vez. La primera:
 
 ```text
 ok      sectores                         fetched=24 new=24 changed=0 unchanged=0 removed=0 skipped=0
@@ -82,18 +78,13 @@ La segunda:
 ok      sectores                         fetched=24 new=0 changed=0 unchanged=24 removed=0 skipped=0
 ```
 
-Todo cayó en `unchanged`: los registros se volvieron a ver y no habían
-cambiado, así que **no se creó ninguna versión nueva**. Solo se refrescó
-la marca de última visita.
+Todo ha caído en `unchanged`: los registros se han vuelto a ver y no habían cambiado, así que **no se ha creado ninguna versión nueva**; solo se ha actualizado la fecha en que se vieron por última vez.
 
-Esa es la idea central de la herramienta. Qué cuenta como un cambio, y
-qué no, se explica en
-[qué se guarda y qué cuenta como un cambio](explanation/payload-policy.md).
+Esa es la idea central de la herramienta. Qué cuenta como un cambio y qué no lo explicamos en [qué se guarda y qué cuenta como un cambio](explanation/payload-policy.md).
 
-## 6. Un endpoint incremental
+## 6. Una entidad incremental
 
-Los grandes no se sincronizan enteros: se piden por rango de fecha de
-registro. Antes de lanzarlo, mira qué haría:
+Las entidades grandes no se descargan enteras, sino por fecha de registro. Antes de lanzar una, mira qué haría:
 
 ```console
 $ bdns-sync sync concesiones_busqueda --window daily --dry-run
@@ -105,19 +96,17 @@ limits      max_ratio=10% max_count=none min_to_enforce_ratio=5
 dry run     nothing fetched, nothing written
 ```
 
-`--dry-run` resuelve el rango, la política y los límites, los imprime y
-para. No toca ni la API ni el destino. Quítalo para lanzarlo de verdad:
+Con `--dry-run` calcula el periodo, las reglas y los límites, te los muestra y se detiene sin tocar la API ni la base de datos. Quítalo para lanzarlo de verdad:
 
 ```console
 $ bdns-sync sync concesiones_busqueda --window daily
 ```
 
-`daily` pide el día de ayer. Hoy no, porque hoy todavía está recibiendo
-altas y quedaría un día a medias que nada revisa después.
+`daily` pide el día de ayer. El de hoy no, porque todavía está recibiendo altas y quedaría un día a medias que nadie volvería a revisar.
 
 ## 7. Ver el registro de ejecuciones
 
-Cada ejecución queda anotada en el destino, junto a los datos:
+Cada ejecución queda anotada en la propia base de datos, junto a los datos:
 
 ```python
 for row in db.execute(
@@ -134,14 +123,11 @@ for row in db.execute(
 (1788734171434519, 'sectores', 'full', 'started', None)
 ```
 
-Dos filas por ejecución: un `started` y un `success`. Si alguna vez
-ves un `started` suelto, ese proceso murió a mitad — es exactamente la
-información que un campo de estado mutable no podría darte.
+Cada ejecución deja dos filas, una `started` y una `success`. Si alguna vez ves un `started` sin su `success`, ese proceso se quedó a medias, y eso es algo que no podrías saber si cada ejecución tuviera un único estado que se va actualizando.
 
 ## 8. Todo de una vez
 
-En producción no se lanza entidad a entidad: un solo comando sincroniza
-las 22, con la ventana que toca cada día. Mira qué haría hoy:
+En producción no se sincroniza entidad a entidad, sino con un solo comando que se encarga de las 22, cada día con el periodo que toque. Mira qué haría hoy:
 
 ```console
 $ bdns-sync delta --dry-run
@@ -155,9 +141,9 @@ limits      max_ratio=10% max_count=none min_to_enforce_ratio=5
 dry run     22 sync(s) planned; nothing fetched, nothing written
 ```
 
-## Qué hacer después
+## Y ahora qué
 
-- Poner esto en marcha a diario: [operación programada](guides/scheduling.md).
-- Cargar el histórico completo: [cargas iniciales y backfills](guides/backfill.md).
-- Llevarlo a la nube: [despliegue](guides/deployment.md).
-- Antes de consultar en serio: [antes de consultar los datos](explanation/data-caveats.md).
+- Para ponerlo en marcha todos los días: [sincronización diaria](guides/scheduling.md).
+- Para cargar el histórico completo: [carga inicial](guides/backfill.md).
+- Para llevarlo a la nube: [despliegue en la nube](guides/deployment.md).
+- Antes de ponerte a consultar en serio: [antes de consultar los datos](explanation/data-caveats.md).

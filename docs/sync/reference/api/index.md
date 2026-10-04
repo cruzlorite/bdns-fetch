@@ -1,18 +1,10 @@
-# Referencia de la API
+# Referencia de Python
 
-Generada desde los docstrings del paquete: una página por módulo, con el
-nombre del módulo que documenta.
+Se genera a partir de los docstrings del código, con una página por módulo que lleva su nombre. Por eso está en inglés.
 
-Cada página muestra todo lo que el módulo define, helpers privados
-incluidos. Lo que distingue unos de otros es el nombre:
+Cada página muestra todo lo que define el módulo, incluidas las funciones internas, y lo que distingue unas de otras es el nombre:
 
-- **Sin guion bajo**: pensado para usarse desde fuera del módulo. Lo que
-  además declara el `__all__` del módulo es el contrato: esos nombres no
-  cambian sin nota de ruptura en el changelog.
-- **Con guion bajo** ([`_apply`][bdns.sync.sinks.sql.scd2._apply], [`_order_independent`][bdns.sync.hashing._order_independent]…): internos. Nada de
-  fuera del módulo debería importarlos, y pueden cambiar sin aviso. Están
-  documentados porque el razonamiento que llevan dentro es lo que explica
-  el diseño.
+- **Sin guion bajo**: pensadas para usarse desde fuera del módulo. Lo que además aparece en el `__all__` del módulo se considera público, y no cambia sin avisarlo en el CHANGELOG como cambio incompatible.
+- **Con guion bajo** ([`_apply`][bdns.sync.sinks.sql.scd2._apply], [`_order_independent`][bdns.sync.hashing._order_independent]...): internas. Nada de fuera del módulo debería importarlas, y pueden cambiar sin aviso. Están documentadas porque explican muchas de las decisiones del diseño.
 
-Para el porqué, y no el qué, están las páginas de
-[Explicación](../../explanation/payload-policy.md).
+Si lo que buscas es el porqué y no el qué, mira las páginas de [conceptos](../../explanation/payload-policy.md).

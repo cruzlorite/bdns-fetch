@@ -1,43 +1,29 @@
-# 0003. `_sync_runs` como log de eventos, no columna de estado
+# 0003. `_sync_runs` como registro de eventos, no como columna de estado
 
-**Estado:** aceptada · **Fecha:** 2026-07-08 (anterior al historial registrado)
+**Estado:** aceptada · **Fecha:** 2026-07-08 (anterior al primer commit del repositorio)
 
 ## Contexto
 
-Hace falta saber, mirando el destino, si una ejecución terminó bien.
+Hay que poder saber, mirando la base de datos, si una ejecución terminó bien.
 
-Lo habitual es una fila por ejecución con una columna `status` que pasa de
-`running` a `success` o `failed`.
+Lo habitual es tener una fila por ejecución con una columna `status` que pasa de `running` a `success` o a `failed`.
 
-Eso no puede registrar el caso que más importa: **un proceso que muere a
-mitad**. Un proceso muerto no actualiza su propia fila, así que la
-ejecución se queda en `running` para siempre, indistinguible de una que
-sigue corriendo.
+Pero así no se puede registrar el caso que más importa: **un proceso que se muere a mitad**. Un proceso muerto no puede actualizar su propia fila, así que la ejecución se queda en `running` para siempre y no se distingue de una que sigue en marcha.
 
 ## Decisión
 
-`_sync_runs` es un log de **eventos** que solo crece. Nunca se actualiza
-una fila ya escrita.
+`_sync_runs` es un registro de **eventos** que solo crece, y ninguna fila se modifica una vez escrita:
 
-- Un evento `started` al arrancar, confirmado de inmediato y **fuera de la
-  transacción de los datos**.
-- Un evento final `success` o `failed` al terminar.
+- al empezar se anota un evento `started`, que se confirma en el momento y **fuera de la transacción de los datos**;
+- al terminar se anota un evento `success` o `failed`.
 
-El estado de una ejecución es su último evento. Un `started` sin evento
-final significa que el proceso murió a mitad.
+El estado de una ejecución es su último evento, y un `started` sin evento final significa que el proceso se murió a mitad.
 
-Los eventos van en transacciones cortas propias. Dentro de la transacción
-de datos heredarían su suerte: en un motor transaccional, una ejecución
-fallida haría rollback de sus propios eventos y borraría del log todas las
-ejecuciones fallidas.
+Los eventos se escriben en transacciones cortas propias. Si fueran dentro de la transacción de los datos correrían su misma suerte: en una base de datos con transacciones, una ejecución fallida desharía también sus propios eventos y desaparecerían del registro todas las ejecuciones fallidas.
 
 ## Consecuencias
 
-- El log siempre dice la verdad, incluso cuando los datos hicieron
-  rollback.
-- Dos filas por ejecución en lugar de una.
-- Queda una ventana teórica en la que los datos se confirman y el evento
-  `success` no llega a escribirse. Se asume: las tablas `_sync_*` son
-  informativas y la lógica de sincronización nunca las lee.
-- La regla de operación es la misma en todos los motores: **si no hay
-  evento `success`, se vuelve a lanzar.**
+- El registro siempre dice la verdad, incluso cuando los cambios en los datos se han deshecho.
+- Cada ejecución deja dos filas en lugar de una.
+- En teoría puede pasar que los datos se confirmen y el evento `success` no llegue a escribirse. Se asume ese riesgo porque las tablas `_sync_*` son solo informativas y la sincronización nunca las lee.
+- La regla es la misma con cualquier base de datos: **si no hay evento `success`, se vuelve a lanzar.**

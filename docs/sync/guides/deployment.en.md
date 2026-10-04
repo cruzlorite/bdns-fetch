@@ -14,7 +14,7 @@ docker pull ghcr.io/cruzlorite/bdns-sync:latest    # or a given version, :0.6.0
 
 - The default command is `bdns-sync delta`: the daily load, which picks the window by itself and carries on when an entity fails ([scheduled operation](scheduling.md)).
 - Any other command passes through as-is: `docker run ... ghcr.io/cruzlorite/bdns-sync bdns-sync sync sectores`.
-- A Cloud Function-style deployment does not fit: timeout limits (15-60 min) cannot cover the wide windows (an `annual` run of `convocatorias` is ~3 h) or the bootstrap (~24 h, see [initial loads and backfills](backfill.md)).
+- A Cloud Function-style deployment does not fit: timeout limits (15-60 min) cannot cover the long periods or the initial load (see [initial loads and backfills](backfill.md)).
 
 ## Recipe: Google Cloud (Cloud Run Jobs + Cloud Scheduler)
 
@@ -43,7 +43,7 @@ gcloud run jobs create bdns-sync-delta \
   --image $REGION-docker.pkg.dev/$PROJECT/ghcr/cruzlorite/bdns-sync:latest \
   --service-account $SA \
   --set-env-vars BDNS_SYNC_TARGET_URL=bigquery://$PROJECT/$DATASET \
-  --memory 4Gi --task-timeout 6h --max-retries 0
+  --memory 4Gi --task-timeout 24h --max-retries 0
 gcloud run jobs add-iam-policy-binding bdns-sync-delta \
   --project $PROJECT --region $REGION \
   --member serviceAccount:$SA --role roles/run.invoker
@@ -61,7 +61,7 @@ gcloud scheduler jobs create http bdns-sync-delta-daily \
 Notes:
 
 - `--memory 4Gi`, no less. Consumption is set by the widest window, the `annual` pass over `concesiones_busqueda`, which runs three days a year and stages around 20 million rows: measured peak **2.33 GB**. Both times it has been too small it showed up live, with the same signature — an `exit 137` and no terminal event in `_sync_runs`: at 1 GiB, four consecutive weekly runs died in July 2026; at 2 GiB, the annual run of 1 September died. Going from 2 to 4 GiB costs about $0.18 a month and does not force a higher vCPU tier.
-- `--task-timeout 6h` leaves slack for the `monthly`/`annual` windows; the daily weekly run takes ~20 min.
+- `--task-timeout 24h`. One call at a time, as the official good practices ask, we estimate (from the measured time per call) that the daily weekly run takes between 20 minutes and an hour, and Monday's monthly run can exceed 3 hours. The annual period is another matter: fetching the detail of the ~74,000 calls for applications of a year can take more than a day when the server is loaded. If that happens, on those three days a year you can run the job with `BDNS_SYNC_MAX_WORKERS` (say, 4), knowing it departs from the official recommendation.
 - `--max-retries 0`: if a run dies, the next cron heals it (idempotent); hot retries only duplicate fetch work.
 
 ### Cost and guardrails
@@ -82,7 +82,7 @@ Two paid services are involved, and the expected spend is cents per month (the j
 
 ## The initial load (bootstrap)
 
-A one-off ~24 h operation (see the table in [initial loads and backfills](backfill.md)), launched by hand. Two options:
+A long operation (see [initial loads and backfills](backfill.md)), launched by hand once. Two options:
 
 - **A second job** with the full-load command and the timeout at its maximum (24 h on Cloud Run Jobs — a tight fit; if an outage cuts it, re-running heals: the one-year slices commit independently):
 
@@ -90,6 +90,8 @@ A one-off ~24 h operation (see the table in [initial loads and backfills](backfi
   gcloud run jobs create bdns-sync-full ... --command bdns-sync --args backfill --task-timeout 24h
   gcloud run jobs execute bdns-sync-full --project $PROJECT --region $REGION
   ```
+
+  One call at a time, `convocatorias` can take longer than 24 hours, so it is easiest to load everything else first and run `convocatorias` separately, or split it by year with `bdns-sync sync convocatorias --since ... --until ...`.
 
 - **Any machine with Docker**: `docker run -e BDNS_SYNC_TARGET_URL=... ghcr.io/cruzlorite/bdns-sync bdns-sync backfill`
 

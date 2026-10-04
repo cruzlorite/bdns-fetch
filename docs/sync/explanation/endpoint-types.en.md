@@ -8,8 +8,8 @@ Small catalogs, where fetching the complete set on every run is affordable.
 
 | Shape | Reason | Entities |
 |---|---|---|
-| Simple | A single call, no parameters | `sectores`, `actividades`, `finalidades`, `beneficiarios`, `instrumentos`, `objetivos`, `regiones` |
-| Swept | The API does not return the union when the parameter is omitted; each value must be queried and the results merged into one table | `organos`/`organos_agrupacion` (sweep `idAdmon`), `reglamentos` (sweeps `ambito`), `sanciones_busqueda` |
+| Simple | A single call, no parameters | `sectores`, `actividades`, `finalidades`, `beneficiarios`, `instrumentos`, `objetivos`, `regiones`, `sanciones_busqueda` |
+| Swept | The API does not return the union when the parameter is omitted; each value must be queried and the results merged into one table | `organos`/`organos_agrupacion` (sweep `idAdmon`), `reglamentos` (sweeps `ambito`) |
 | Discover-then-detail | The listing does not include every field | `planesestrategicos_busqueda`/`planesestrategicos`/`planesestrategicos_vigencia`, `grandesbeneficiarios_anios`/`grandesbeneficiarios_busqueda` |
 
 ## Registration-date incremental (`bdns-sync sync <entity> --window {daily,weekly,monthly,annual}`)
@@ -29,6 +29,6 @@ Endpoints with tens of millions of rows, where full replacement is not viable.
 
 `convocatorias_busqueda` does **not** replace `convocatorias`: the listing carries only 10 of the ~30 detail fields (no budget, application dates, documents, instruments, etc.), and its hash staying the same says nothing about whether a detail-only field changed. Never use the listing to decide whether a code's detail fetch can be skipped.
 
-The detail step of `convocatorias` is the expensive one: one real API call per discovered code, with no pagination possible. It is parallelized with paced request starts (8 workers, ~9.5 req/s, just under the official 10/s cap), which cuts a real month from hours to minutes with zero `429`s; figures in [measured performance](sync-behavior.md#performance). The same machinery ([`bdns.sync.pipeline`](../reference/api/pipeline.md)) drives the detail steps of `planesestrategicos` and `planesestrategicos_vigencia`.
+The detail step of `convocatorias` is the expensive one: one real API call per discovered code, with no pagination possible. By default calls are made one at a time, as the official good practices ask; `--max-workers` allows several at once and cuts the time a lot, with figures in [performance](sync-behavior.md#performance). The same machinery ([`bdns.sync.pipeline`](../reference/api/pipeline.md)) drives the detail steps of `planesestrategicos` and `planesestrategicos_vigencia`.
 
 A record's registration date does not change when the record is edited, so re-querying the same window later finds no new additions, but does detect edits via the hash. Corrections cluster near the registration date and taper off with age; hence the window cascade: every level reaches back to yesterday ([`window_bounds`][bdns.sync.windows.window_bounds]), so `annual` contains `monthly` contains `weekly` contains `daily` on any given day. Which window `bdns-sync delta` runs on which day ([`cadence_window`][bdns.sync.windows.cadence_window]), and why they are never stacked, is in [scheduled operation](../guides/scheduling.md).

@@ -3,6 +3,7 @@
 """Generic SCD2 table shape shared by every synced endpoint, plus control tables."""
 
 import json
+from functools import cache
 from typing import Any
 
 from sqlalchemy import (
@@ -17,9 +18,36 @@ from sqlalchemy import (
     Table,
     Text,
 )
+from sqlalchemy.dialects import registry
+from sqlalchemy.exc import NoSuchModuleError
 from sqlalchemy.types import TypeDecorator
 
 __all__ = ["PortableJSON", "build_control_tables", "build_staging_table", "build_sync_table"]
+
+
+@cache
+def _bigquery_dialect_installed() -> bool:
+    """Return whether SQLAlchemy can load the BigQuery dialect."""
+    try:
+        registry.load("bigquery")
+    except NoSuchModuleError:
+        return False
+    return True
+
+
+def _clustering(*fields: str) -> dict[str, list[str]]:
+    """Return BigQuery's clustering option for a table, when it can apply.
+
+    BigQuery has no secondary indexes (see dialects.py); clustering is its
+    equivalent for pruning scans on the columns the SCD2 diff joins and
+    filters on. The option is namespaced, so other dialects ignore it, but
+    SQLAlchemy warns about an argument whose dialect it cannot load: without
+    the `bigquery` extra, every run on SQLite or PostgreSQL would warn. So
+    the option is only passed when the dialect is installed.
+    """
+    if not _bigquery_dialect_installed():
+        return {}
+    return {"bigquery_clustering_fields": list(fields)}
 
 
 class PortableJSON(TypeDecorator):
@@ -88,12 +116,9 @@ def build_sync_table(name: str, metadata: MetaData) -> Table:
         Column("_closed_run_id", BigInteger, nullable=True),
         Column("_closed_reason", String, nullable=True),
         extend_existing=True,
-        # No-op outside BigQuery (dialect-namespaced kwarg, silently ignored
-        # elsewhere). Every SCD2 diff query equality-joins on `_natural_key`
-        # (scd2._matches) and most also filter `_is_current`; BigQuery has
-        # no secondary indexes (see dialects.py), clustering is its
-        # equivalent for pruning scans on these columns.
-        bigquery_clustering_fields=["_natural_key", "_is_current"],
+        # Every SCD2 diff query equality-joins on `_natural_key`
+        # (scd2._matches) and most also filter `_is_current`.
+        **_clustering("_natural_key", "_is_current"),
     )
 
 
@@ -118,7 +143,7 @@ def build_staging_table(name: str, metadata: MetaData) -> Table:
         Column("_reg_date", Date, nullable=True),
         Column("payload", PortableJSON, nullable=False),
         extend_existing=True,
-        bigquery_clustering_fields=["_natural_key"],
+        **_clustering("_natural_key"),
     )
 
 

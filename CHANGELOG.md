@@ -162,6 +162,9 @@ Changes since bdns-sync 0.5.0.
 
 - DuckDB targets failed on a fresh install: pip picked SQLAlchemy 2.1, under which duckdb-engine 0.17 cannot
   reflect the schema. SQLAlchemy is capped below 2.1 until the DuckDB and BigQuery dialects support it.
+- Building the tables no longer warns "Can't validate argument 'bigquery_clustering_fields'" on every run
+  when the `bigquery` extra is not installed: the BigQuery clustering option is only passed when its
+  dialect is.
 - A batch in which one natural key carries two different payloads fails the run, naming the keys. It used to write
   two current versions for one key, which every later run closed and rewrote, reporting changes the source never
   made. Byte-identical duplicates are still tolerated.

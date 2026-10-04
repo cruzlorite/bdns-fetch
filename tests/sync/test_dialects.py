@@ -5,11 +5,15 @@ which adapter a URL resolves to, which is pure mapping and needs no server.
 
 import sys
 import types
+import warnings
 from datetime import date
 from types import SimpleNamespace
 
+import pytest
 from sqlalchemy import MetaData, create_engine
+from sqlalchemy.exc import NoSuchModuleError
 
+from bdns.sync.sinks.sql import schema
 from bdns.sync.sinks.sql.dialects import (
     BigQueryAdapter,
     DialectAdapter,
@@ -170,3 +174,29 @@ def test_bigquery_insert_rows_blocks_on_the_load_job(monkeypatch):
     assert calls["waited"] is True
     assert calls["table_ref"] == "proj.dataset._staging_things"
     assert calls["rows"] == [{"_natural_key": "[1]", "_row_hash": "f" * 64, "payload": '{"id": 1}'}]
+
+
+def test_tables_cluster_on_bigquery_when_its_dialect_is_installed():
+    pytest.importorskip("sqlalchemy_bigquery")
+    schema._bigquery_dialect_installed.cache_clear()
+    table = schema.build_sync_table("sectores", MetaData())
+    assert table.kwargs["bigquery_clustering_fields"] == ["_natural_key", "_is_current"]
+
+
+def test_tables_build_without_warnings_when_bigquery_is_not_installed(monkeypatch):
+    # Without the bigquery extra, a dialect-namespaced option SQLAlchemy
+    # cannot validate warns on every table built, i.e. on every run.
+    def missing(name):
+        raise NoSuchModuleError(name)
+
+    monkeypatch.setattr(schema.registry, "load", missing)
+    schema._bigquery_dialect_installed.cache_clear()
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            sync_table = schema.build_sync_table("sectores", MetaData())
+            staging = schema.build_staging_table("sectores", MetaData())
+    finally:
+        schema._bigquery_dialect_installed.cache_clear()
+    assert "bigquery_clustering_fields" not in sync_table.kwargs
+    assert "bigquery_clustering_fields" not in staging.kwargs

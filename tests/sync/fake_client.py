@@ -191,8 +191,8 @@ class FakeBDNSClient:
 
         - The four `fechaRegFin` search endpoints use a HALF-OPEN range: the
           upper bound is exclusive, so a record on day `end` is NOT returned
-          (`upper_inclusive=False`). That's why those callers must go
-          through `bdns.fetch.dates.registration_range`; if they don't, this drops
+          (`upper_inclusive=False`). That's why those callers must send
+          `fechaRegFin = last + 1`; if they don't, this drops
           the boundary day exactly like the live API does, so the regression
           tests catch it instead of silently passing.
         - convocatorias' `fechaHasta` is INCLUSIVE (`upper_inclusive=True`):

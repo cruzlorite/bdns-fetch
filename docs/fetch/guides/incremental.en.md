@@ -8,25 +8,22 @@ To detect new and changed records, filter by `fechaRegInicio`/`fechaRegFin`, the
 
 The registration date exists on `concesiones-busqueda`, `ayudasestado-busqueda`, `minimis-busqueda` and `partidospoliticos-busqueda`.
 
-## Ask for an inclusive range and let the client translate
+## Add a day to `fechaRegFin`
 
-`fechaRegFin` is **exclusive** and `fechaHasta` **inclusive** ([why it matters](../explanation/api-behavior.md#upper-bound)). Instead of remembering which family needs a day added, use the helpers in [`dates`][bdns.fetch.dates]:
+`fechaRegFin` is **exclusive** and `fechaHasta` **inclusive** ([why it matters](../explanation/api-behavior.md#upper-bound)), so to ask up to a given day by registration date you pass the day after:
 
 ```python
 from datetime import date
 
 from bdns.fetch import BDNSClient
-from bdns.fetch.dates import period_range, registration_range
 
 client = BDNSClient()
 
-# Everything registered in January, 1st to 31st inclusive.
-january = registration_range(date(2024, 1, 1), date(2024, 1, 31))
-awards = client.fetch_concesiones_busqueda(**january)
+# Everything registered in January, 1st to 31st: fechaRegFin is 1 February.
+awards = client.fetch_concesiones_busqueda(fechaRegInicio=date(2024, 1, 1), fechaRegFin=date(2024, 2, 1))
 
-# Calls received on 15 January.
-day = period_range(date(2024, 1, 15), date(2024, 1, 15))
-calls = client.fetch_convocatorias_busqueda(**day)
+# Calls received on 15 January: fechaHasta is that same day.
+calls = client.fetch_convocatorias_busqueda(fechaDesde=date(2024, 1, 15), fechaHasta=date(2024, 1, 15))
 ```
 
 ## Split long ranges
@@ -34,12 +31,13 @@ calls = client.fetch_convocatorias_busqueda(**day)
 A multi-year range fails intermittently with `ERR_MANTENIMIENTO_BBDD`; a week-long one does not ([measurement](../explanation/api-behavior.md#range-reliability)). [`split_range`][bdns.fetch.dates.split_range] cuts a range into contiguous pieces of at most 7 days:
 
 ```python
-from bdns.fetch.dates import registration_range, split_range
+from datetime import timedelta
+
+from bdns.fetch.dates import split_range
 
 def registered(first: date, last: date):
     for start, end in split_range(first, last):
-        chunk = registration_range(start, end)
-        yield from client.fetch_concesiones_busqueda(**chunk)
+        yield from client.fetch_concesiones_busqueda(fechaRegInicio=start, fechaRegFin=end + timedelta(days=1))
 ```
 
 Since each piece uses the right bound, the result does not depend on the piece size.

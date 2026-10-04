@@ -27,11 +27,11 @@ changes) are documented by bdns-fetch; each rule here links to them.
 import logging
 from collections.abc import Callable, Collection, Iterable, Iterator
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, Literal
 
 from bdns.fetch import Ambito, BDNSClient, TipoAdministracion
-from bdns.fetch.dates import period_range, registration_range, split_range
+from bdns.fetch.dates import split_range
 from bdns.sync.pipeline import bounded_map
 from bdns.sync.policy import DEFAULT_POLICY, PayloadPolicy
 from bdns.sync.sinks import Sink, SyncStats
@@ -119,7 +119,8 @@ def registration_window(method: str) -> WindowRows:
         fetch = getattr(client, method)
         for start, end in split_range(first, last):
             logger.info("%s: chunk [%s .. %s]", method, start, end)
-            yield from fetch(**registration_range(start, end))
+            # fechaRegFin is exclusive: the range ends the day after `end`.
+            yield from fetch(fechaRegInicio=start, fechaRegFin=end + timedelta(days=1))
 
     return rows
 
@@ -131,7 +132,7 @@ def period_window(method: str) -> WindowRows:
         fetch = getattr(client, method)
         for start, end in split_range(first, last):
             logger.info("%s: chunk [%s .. %s]", method, start, end)
-            yield from fetch(**period_range(start, end))
+            yield from fetch(fechaDesde=start, fechaHasta=end)
 
     return rows
 
@@ -211,7 +212,7 @@ def convocatoria_details(
     codes = {
         item["numeroConvocatoria"]
         for start, end in split_range(first, last)
-        for item in client.fetch_convocatorias_busqueda(**period_range(start, end))
+        for item in client.fetch_convocatorias_busqueda(fechaDesde=start, fechaHasta=end)
     }
     return _details(
         client,

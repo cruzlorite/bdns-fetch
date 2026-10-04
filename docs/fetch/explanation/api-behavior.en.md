@@ -30,19 +30,6 @@ For the calls received on those same dates, on the other hand, you ask for exact
 
 Getting it wrong is expensive. Without adding a day to `fechaRegFin`, a one-day query returns almost nothing and any wider range loses its last day. Splitting a range multiplies the error, one day per boundary: a 28-day range split into days returned 8 rows instead of ~1.2 million.
 
-`bdns-fetch` keeps the parameters exactly as the API defines them, and offers [`registration_range`][bdns.fetch.dates.registration_range] and [`period_range`][bdns.fetch.dates.period_range]: you give them the first and last day you want, both included, and they return the right arguments for each family.
-
-```python
-from datetime import date
-from bdns.fetch.dates import period_range, registration_range
-
-registration_range(date(2024, 3, 1), date(2024, 3, 7))
-# fechaRegInicio = 1 March, fechaRegFin = 8 March
-
-period_range(date(2024, 3, 1), date(2024, 3, 7))
-# fechaDesde = 1 March, fechaHasta = 7 March
-```
-
 <a id="range-reliability"></a>
 ## Long ranges fail; week-long ones do not
 

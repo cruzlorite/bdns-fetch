@@ -1,6 +1,6 @@
 # Generación
 
-Todo el proceso es SQL de DuckDB, sin una línea de Python. Los pasos son ficheros en [`dataset/sql/`](https://github.com/cruzlorite/bdns-tools/tree/main/dataset/sql), que se pueden leer, revisar y volver a ejecutar tal cual, y `dataset/build.sql` los lanza en orden con la línea de comandos de DuckDB, desde la raíz del repositorio:
+Todo el proceso es SQL de DuckDB. Los pasos son ficheros en [`dataset/sql/`](https://github.com/cruzlorite/bdns-tools/tree/main/dataset/sql), que se pueden leer, revisar y volver a ejecutar tal cual, y `dataset/build.sql` los lanza en orden con la línea de comandos de DuckDB, desde la raíz del repositorio:
 
 ```console
 $ duckdb /ruta/privada/dataset.duckdb \

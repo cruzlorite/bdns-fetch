@@ -10,7 +10,7 @@ In `bdns-sync`, a date range is **closed at both ends**: the `daily` window on d
 <a id="upper-bound"></a>
 ## Dates are translated by bdns-fetch, never by hand
 
-The API uses two opposite semantics for the upper bound: `fechaRegFin` is exclusive and `fechaHasta` inclusive ([measurement](../../fetch/explanation/api-behavior.md#upper-bound)). `bdns-sync` does not build those parameters: each entity passes its inclusive range through [`registration_range`](../../fetch/reference/api/dates.md) or [`period_range`](../../fetch/reference/api/dates.md), depending on its family. The rule lives in one place, the API's.
+The API uses two opposite semantics for the upper bound: `fechaRegFin` is exclusive and `fechaHasta` inclusive ([measurement](../../fetch/explanation/api-behavior.md#upper-bound)). So `bdns-sync` adds a day to the end of the period for entities fetched by registration date, and leaves it as is for those using `fechaDesde` and `fechaHasta`.
 
 <a id="window-chunking"></a>
 ## 7-day pieces

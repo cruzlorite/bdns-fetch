@@ -30,19 +30,6 @@ Para las convocatorias recibidas en esas mismas fechas, en cambio, se pide justo
 
 Equivocarse sale caro. Si no se suma un día a `fechaRegFin`, una consulta de un solo día no devuelve prácticamente nada y cualquier rango más largo pierde su último día. Y si además el rango se divide en tramos, se pierde un día en cada corte: un rango de 28 días dividido en días sueltos devolvió 8 filas en lugar de cerca de 1,2 millones.
 
-`bdns-fetch` deja los parámetros tal y como los define la API, pero te da [`registration_range`][bdns.fetch.dates.registration_range] y [`period_range`][bdns.fetch.dates.period_range]: les pasas el primer y el último día que quieres, los dos incluidos, y te devuelven los parámetros correctos para cada familia.
-
-```python
-from datetime import date
-from bdns.fetch.dates import period_range, registration_range
-
-registration_range(date(2024, 3, 1), date(2024, 3, 7))
-# fechaRegInicio = 1 de marzo, fechaRegFin = 8 de marzo
-
-period_range(date(2024, 3, 1), date(2024, 3, 7))
-# fechaDesde = 1 de marzo, fechaHasta = 7 de marzo
-```
-
 <a id="range-reliability"></a>
 ## Los rangos largos fallan y los semanales no
 

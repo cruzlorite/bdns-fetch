@@ -1,6 +1,6 @@
 # Build
 
-The whole process is DuckDB SQL, without a line of Python. The steps are files in [`dataset/sql/`](https://github.com/cruzlorite/bdns-tools/tree/main/dataset/sql), which can be read, reviewed and rerun as they are, and `dataset/build.sql` runs them in order with the DuckDB command line, from the repository root:
+The whole process is DuckDB SQL. The steps are files in [`dataset/sql/`](https://github.com/cruzlorite/bdns-tools/tree/main/dataset/sql), which can be read, reviewed and rerun as they are, and `dataset/build.sql` runs them in order with the DuckDB command line, from the repository root:
 
 ```console
 $ duckdb /private/path/dataset.duckdb \

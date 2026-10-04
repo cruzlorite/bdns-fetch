@@ -100,9 +100,8 @@ Changes since bdns-fetch 1.3.0.
 - `get()`, `get_bytes()` and `pages()` request any path under the same retries, rate limit and
   parameter encoding, covering endpoints without a method of their own; `bdns-fetch get` does the
   same from the CLI.
-- `bdns.fetch.dates`: `registration_range` and `period_range` turn an inclusive range into each
-  date family's arguments (`fechaRegFin` is exclusive, `fechaHasta` inclusive), and `split_range`
-  cuts long ranges into the 7-day pieces the API serves reliably. Moved here from bdns-sync.
+- `bdns.fetch.dates.split_range` cuts long ranges into the 7-day pieces the API serves reliably.
+  Moved here from bdns-sync.
 - `bdns.fetch.contract` and `bdns-fetch check-api`: check those date semantics against the live
   API. Moved here from bdns-sync.
 - `rate_limiter` and `base_url` on `BDNSClient`; `--rate-limit` on the CLI.

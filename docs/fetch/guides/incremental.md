@@ -8,25 +8,22 @@ Si lo que quieres es detectar altas y cambios, filtra por `fechaRegInicio` y `fe
 
 La fecha de registro está disponible en `concesiones-busqueda`, `ayudasestado-busqueda`, `minimis-busqueda` y `partidospoliticos-busqueda`.
 
-## Pide un rango cerrado y deja que el cliente lo traduzca
+## Suma un día a `fechaRegFin`
 
-`fechaRegFin` **no incluye** el propio día, mientras que `fechaHasta` **sí lo incluye** ([por qué importa](../explanation/api-behavior.md#upper-bound)). Para no tener que acordarte de a cuál hay que sumarle un día, usa las funciones de [`dates`][bdns.fetch.dates]:
+`fechaRegFin` **no incluye** el propio día, mientras que `fechaHasta` **sí lo incluye** ([por qué importa](../explanation/api-behavior.md#upper-bound)), así que para pedir hasta un día concreto por fecha de registro tienes que poner el día siguiente:
 
 ```python
 from datetime import date
 
 from bdns.fetch import BDNSClient
-from bdns.fetch.dates import period_range, registration_range
 
 client = BDNSClient()
 
-# Todo lo registrado en enero, del 1 al 31, ambos incluidos.
-enero = registration_range(date(2024, 1, 1), date(2024, 1, 31))
-concesiones = client.fetch_concesiones_busqueda(**enero)
+# Todo lo registrado en enero, del 1 al 31: fechaRegFin es el 1 de febrero.
+concesiones = client.fetch_concesiones_busqueda(fechaRegInicio=date(2024, 1, 1), fechaRegFin=date(2024, 2, 1))
 
-# Las convocatorias recibidas el 15 de enero.
-dia = period_range(date(2024, 1, 15), date(2024, 1, 15))
-convocatorias = client.fetch_convocatorias_busqueda(**dia)
+# Las convocatorias recibidas el 15 de enero: fechaHasta es el mismo día.
+convocatorias = client.fetch_convocatorias_busqueda(fechaDesde=date(2024, 1, 15), fechaHasta=date(2024, 1, 15))
 ```
 
 ## Divide los rangos largos en semanas
@@ -34,12 +31,13 @@ convocatorias = client.fetch_convocatorias_busqueda(**dia)
 Una consulta de varios años falla de vez en cuando con `ERR_MANTENIMIENTO_BBDD`, y la misma consulta dividida en semanas no falla ([las pruebas](../explanation/api-behavior.md#range-reliability)). Esto es lo que hace posibles las descargas grandes. [`split_range`][bdns.fetch.dates.split_range] divide un rango en tramos consecutivos de siete días como máximo:
 
 ```python
-from bdns.fetch.dates import registration_range, split_range
+from datetime import timedelta
+
+from bdns.fetch.dates import split_range
 
 def registradas(primero: date, ultimo: date):
     for desde, hasta in split_range(primero, ultimo):
-        tramo = registration_range(desde, hasta)
-        yield from client.fetch_concesiones_busqueda(**tramo)
+        yield from client.fetch_concesiones_busqueda(fechaRegInicio=desde, fechaRegFin=hasta + timedelta(days=1))
 ```
 
 Como cada tramo trata bien el extremo final, el resultado es el mismo sea cual sea el tamaño del tramo.

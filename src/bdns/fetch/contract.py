@@ -19,7 +19,6 @@ from datetime import date, timedelta
 from typing import Literal
 
 from bdns.fetch.client import BDNSClient
-from bdns.fetch.dates import period_range, registration_range
 
 __all__ = ["ContractReport", "check_api_contract"]
 
@@ -71,7 +70,7 @@ def _probe_exclusive(client: BDNSClient, day: date, problems: list[str]) -> bool
     fetch = getattr(client, method)
     nxt = day + timedelta(days=1)
 
-    full_day = list(fetch(**registration_range(day, day)))
+    full_day = list(fetch(fechaRegInicio=day, fechaRegFin=nxt))
     if not full_day:
         return False  # nothing registered that day; try another
 
@@ -80,10 +79,10 @@ def _probe_exclusive(client: BDNSClient, day: date, problems: list[str]) -> bool
         problems.append(
             f"{method}: fechaRegFin looks INCLUSIVE now: fechaRegFin={day} returned {len(bare)} "
             f"records for that same day (expected ~0 of {len(full_day)}). "
-            f"registration_range would now fetch one day too many."
+            f"Ranges ending at fechaRegFin = last + 1 would now fetch one day too many."
         )
 
-    next_day = list(fetch(**registration_range(nxt, nxt)))
+    next_day = list(fetch(fechaRegInicio=nxt, fechaRegFin=nxt + timedelta(days=1)))
     if next_day:
         shared = _keys(full_day, key_field) & _keys(next_day, key_field)
         if shared:
@@ -91,7 +90,7 @@ def _probe_exclusive(client: BDNSClient, day: date, problems: list[str]) -> bool
                 f"{method}: adjacent days overlap by {len(shared)} record(s); "
                 f"consecutive ranges would double-count them."
             )
-        span = list(fetch(**registration_range(day, nxt)))
+        span = list(fetch(fechaRegInicio=day, fechaRegFin=nxt + timedelta(days=1)))
         union = _keys(full_day, key_field) | _keys(next_day, key_field)
         if _keys(span, key_field) != union:
             problems.append(
@@ -109,21 +108,21 @@ def _probe_inclusive(client: BDNSClient, day: date, problems: list[str]) -> bool
     method, key_field, reg_field = _INCLUSIVE_PROBE
     fetch = getattr(client, method)
 
-    same_day = list(fetch(**period_range(day, day)))
+    same_day = list(fetch(fechaDesde=day, fechaHasta=day))
     if not same_day:
         # Either the day is empty, or the bound stopped being inclusive. A
         # wider range tells them apart: if this day's records show up
         # there, the day was not empty and the bound moved.
         wider = [
             r
-            for r in fetch(**period_range(day, day + timedelta(days=1)))
+            for r in fetch(fechaDesde=day, fechaHasta=day + timedelta(days=1))
             if isinstance(r, dict) and r.get(reg_field) == day.isoformat()
         ]
         if wider:
             problems.append(
                 f"{method}: fechaHasta looks EXCLUSIVE now: fechaHasta={day} returned nothing for "
                 f"that day, while a wider range returned {len(wider)} records for it. "
-                f"period_range would now drop the last day of every range."
+                f"Ranges ending at fechaHasta = last would now drop their last day."
             )
             return True
         return False

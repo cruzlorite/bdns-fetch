@@ -10,7 +10,7 @@ En `bdns-sync`, un periodo de fechas incluye siempre el primer día y el último
 <a id="upper-bound"></a>
 ## Las fechas las traduce bdns-fetch
 
-La API trata el último día de dos formas opuestas: `fechaRegFin` no lo incluye y `fechaHasta` sí ([las pruebas](../../fetch/explanation/api-behavior.md#upper-bound)). `bdns-sync` no monta esos parámetros a mano, sino que pasa el periodo de cada entidad por [`registration_range`](../../fetch/reference/api/dates.md) o por [`period_range`](../../fetch/reference/api/dates.md), según la familia de fechas que use. Así la regla está en un solo sitio, que es el que corresponde a la API.
+La API trata el último día de dos formas opuestas: `fechaRegFin` no lo incluye y `fechaHasta` sí ([las pruebas](../../fetch/explanation/api-behavior.md#upper-bound)). Por eso `bdns-sync` suma un día al final del periodo en las entidades que se piden por fecha de registro, y lo deja tal cual en las que usan `fechaDesde` y `fechaHasta`.
 
 <a id="window-chunking"></a>
 ## Las consultas se dividen en semanas

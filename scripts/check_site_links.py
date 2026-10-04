@@ -3,7 +3,7 @@
 
 A page that names another page, a documented object or a script should
 let the reader click through. Written as plain text, the reference is a
-dead end: on the site nothing says where `registration_range` is
+dead end: on the site nothing says where `split_range` is
 documented, and "docs/explanation/..." is a path to a file nobody browsing
 the site can open.
 
@@ -44,7 +44,7 @@ def documented_names() -> tuple[dict[str, set[str]], set[str]]:
 
     Returns:
         `(names, params)`: each suffix of each documented path (so
-        `generic.to_api_upper_bound` and `registration_range` both count)
+        `generic.to_api_upper_bound` and `split_range` both count)
         mapped to the paths it can mean, and every parameter name in the
         package.
     """

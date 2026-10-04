@@ -36,10 +36,10 @@ bdns-fetch concesiones-busqueda --fechaDesde 2024-01-01 --fechaHasta 2024-01-31 
 from datetime import date
 
 from bdns.fetch import BDNSClient
-from bdns.fetch.dates import registration_range
 
 client = BDNSClient()
-for concesion in client.fetch_concesiones_busqueda(**registration_range(date(2024, 1, 1), date(2024, 1, 31))):
+# fechaRegFin is exclusive: all of January
+for concesion in client.fetch_concesiones_busqueda(fechaRegInicio=date(2024, 1, 1), fechaRegFin=date(2024, 2, 1)):
     print(concesion["beneficiario"], concesion["importe"])
 ```
 

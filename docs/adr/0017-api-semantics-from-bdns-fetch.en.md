@@ -17,8 +17,8 @@ forcing it to fetch every page) instead of fixing them where they belong.
 
 ## Decision
 
-`bdns-sync` uses what `bdns-fetch` provides: range translation with
-[`registration_range`][bdns.fetch.dates.registration_range] and [`period_range`][bdns.fetch.dates.period_range], splitting with [`split_range`][bdns.fetch.dates.split_range],
+`bdns-sync` uses what `bdns-fetch` provides: what it
+[documents](../fetch/explanation/api-behavior.md#upper-bound) about each date family's last day, splitting with [`split_range`][bdns.fetch.dates.split_range],
 the contract check with [`check_api_contract`][bdns.fetch.contract.check_api_contract], and request spacing in the
 client. It is the other half of
 [ADR 0012](0012-api-knowledge-lives-in-fetch.md), which covers the same ground from `bdns-fetch`.

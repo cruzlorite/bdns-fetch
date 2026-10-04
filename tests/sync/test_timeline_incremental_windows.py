@@ -229,8 +229,7 @@ def test_window_date_bounds_match_the_declared_cadence(endpoint, key_fields, win
     The fetch is chunked into `CHUNK_DAYS`-wide pieces (see bdns.fetch.dates.split_range), so
     for `monthly`/`annual` this is several calls, not one. For the four
     `fechaRegFin` endpoints, each call's `end` in the log is the API's
-    *exclusive* upper bound (inclusive chunk end + 1, see
-    `registration_range`), so a chunk covering days [s, e] is recorded as
+    *exclusive* upper bound (inclusive chunk end + 1), so a chunk covering days [s, e] is recorded as
     (s, e + 1). `convocatorias_busqueda` is the opposite family
     (`fechaHasta`, inclusive, see `sync_search_range_inclusive`): its `end`
     is recorded as the inclusive chunk end itself, with no +1. What matters

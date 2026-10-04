@@ -1,6 +1,6 @@
 # Dataset
 
-El SQL que genera el dataset anonimizado de la BDNS a partir de una base de datos de `bdns-sync`. Es SQL de DuckDB y nada más: no forma parte del paquete de Python.
+El SQL que genera el dataset anonimizado de la BDNS a partir de una base de datos de `bdns-sync`. Es SQL de DuckDB y no forma parte del paquete de Python.
 
 ```console
 $ duckdb /ruta/privada/dataset.duckdb \

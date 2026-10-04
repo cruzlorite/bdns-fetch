@@ -10,7 +10,7 @@ Si la parte que guarda los datos lo resolviera por su cuenta, el cliente de la A
 
 ## Decisión
 
-`bdns-sync` usa lo que aporta `bdns-fetch`: [`registration_range`][bdns.fetch.dates.registration_range] y [`period_range`][bdns.fetch.dates.period_range] para traducir los periodos, [`split_range`][bdns.fetch.dates.split_range] para dividirlos, [`check_api_contract`][bdns.fetch.contract.check_api_contract] para comprobar la API, y el propio cliente para espaciar las peticiones. Es la otra mitad de la [decisión 0012](0012-api-knowledge-lives-in-fetch.md), que trata lo mismo desde `bdns-fetch`.
+`bdns-sync` usa lo que aporta `bdns-fetch`: lo que [documenta](../fetch/explanation/api-behavior.md#upper-bound) sobre el último día de cada familia de fechas, [`split_range`][bdns.fetch.dates.split_range] para dividir los periodos, [`check_api_contract`][bdns.fetch.contract.check_api_contract] para comprobar la API, y el propio cliente para espaciar las peticiones. Es la otra mitad de la [decisión 0012](0012-api-knowledge-lives-in-fetch.md), que trata lo mismo desde `bdns-fetch`.
 
 ## Consecuencias
 

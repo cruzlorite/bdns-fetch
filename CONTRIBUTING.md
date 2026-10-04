@@ -34,6 +34,16 @@ make check-docs         # enlaces, docstrings y generación de la web
 
 La integración continua ejecuta lo mismo que `make lint`, `make check-docs` y `make test`, y un pull request en rojo no se revisa hasta que esté en verde.
 
+## Publicar una versión
+
+Esto solo lo hace quien mantiene el proyecto:
+
+1. En el CHANGELOG, cambia `[Unreleased]` por `[X.Y.Z] - AAAA-MM-DD` y deja encima un `[Unreleased]` vacío. De ese apartado salen las notas de la release de GitHub.
+2. Sube la versión con `poetry version X.Y.Z` y haz commit en `main`.
+3. Crea la etiqueta y súbela: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+
+El resto lo hace `publish.yml`: comprueba que la etiqueta coincide con la versión de `pyproject.toml` y que el CHANGELOG tiene su apartado, pasa los tests y publica en PyPI. Solo si eso sale bien crea la release de GitHub, con esas notas y los mismos ficheros que recibió PyPI, y actualiza la web. Si algo falla antes de llegar a PyPI, corrígelo, borra la etiqueta (`git push --delete origin vX.Y.Z`) y vuelve a crearla.
+
 ## Licencia
 
 Al contribuir aceptas que tu aportación se distribuya con la [licencia MIT](LICENSE) del proyecto.

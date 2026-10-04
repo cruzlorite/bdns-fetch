@@ -31,4 +31,4 @@ Se da soporte a las versiones de Python que se prueban en la integración contin
 
 ## Cómo se publica una versión
 
-Al crear una etiqueta `vX.Y.Z` en la rama principal se publica la versión en PyPI, siempre que coincida con la de `pyproject.toml` y pasen los tests. No hay otra forma de publicar.
+Al crear una etiqueta `vX.Y.Z` en la rama principal se publica la versión, siempre que coincida con la de `pyproject.toml`, que el CHANGELOG tenga su apartado y que pasen los tests. Primero se sube a PyPI. Solo si eso sale bien se crea la release de GitHub, con las notas del CHANGELOG y los mismos ficheros que recibió PyPI, y se actualiza esta web. No hay otra forma de publicar.

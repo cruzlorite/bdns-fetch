@@ -37,6 +37,7 @@ Planned as 2.0.0: the client's signatures change (see *Changed*).
 
 ### Added
 
+- Each release gets a GitHub release, with its changelog section as notes and the same files published to PyPI.
 - `BDNSTransientError`, the `BDNSError` subclass for failures worth retrying, with `retry_after`.
 - Exponential backoff with jitter between retries, capped at 60 seconds, honouring `Retry-After`.
 - Connection reuse: one `requests.Session` per thread.

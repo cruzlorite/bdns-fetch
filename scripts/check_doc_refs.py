@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify that every docs/ reference in the code points somewhere real.
 
-Docstrings, tests, the and the Makefile link to the
+Docstrings, tests and the Makefile link to the
 documents instead of copying them, which is what stops the two from
 drifting. That only works while the links do: a renamed file or a
 reworded heading silently turns a reference into a dead end that nothing

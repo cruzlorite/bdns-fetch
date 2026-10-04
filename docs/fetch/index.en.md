@@ -13,7 +13,8 @@ $ bdns-fetch convocatorias-busqueda --fechaDesde 2024-01-01 --num-pages 0 > conv
 ```python
 from bdns.fetch import BDNSClient
 
-for convocatoria in BDNSClient().fetch_convocatorias_busqueda(descripcion="investigación"):
+client = BDNSClient()
+for convocatoria in client.fetch_convocatorias_busqueda(descripcion="investigación"):
     print(convocatoria["numeroConvocatoria"], convocatoria["descripcion"])
 ```
 

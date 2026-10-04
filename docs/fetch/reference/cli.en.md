@@ -27,19 +27,41 @@ One per `fetch_*` method of the client, named after the method without `fetch_`,
 
 Each command's options are the API's parameters, spelled the same way (`--fechaDesde`, `--nifCif`). Dates are written `YYYY-MM-DD` or `DD/MM/YYYY`. `bdns-fetch COMMAND --help` lists each command's options.
 
-| Command | Paginated |
-|---|---|
-| `actividades`, `beneficiarios`, `finalidades`, `instrumentos`, `objetivos`, `regiones`, `reglamentos`, `sectores` | |
-| `organos`, `organos-agrupacion`, `organos-codigo`, `organos-codigoadmin` | |
-| `convocatorias`, `convocatorias-ultimas` | |
-| `convocatorias-busqueda` | yes |
-| `concesiones-busqueda`, `ayudasestado-busqueda`, `minimis-busqueda`, `partidospoliticos-busqueda` | yes |
-| `grandesbeneficiarios-anios` | |
-| `grandesbeneficiarios-busqueda`, `sanciones-busqueda` | yes |
-| `planesestrategicos`, `planesestrategicos-vigencia` | |
-| `planesestrategicos-busqueda` | yes |
-| `terceros` | |
-| `convocatorias-pdf`, `convocatorias-documentos`, `planesestrategicos-documentos` | document |
+<div class="grid cards" markdown>
+
+- :material-format-list-bulleted:{ .lg .middle } **Catalogs**
+
+    ---
+
+    Small lists that arrive whole.
+
+    `actividades` `beneficiarios` `finalidades` `instrumentos` `objetivos` `regiones` `reglamentos` `sectores` `organos` `organos-agrupacion` `organos-codigo` `organos-codigoadmin` `grandesbeneficiarios-anios`
+
+- :material-magnify:{ .lg .middle } **Paginated searches**
+
+    ---
+
+    They take filters and arrive in pages, as explained just below.
+
+    `concesiones-busqueda` `ayudasestado-busqueda` `minimis-busqueda` `partidospoliticos-busqueda` `convocatorias-busqueda` `grandesbeneficiarios-busqueda` `sanciones-busqueda` `planesestrategicos-busqueda`
+
+- :material-file-search-outline:{ .lg .middle } **Lookups**
+
+    ---
+
+    They ask for one record or a short list, unpaginated.
+
+    `convocatorias` `convocatorias-ultimas` `planesestrategicos` `planesestrategicos-vigencia` `terceros`
+
+- :material-file-pdf-box:{ .lg .middle } **Documents**
+
+    ---
+
+    They return the file as is; `-o` saves it to disk.
+
+    `convocatorias-pdf` `convocatorias-documentos` `planesestrategicos-documentos`
+
+</div>
 
 On paginated ones, `--num-pages` (default **1**; 0 = all), `--from-page` and `--pageSize` (at most 10000) control pagination. A warning on stderr says when pages were left out.
 

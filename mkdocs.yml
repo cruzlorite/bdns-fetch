@@ -10,6 +10,8 @@ copyright: "Licencia MIT · Proyecto no oficial, sin relación con la BDNS ni co
 
 theme:
   name: material
+  # main.html loads the icon pack for diagrams; see the file.
+  custom_dir: overrides
   language: es
   favicon: assets/favicon.svg
   icon:
@@ -89,6 +91,9 @@ markdown_extensions:
       alternate_style: true
   - pymdownx.highlight:
       anchor_linenums: true
+      # Marks each block with its language (language-console...), which
+      # extra.css uses to wrap terminal sessions instead of scrolling them.
+      pygments_lang_class: true
   - pymdownx.inlinehilite
   # Every page gets the glossary, so BDNS, SCD2, NIF... show their meaning
   # on hover (content.tooltips) wherever they appear in running text.

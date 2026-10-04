@@ -74,13 +74,13 @@ $ bdns-sync sync sectores
 Compare the counters. The first time:
 
 ```text
-ok      sectores                         fetched=24 new=24 changed=0 unchanged=0 removed=0 skipped=0
+ok  sectores  fetched=24 new=24 changed=0 unchanged=0 removed=0 skipped=0
 ```
 
 The second:
 
 ```text
-ok      sectores                         fetched=24 new=0 changed=0 unchanged=24 removed=0 skipped=0
+ok  sectores  fetched=24 new=0 changed=0 unchanged=24 removed=0 skipped=0
 ```
 
 Everything landed in `unchanged`: the records were seen again and had not

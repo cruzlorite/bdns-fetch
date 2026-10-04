@@ -75,7 +75,9 @@ the target:
 
 | Load | Rows | Duration |
 |---|---|---|
-| The full entities | ~150,000 | ~10 s most; `planesestrategicos` and `planesestrategicos_vigencia`, ~4 min each (detail per key); `grandesbeneficiarios_busqueda`, ~2 min |
+| The full entities, most of them | ~150,000 in all | ~10 s each |
+| `grandesbeneficiarios_busqueda` | | ~2 min |
+| `planesestrategicos` and `planesestrategicos_vigencia`, which fetch each plan's detail | | ~4 min each |
 | `concesiones_busqueda` (since 2020) | 27.7 M | ~2.5 h |
 | `ayudasestado_busqueda` (since 2015) | 6.4 M | ~2 h |
 | `minimis_busqueda` (since 2015) | 4.3 M | ~30 min |

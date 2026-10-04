@@ -79,9 +79,12 @@ The record is faithful to what the source returned, but counting amendments to c
 ```sql
 SELECT * FROM convocatorias v
 WHERE JSON_VALUE(v.payload,'$.fechaFinSolicitud') IS NULL
-  AND EXISTS (SELECT 1 FROM convocatorias p
-              WHERE p._natural_key = v._natural_key AND p._valid_from < v._valid_from
-                AND JSON_VALUE(p.payload,'$.fechaFinSolicitud') IS NOT NULL);
+  AND EXISTS (
+    SELECT 1 FROM convocatorias p
+    WHERE p._natural_key = v._natural_key
+      AND p._valid_from < v._valid_from
+      AND JSON_VALUE(p.payload, '$.fechaFinSolicitud') IS NOT NULL
+  );
 ```
 
 The same happens, less often, in `descripcionLeng` of `convocatorias_busqueda` and `sectorActividad` of `minimis_busqueda`.

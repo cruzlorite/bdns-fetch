@@ -21,10 +21,12 @@ from bdns.fetch.dates import period_range, registration_range
 client = BDNSClient()
 
 # Todo lo registrado en enero, del 1 al 31, ambos incluidos.
-enero = client.fetch_concesiones_busqueda(**registration_range(date(2024, 1, 1), date(2024, 1, 31)))
+enero = registration_range(date(2024, 1, 1), date(2024, 1, 31))
+concesiones = client.fetch_concesiones_busqueda(**enero)
 
 # Las convocatorias recibidas el 15 de enero.
-dia = client.fetch_convocatorias_busqueda(**period_range(date(2024, 1, 15), date(2024, 1, 15)))
+dia = period_range(date(2024, 1, 15), date(2024, 1, 15))
+convocatorias = client.fetch_convocatorias_busqueda(**dia)
 ```
 
 ## Divide los rangos largos en semanas
@@ -36,7 +38,8 @@ from bdns.fetch.dates import registration_range, split_range
 
 def registradas(primero: date, ultimo: date):
     for desde, hasta in split_range(primero, ultimo):
-        yield from client.fetch_concesiones_busqueda(**registration_range(desde, hasta))
+        tramo = registration_range(desde, hasta)
+        yield from client.fetch_concesiones_busqueda(**tramo)
 ```
 
 Como cada tramo trata bien el extremo final, el resultado es el mismo sea cual sea el tamaño del tramo.

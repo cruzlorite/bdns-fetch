@@ -69,13 +69,13 @@ $ bdns-sync sync sectores
 Y compara lo que muestra cada vez. La primera:
 
 ```text
-ok      sectores                         fetched=24 new=24 changed=0 unchanged=0 removed=0 skipped=0
+ok  sectores  fetched=24 new=24 changed=0 unchanged=0 removed=0 skipped=0
 ```
 
 La segunda:
 
 ```text
-ok      sectores                         fetched=24 new=0 changed=0 unchanged=24 removed=0 skipped=0
+ok  sectores  fetched=24 new=0 changed=0 unchanged=24 removed=0 skipped=0
 ```
 
 Todo ha caído en `unchanged`: los registros se han vuelto a ver y no habían cambiado, así que **no se ha creado ninguna versión nueva**; solo se ha actualizado la fecha en que se vieron por última vez.

@@ -79,9 +79,12 @@ El registro refleja fielmente lo que devolvió la API, pero si cuentas modificac
 ```sql
 SELECT * FROM convocatorias v
 WHERE JSON_VALUE(v.payload,'$.fechaFinSolicitud') IS NULL
-  AND EXISTS (SELECT 1 FROM convocatorias p
-              WHERE p._natural_key = v._natural_key AND p._valid_from < v._valid_from
-                AND JSON_VALUE(p.payload,'$.fechaFinSolicitud') IS NOT NULL);
+  AND EXISTS (
+    SELECT 1 FROM convocatorias p
+    WHERE p._natural_key = v._natural_key
+      AND p._valid_from < v._valid_from
+      AND JSON_VALUE(p.payload, '$.fechaFinSolicitud') IS NOT NULL
+  );
 ```
 
 Lo mismo ocurre, aunque menos, con `descripcionLeng` en `convocatorias_busqueda` y con `sectorActividad` en `minimis_busqueda`.

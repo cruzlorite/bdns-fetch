@@ -66,7 +66,7 @@ entities down with it.
 and reports at the end:
 
 ```console
-ok      sectores                         fetched=24 new=0 changed=0 unchanged=24 removed=0 skipped=0
+ok  sectores  fetched=24 new=0 changed=0 unchanged=24 removed=0 skipped=0
 FAILED  concesiones_busqueda             BDNSTransientError: HTTP 503: Server error
 ...
 1 of 22 sync(s) failed

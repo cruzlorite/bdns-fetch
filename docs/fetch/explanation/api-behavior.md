@@ -9,14 +9,39 @@ Cada afirmación va acompañada de la prueba en la que se basa. Casi todas se hi
 
 La API tiene dos familias de parámetros de fecha, y cada una trata el último día del rango justo al revés que la otra:
 
-| Familia | Parámetros | Endpoints | ¿Incluye el último día? | Comprobación (día `D`) |
-|---|---|---|---|---|
-| Fecha de registro | `fechaRegInicio` / `fechaRegFin` | `concesiones-busqueda`, `ayudasestado-busqueda`, `minimis-busqueda`, `partidospoliticos-busqueda` | **No** | Con `fechaRegFin=D` apenas llega nada del día `D`; con `fechaRegFin=D+1` llega entero (en `concesiones`, 1 fila frente a 58.488) |
-| Periodo | `fechaDesde` / `fechaHasta` | el resto de búsquedas, entre ellas `convocatorias-busqueda` | **Sí** | Con `fechaHasta=D` llegan todas las convocatorias con `fechaRecepcion` igual a `D`; con `fechaHasta=D+1` llegan las de `D` y `D+1` |
+| | Fecha de registro | Periodo |
+|---|---|---|
+| **Parámetros** | `fechaRegInicio` y `fechaRegFin` | `fechaDesde` y `fechaHasta` |
+| **Dónde se usan** | En las búsquedas de concesiones, ayudas de Estado, minimis y partidos políticos | En el resto de búsquedas, entre ellas la de convocatorias |
+| **¿Incluye el último día?** | **No** | **Sí** |
+
+Lo comprobamos pidiendo un solo día, `D`. En la búsqueda de concesiones, con `fechaRegFin=D` llegó 1 fila del día `D`, y con `fechaRegFin=D+1`, las 58.488 que tenía. En la de convocatorias, con `fechaHasta=D` ya llegan todas las que tienen `fechaRecepcion` igual a `D`, y con `fechaHasta=D+1` llegan también las del día siguiente.
+
+### Un ejemplo
+
+Para pedir las concesiones registradas **del 1 al 7 de marzo de 2024**, ambos incluidos, se envía `fechaRegInicio=2024-03-01` y, según lo que pongas en `fechaRegFin`:
+
+```text
+fechaRegFin=2024-03-07  →  del 1 al 6 de marzo: falta el día 7
+fechaRegFin=2024-03-08  →  del 1 al 7 de marzo, completo
+```
+
+Para las convocatorias recibidas en esas mismas fechas, en cambio, se pide justo lo que se quiere: `fechaDesde=2024-03-01` y `fechaHasta=2024-03-07`.
 
 Equivocarse sale caro. Si no se suma un día a `fechaRegFin`, una consulta de un solo día no devuelve prácticamente nada y cualquier rango más largo pierde su último día. Y si además el rango se divide en tramos, se pierde un día en cada corte: un rango de 28 días dividido en días sueltos devolvió 8 filas en lugar de cerca de 1,2 millones.
 
-`bdns-fetch` deja los parámetros tal y como los define la API, pero te da [`registration_range`][bdns.fetch.dates.registration_range] y [`period_range`][bdns.fetch.dates.period_range], que reciben un rango con los dos extremos incluidos y devuelven los parámetros correctos para cada familia.
+`bdns-fetch` deja los parámetros tal y como los define la API, pero te da [`registration_range`][bdns.fetch.dates.registration_range] y [`period_range`][bdns.fetch.dates.period_range]: les pasas el primer y el último día que quieres, los dos incluidos, y te devuelven los parámetros correctos para cada familia.
+
+```python
+from datetime import date
+from bdns.fetch.dates import period_range, registration_range
+
+registration_range(date(2024, 3, 1), date(2024, 3, 7))
+# fechaRegInicio = 1 de marzo, fechaRegFin = 8 de marzo
+
+period_range(date(2024, 3, 1), date(2024, 3, 7))
+# fechaDesde = 1 de marzo, fechaHasta = 7 de marzo
+```
 
 <a id="range-reliability"></a>
 ## Los rangos largos fallan y los semanales no

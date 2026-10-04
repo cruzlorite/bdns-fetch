@@ -13,7 +13,8 @@ config = client.get("/vpd/GE/configuracion")         # one JSON document
 links = client.get("/enlaces")
 pdf = client.get_bytes("/convocatorias/pdf", {"id": 608268, "vpd": "GE"})
 
-for page in client.pages("/concesiones/busqueda", {"pageSize": 1000}, num_pages=2):
+pages = client.pages("/concesiones/busqueda", {"pageSize": 1000}, num_pages=2)
+for page in pages:
     print(page["number"], page["totalElements"], len(page["content"]))
 ```
 

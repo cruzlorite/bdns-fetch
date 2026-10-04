@@ -27,19 +27,41 @@ Hay un comando por cada método `fetch_*` del cliente. Se llama como el método 
 
 Las opciones de cada comando son los parámetros de la API, escritos igual (`--fechaDesde`, `--nifCif`). Las fechas se escriben como `AAAA-MM-DD` o `DD/MM/AAAA`. Con `bdns-fetch COMANDO --help` ves las de cada uno.
 
-| Comando | Tipo |
-|---|---|
-| `actividades`, `beneficiarios`, `finalidades`, `instrumentos`, `objetivos`, `regiones`, `reglamentos`, `sectores` | catálogo |
-| `organos`, `organos-agrupacion`, `organos-codigo`, `organos-codigoadmin` | catálogo |
-| `convocatorias`, `convocatorias-ultimas` | consulta |
-| `convocatorias-busqueda` | búsqueda paginada |
-| `concesiones-busqueda`, `ayudasestado-busqueda`, `minimis-busqueda`, `partidospoliticos-busqueda` | búsqueda paginada |
-| `grandesbeneficiarios-anios` | catálogo |
-| `grandesbeneficiarios-busqueda`, `sanciones-busqueda` | búsqueda paginada |
-| `planesestrategicos`, `planesestrategicos-vigencia` | consulta |
-| `planesestrategicos-busqueda` | búsqueda paginada |
-| `terceros` | consulta |
-| `convocatorias-pdf`, `convocatorias-documentos`, `planesestrategicos-documentos` | documento |
+<div class="grid cards" markdown>
+
+- :material-format-list-bulleted:{ .lg .middle } **Catálogos**
+
+    ---
+
+    Listas pequeñas que llegan enteras.
+
+    `actividades` `beneficiarios` `finalidades` `instrumentos` `objetivos` `regiones` `reglamentos` `sectores` `organos` `organos-agrupacion` `organos-codigo` `organos-codigoadmin` `grandesbeneficiarios-anios`
+
+- :material-magnify:{ .lg .middle } **Búsquedas paginadas**
+
+    ---
+
+    Admiten filtros y llegan por páginas, como se explica justo debajo.
+
+    `concesiones-busqueda` `ayudasestado-busqueda` `minimis-busqueda` `partidospoliticos-busqueda` `convocatorias-busqueda` `grandesbeneficiarios-busqueda` `sanciones-busqueda` `planesestrategicos-busqueda`
+
+- :material-file-search-outline:{ .lg .middle } **Consultas**
+
+    ---
+
+    Piden un registro concreto o una lista corta, sin paginar.
+
+    `convocatorias` `convocatorias-ultimas` `planesestrategicos` `planesestrategicos-vigencia` `terceros`
+
+- :material-file-pdf-box:{ .lg .middle } **Documentos**
+
+    ---
+
+    Devuelven el fichero tal cual; con `-o` lo guardas en disco.
+
+    `convocatorias-pdf` `convocatorias-documentos` `planesestrategicos-documentos`
+
+</div>
 
 En las búsquedas paginadas, `--num-pages` (por defecto **1**; con 0 se descargan todas), `--from-page` y `--pageSize` (como mucho 10000) controlan la paginación. Si quedan páginas sin descargar, se avisa por la salida de errores.
 

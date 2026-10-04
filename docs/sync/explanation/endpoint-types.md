@@ -6,11 +6,11 @@ Las entidades se dividen en dos grupos según cuántos datos tienen: las que se 
 
 Son catálogos pequeños, así que sale barato descargarlos enteros cada vez. Como cada descarga trae todo lo que existe en ese momento, lo que deje de aparecer se puede dar por retirado.
 
-| Cómo se descargan | Por qué | Entidades |
-|---|---|---|
-| Con una sola llamada | No necesitan parámetros | `sectores`, `actividades`, `finalidades`, `beneficiarios`, `instrumentos`, `objetivos`, `regiones`, `sanciones_busqueda` |
-| Recorriendo un parámetro | La API no devuelve todo junto si se omite el parámetro, así que hay que pedir cada valor por separado y juntar los resultados en una sola tabla | `organos` y `organos_agrupacion` (recorren `idAdmon`), `reglamentos` (recorre `ambito`) |
-| Primero el listado y después el detalle | El listado no trae todos los campos | `planesestrategicos_busqueda`, `planesestrategicos` y `planesestrategicos_vigencia`; `grandesbeneficiarios_anios` y `grandesbeneficiarios_busqueda` |
+Hay tres formas de descargarlas:
+
+- **Con una sola llamada**, porque no necesitan parámetros: `sectores`, `actividades`, `finalidades`, `beneficiarios`, `instrumentos`, `objetivos`, `regiones` y `sanciones_busqueda`.
+- **Recorriendo un parámetro**, porque si se omite la API no lo devuelve todo junto: `organos` y `organos_agrupacion` recorren `idAdmon`, y `reglamentos` recorre `ambito`. Cada valor se pide por separado y los resultados se juntan en una sola tabla.
+- **Primero el listado y después el detalle**, porque el listado no trae todos los campos: `planesestrategicos_busqueda`, `planesestrategicos` y `planesestrategicos_vigencia`, y también `grandesbeneficiarios_anios` y `grandesbeneficiarios_busqueda`.
 
 ## Entidades incrementales
 

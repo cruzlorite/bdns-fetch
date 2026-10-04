@@ -46,10 +46,13 @@ Cada entidad incremental indica en el [registro de entidades][bdns.sync.entities
 
 ## Cuánto tarda
 
-Estos tiempos se midieron en una carga inicial completa real (julio de 2026, con BigQuery como destino, desde una sola máquina y con varias llamadas a la vez: 5 al paginar y 8 en los detalles). Lo que marca el ritmo es siempre la API o la escritura, nunca nuestro código: 
+Estos tiempos se midieron en una carga inicial completa real (julio de 2026, con BigQuery como destino, desde una sola máquina y con varias llamadas a la vez: 5 al paginar y 8 en los detalles). Lo que marca el ritmo es siempre la API o la escritura, nunca nuestro código:
+
 | Carga | Filas | Duración |
 |---|---|---|
-| Las entidades completas | unas 150.000 | unos 10 segundos casi todas; `grandesbeneficiarios_busqueda`, unos 2 minutos; `planesestrategicos` y `planesestrategicos_vigencia`, que piden el detalle de cada plan, unos 4 minutos cada una |
+| Las entidades completas, casi todas | unas 150.000 en total | unos 10 segundos cada una |
+| `grandesbeneficiarios_busqueda` | | unos 2 minutos |
+| `planesestrategicos` y `planesestrategicos_vigencia`, que piden el detalle de cada plan | | unos 4 minutos cada una |
 | `concesiones_busqueda` (desde 2020) | 27,7 millones | unas 2 horas y media |
 | `ayudasestado_busqueda` (desde 2015) | 6,4 millones | unas 2 horas |
 | `minimis_busqueda` (desde 2015) | 4,3 millones | unos 30 minutos |

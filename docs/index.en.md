@@ -22,16 +22,17 @@ $ pip install bdns                # for BigQuery: pip install "bdns[bigquery]"
 
 ```mermaid
 flowchart LR
-    api(["BDNS API"]) --> fetch["`**bdns-fetch**
-    client and command line`"]
-    fetch --> files["`JSON Lines files
-    or your own code`"]
-    fetch --> sync["`**bdns-sync**
-    daily sync`"]
-    sync --> db[("`Your database
-    with the whole history`")]
-    db -.-> dataset["`Anonymised dataset
-    _coming_`"]
+    api@{ icon: "mdi:api", form: "circle", label: "BDNS API", pos: "b", h: 42 }
+    fetch@{ icon: "mdi:cloud-download", form: "circle", label: "bdns-fetch", pos: "b", h: 42 }
+    files@{ icon: "mdi:file-document-multiple", form: "circle", label: "Files or your own code", pos: "b", h: 42 }
+    sync@{ icon: "mdi:database-sync", form: "circle", label: "bdns-sync", pos: "b", h: 42 }
+    db@{ icon: "mdi:database", form: "circle", label: "Your database, with the history", pos: "b", h: 42 }
+    dataset@{ icon: "mdi:chart-box", form: "circle", label: "Anonymised dataset (coming)", pos: "b", h: 42 }
+    api --> fetch
+    fetch --> files
+    fetch --> sync
+    sync --> db
+    db -.-> dataset
 ```
 
 ## Two tools, one package

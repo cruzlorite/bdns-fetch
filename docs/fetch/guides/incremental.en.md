@@ -21,10 +21,12 @@ from bdns.fetch.dates import period_range, registration_range
 client = BDNSClient()
 
 # Everything registered in January, 1st to 31st inclusive.
-january = client.fetch_concesiones_busqueda(**registration_range(date(2024, 1, 1), date(2024, 1, 31)))
+january = registration_range(date(2024, 1, 1), date(2024, 1, 31))
+awards = client.fetch_concesiones_busqueda(**january)
 
 # Calls received on 15 January.
-day = client.fetch_convocatorias_busqueda(**period_range(date(2024, 1, 15), date(2024, 1, 15)))
+day = period_range(date(2024, 1, 15), date(2024, 1, 15))
+calls = client.fetch_convocatorias_busqueda(**day)
 ```
 
 ## Split long ranges
@@ -36,7 +38,8 @@ from bdns.fetch.dates import registration_range, split_range
 
 def registered(first: date, last: date):
     for start, end in split_range(first, last):
-        yield from client.fetch_concesiones_busqueda(**registration_range(start, end))
+        chunk = registration_range(start, end)
+        yield from client.fetch_concesiones_busqueda(**chunk)
 ```
 
 Since each piece uses the right bound, the result does not depend on the piece size.

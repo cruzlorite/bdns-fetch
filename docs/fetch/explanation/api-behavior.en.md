@@ -9,14 +9,39 @@ Each claim names the measurement behind it. Most were made while building [`bdns
 
 The API has two families of date parameters, and the upper bound behaves the **opposite** way in each:
 
-| Family | Parameters | Endpoints | Upper bound | Checked (day `D`) |
-|---|---|---|---|---|
-| Registration date | `fechaRegInicio` / `fechaRegFin` | `concesiones-busqueda`, `ayudasestado-busqueda`, `minimis-busqueda`, `partidospoliticos-busqueda` | **Exclusive** | `fechaRegFin=D` returns ~0 rows of day `D`; `fechaRegFin=D+1` returns all of it (on `concesiones`, 1 row against 58,488) |
-| Period | `fechaDesde` / `fechaHasta` | the other searches, `convocatorias-busqueda` among them | **Inclusive** | `fechaHasta=D` returns every call with `fechaRecepcion == D`; `fechaHasta=D+1` returns `D` and `D+1` |
+| | Registration date | Period |
+|---|---|---|
+| **Parameters** | `fechaRegInicio` and `fechaRegFin` | `fechaDesde` and `fechaHasta` |
+| **Used by** | The searches for awards, state aid, de minimis aid and political parties | The other searches, calls for applications among them |
+| **Includes the last day?** | **No** | **Yes** |
+
+We checked it by asking for a single day, `D`. On the awards search, `fechaRegFin=D` returned 1 row of day `D`, and `fechaRegFin=D+1` the 58,488 it had. On the calls search, `fechaHasta=D` already returns every call with `fechaRecepcion` equal to `D`, and `fechaHasta=D+1` adds the next day's too.
+
+### An example
+
+To ask for the awards registered **from 1 to 7 March 2024**, both included, you send `fechaRegInicio=2024-03-01` and, depending on what goes in `fechaRegFin`:
+
+```text
+fechaRegFin=2024-03-07  →  1 to 6 March: the 7th is missing
+fechaRegFin=2024-03-08  →  1 to 7 March, complete
+```
+
+For the calls received on those same dates, on the other hand, you ask for exactly what you want: `fechaDesde=2024-03-01` and `fechaHasta=2024-03-07`.
 
 Getting it wrong is expensive. Without adding a day to `fechaRegFin`, a one-day query returns almost nothing and any wider range loses its last day. Splitting a range multiplies the error, one day per boundary: a 28-day range split into days returned 8 rows instead of ~1.2 million.
 
-`bdns-fetch` keeps the parameters exactly as the API defines them, and offers [`registration_range`][bdns.fetch.dates.registration_range] and [`period_range`][bdns.fetch.dates.period_range]: they take an inclusive `[first, last]` range and return the right arguments for each family.
+`bdns-fetch` keeps the parameters exactly as the API defines them, and offers [`registration_range`][bdns.fetch.dates.registration_range] and [`period_range`][bdns.fetch.dates.period_range]: you give them the first and last day you want, both included, and they return the right arguments for each family.
+
+```python
+from datetime import date
+from bdns.fetch.dates import period_range, registration_range
+
+registration_range(date(2024, 3, 1), date(2024, 3, 7))
+# fechaRegInicio = 1 March, fechaRegFin = 8 March
+
+period_range(date(2024, 3, 1), date(2024, 3, 7))
+# fechaDesde = 1 March, fechaHasta = 7 March
+```
 
 <a id="range-reliability"></a>
 ## Long ranges fail; week-long ones do not

@@ -44,7 +44,7 @@ Cada entidad se sincroniza por separado y no depende de las otras, así que no t
 Ahora `delta` anota el fallo en `_sync_runs`, continúa con el resto y al final muestra un resumen como este:
 
 ```console
-ok      sectores                         fetched=24 new=0 changed=0 unchanged=24 removed=0 skipped=0
+ok  sectores  fetched=24 new=0 changed=0 unchanged=24 removed=0 skipped=0
 FAILED  concesiones_busqueda             BDNSTransientError: HTTP 503: Server error
 ...
 1 of 22 sync(s) failed

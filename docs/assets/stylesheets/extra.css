@@ -104,3 +104,39 @@
   background-color: #5eead4;
   border-color: #5eead4;
 }
+
+/* Tables: inline code never breaks in the middle of a name (a long
+   parameter wraps the cell, not the word), the text is a touch larger
+   than Material's default, and the header row carries a faint tint. */
+.md-typeset table:not([class]) {
+  font-size: 0.72rem;
+}
+
+.md-typeset table:not([class]) code {
+  white-space: nowrap;
+  word-break: normal;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: rgba(15, 118, 110, 0.06);
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
+  background-color: rgba(45, 212, 191, 0.08);
+}
+
+/* Inside cards, inline code reads as a set of tags: each name stays whole
+   (no break at its hyphens) and wraps as a unit. */
+.md-typeset .grid.cards code {
+  display: inline-block;
+  white-space: nowrap;
+  margin: 0.15em 0.05em;
+}
+
+/* Terminal sessions and plain-text blocks wrap instead of scrolling
+   sideways: long commands and log lines stay readable in the text column.
+   Code in a programming language keeps its layout and scrolls. */
+.md-typeset :is(.language-console, .language-text) code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

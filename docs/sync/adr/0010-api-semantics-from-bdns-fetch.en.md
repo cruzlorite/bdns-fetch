@@ -18,15 +18,16 @@ forcing it to fetch every page) instead of fixing them where they belong.
 ## Decision
 
 `bdns-sync` uses what `bdns-fetch` provides: range translation with
-`registration_range` and `period_range`, splitting with `split_range`,
-the contract check with `check_api_contract`, and request spacing in the
+[`registration_range`][bdns.fetch.dates.registration_range] and [`period_range`][bdns.fetch.dates.period_range], splitting with [`split_range`][bdns.fetch.dates.split_range],
+the contract check with [`check_api_contract`][bdns.fetch.contract.check_api_contract], and request spacing in the
 client. It is the other half of the decision `bdns-fetch` records in its
-[ADR 0007](https://cruzlorite.github.io/bdns-fetch/en/adr/0007-api-knowledge-lives-in-fetch/).
+[ADR 0007](../../fetch/adr/0007-api-knowledge-lives-in-fetch.md).
 
 ## Consequences
 
 - The API measurements have one home, in `bdns-fetch`'s documentation;
   `bdns-sync`'s links there and explains only its own decisions.
-- `bdns-sync` depends on a specific major version of `bdns-fetch`, and
-  its CI also tests against `bdns-fetch`'s main branch to catch a break
-  before it is released.
+- `bdns-sync` depends on what `bdns-fetch` declares public, not on its
+  internals. Since both ship in the same package
+  ([shared decision 0001](../../adr/0001-one-package.md)), a change in one
+  that breaks the other shows up in the tests of the same pull request.

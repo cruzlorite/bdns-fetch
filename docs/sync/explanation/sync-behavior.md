@@ -1,6 +1,6 @@
 # Cómo sincroniza
 
-En esta página se explica qué decide `bdns-sync` a partir de cómo se comporta la API. Lo que se sabe de la propia API (cómo tratan las fechas los parámetros, por qué fallan los rangos largos, cuánto histórico guarda cada endpoint o qué datos cambian de forma sin cambiar de verdad), junto con las pruebas, está en la documentación de `bdns-fetch`: [comportamiento de la API](https://cruzlorite.github.io/bdns-fetch/explanation/api-behavior/). Aquí lo enlazamos en lugar de repetirlo.
+En esta página se explica qué decide `bdns-sync` a partir de cómo se comporta la API. Lo que se sabe de la propia API (cómo tratan las fechas los parámetros, por qué fallan los rangos largos, cuánto histórico guarda cada endpoint o qué datos cambian de forma sin cambiar de verdad), junto con las pruebas, está en la documentación de `bdns-fetch`: [comportamiento de la API](../../fetch/explanation/api-behavior.md). Aquí lo enlazamos en lugar de repetirlo.
 
 <a id="inclusive-range"></a>
 ## Los periodos incluyen los dos extremos y terminan ayer
@@ -10,19 +10,19 @@ En `bdns-sync`, un periodo de fechas incluye siempre el primer día y el último
 <a id="upper-bound"></a>
 ## Las fechas las traduce bdns-fetch
 
-La API trata el último día de dos formas opuestas: `fechaRegFin` no lo incluye y `fechaHasta` sí ([las pruebas](https://cruzlorite.github.io/bdns-fetch/explanation/api-behavior/#upper-bound)). `bdns-sync` no monta esos parámetros a mano, sino que pasa el periodo de cada entidad por [`registration_range`](https://cruzlorite.github.io/bdns-fetch/reference/api/dates/) o por [`period_range`](https://cruzlorite.github.io/bdns-fetch/reference/api/dates/), según la familia de fechas que use. Así la regla está en un solo sitio, que es el que corresponde a la API.
+La API trata el último día de dos formas opuestas: `fechaRegFin` no lo incluye y `fechaHasta` sí ([las pruebas](../../fetch/explanation/api-behavior.md#upper-bound)). `bdns-sync` no monta esos parámetros a mano, sino que pasa el periodo de cada entidad por [`registration_range`](../../fetch/reference/api/dates.md) o por [`period_range`](../../fetch/reference/api/dates.md), según la familia de fechas que use. Así la regla está en un solo sitio, que es el que corresponde a la API.
 
 <a id="window-chunking"></a>
 ## Las consultas se dividen en semanas
 
-Antes de pedir un periodo a la API, se divide en tramos de siete días como máximo con [`split_range`](https://cruzlorite.github.io/bdns-fetch/reference/api/dates/), porque los rangos largos fallan de vez en cuando y los semanales no ([las pruebas](https://cruzlorite.github.io/bdns-fetch/explanation/api-behavior/#range-reliability)). Esto es lo que permite descargar años de datos. Los periodos `daily` y `weekly` caben en un solo tramo; el `monthly`, el `annual` y las cargas históricas se dividen.
+Antes de pedir un periodo a la API, se divide en tramos de siete días como máximo con [`split_range`](../../fetch/reference/api/dates.md), porque los rangos largos fallan de vez en cuando y los semanales no ([las pruebas](../../fetch/explanation/api-behavior.md#range-reliability)). Esto es lo que permite descargar años de datos. Los periodos `daily` y `weekly` caben en un solo tramo; el `monthly`, el `annual` y las cargas históricas se dividen.
 
 Los tramos solo afectan a cómo se descarga. El periodo que recibe el sink, y con el que se acotan las bajas, es el periodo completo que se pidió.
 
 <a id="boundary-check"></a>
 ## Cada día se comprueba primero la API
 
-Todo lo anterior se apoya en un comportamiento que se ha medido, pero que la API no documenta. Por eso `bdns-sync delta` empieza ejecutando la comprobación de `bdns-fetch` ([`check-api`](https://cruzlorite.github.io/bdns-fetch/reference/cli/#check-api)): si la API devuelve datos válidos que contradicen ese comportamiento, ese día no se sincroniza nada, porque seguir adelante supondría perder o duplicar registros sin que nadie se diera cuenta. Si el día de prueba no tiene datos o hay un error pasajero, no se bloquea nada.
+Todo lo anterior se apoya en un comportamiento que se ha medido, pero que la API no documenta. Por eso `bdns-sync delta` empieza ejecutando la comprobación de `bdns-fetch` ([`check-api`](../../fetch/reference/cli.md#check-api)): si la API devuelve datos válidos que contradicen ese comportamiento, ese día no se sincroniza nada, porque seguir adelante supondría perder o duplicar registros sin que nadie se diera cuenta. Si el día de prueba no tiene datos o hay un error pasajero, no se bloquea nada.
 
 Además, los tests comprueban lo mismo (que dos días seguidos no comparten registros y que juntos dan el total) con un cliente simulado, para que un error en `bdns-sync` no pase desapercibido.
 
@@ -33,7 +33,7 @@ Las entidades incrementales que traen su propia fecha de registro (`concesiones_
 
 Nunca se compara con la ejecución anterior, porque daría falsos positivos todo el tiempo: tarde o temprano todas las filas se quedan fuera de un periodo que avanza cada día, sin que eso signifique que se hayan dado de baja.
 
-`partidospoliticos_busqueda` se queda fuera, porque su respuesta no trae ningún campo con la fecha de registro ([las pruebas](https://cruzlorite.github.io/bdns-fetch/explanation/api-behavior/#api-issues)) y no hay forma de acotar la comparación. Seguirá así mientras la API no cambie.
+`partidospoliticos_busqueda` se queda fuera, porque su respuesta no trae ningún campo con la fecha de registro ([las pruebas](../../fetch/explanation/api-behavior.md#api-issues)) y no hay forma de acotar la comparación. Seguirá así mientras la API no cambie.
 
 <a id="history-depth"></a>
 ## Hasta dónde llega el histórico
@@ -46,12 +46,12 @@ Cada entidad incremental indica en el [registro de entidades][bdns.sync.entities
 | `ayudasestado_busqueda`, `minimis_busqueda` | 2015 | se publican durante unos diez años |
 | `convocatorias_busqueda`, `convocatorias` | 2013 | el portal empezó a funcionar entonces |
 
-Son fechas prudentes, no la del primer registro: pedir fechas anteriores al periodo de visualización ([las pruebas](https://cruzlorite.github.io/bdns-fetch/explanation/api-behavior/#history-depth)) solo devuelve semanas vacías, y cada una cuesta una sola llamada.
+Son fechas prudentes, no la del primer registro: pedir fechas anteriores al periodo de visualización ([las pruebas](../../fetch/explanation/api-behavior.md#history-depth)) solo devuelve semanas vacías, y cada una cuesta una sola llamada.
 
 <a id="performance"></a>
 ## Rendimiento
 
-- **Una llamada cada vez.** `bdns-fetch` espacia las peticiones a 9,5 por segundo y no deja pasar ráfagas, porque la API las rechaza ([las pruebas](https://cruzlorite.github.io/bdns-fetch/explanation/api-behavior/#rate-limit)), y por defecto hace una sola llamada cada vez, como piden las buenas prácticas oficiales. Lo que más se nota es la paginación: sincronizar una semana de concesiones (236.113 filas) con SQLite como destino tardó 63 segundos con una llamada cada vez y 27 con `--max-workers 5`. Los detalles de `convocatorias` y `planesestrategicos` apenas cambian mientras el servidor responde rápido, porque ya los limita el máximo de peticiones por segundo; si el servidor va cargado, sí se nota: un mes de `convocatorias` (6.186 códigos) llegó a tardar 3 horas y 12 minutos llamada a llamada y 10 minutos y 54 segundos con 8 a la vez ([cuánto se gana con varias llamadas](https://cruzlorite.github.io/bdns-fetch/explanation/api-behavior/#concurrency)). Dentro de la recomendación no hay más margen en nuestro lado, porque cada página tarda lo que tarda el servidor en prepararla y enviarla.
+- **Una llamada cada vez.** `bdns-fetch` espacia las peticiones a 9,5 por segundo y no deja pasar ráfagas, porque la API las rechaza ([las pruebas](../../fetch/explanation/api-behavior.md#rate-limit)), y por defecto hace una sola llamada cada vez, como piden las buenas prácticas oficiales. Lo que más se nota es la paginación: sincronizar una semana de concesiones (236.113 filas) con SQLite como destino tardó 63 segundos con una llamada cada vez y 27 con `--max-workers 5`. Los detalles de `convocatorias` y `planesestrategicos` apenas cambian mientras el servidor responde rápido, porque ya los limita el máximo de peticiones por segundo; si el servidor va cargado, sí se nota: un mes de `convocatorias` (6.186 códigos) llegó a tardar 3 horas y 12 minutos llamada a llamada y 10 minutos y 54 segundos con 8 a la vez ([cuánto se gana con varias llamadas](../../fetch/explanation/api-behavior.md#concurrency)). Dentro de la recomendación no hay más margen en nuestro lado, porque cada página tarda lo que tarda el servidor en prepararla y enviarla.
 - **Descarga y escritura a la vez.** Mientras se escribe un lote en el staging se va descargando el siguiente ([`pipeline`][bdns.sync.pipeline]), lo que es un 40% más rápido en los endpoints donde pesa más la descarga. La descarga va en un hilo aparte y la escritura en el hilo dueño de la conexión, porque los objetos de SQLite no se pueden usar desde otro hilo; una cola de tamaño limitado hace que la descarga espere si la escritura va más lenta.
 - **BigQuery.** El staging se carga con *load jobs* en lotes de 50.000 filas en lugar de con `INSERT`, porque son más rápidos, no gastan cuota de DML y dejan margen frente al límite de operaciones de actualización por tabla ([`dialects`][bdns.sync.sinks.sql.dialects]).
 - **Reintentos.** Por defecto son 5 reintentos, empezando por 10 segundos de espera (10, 20, 40, 60 y 60), de modo que cada petición aguanta unos tres o cuatro minutos de problemas antes de que falle la ejecución. Se ajustan con `--max-retries` y `--wait-time`.
@@ -59,7 +59,7 @@ Son fechas prudentes, no la del primer registro: pedir fechas anteriores al peri
 <a id="api-issues"></a>
 ## Qué hace con cada problema conocido de la API
 
-| Problema ([detalle](https://cruzlorite.github.io/bdns-fetch/explanation/api-behavior/#api-issues)) | Qué hace `bdns-sync` |
+| Problema ([detalle](../../fetch/explanation/api-behavior.md#api-issues)) | Qué hace `bdns-sync` |
 |---|---|
 | Registros sueltos que llegan como una página de error en HTML | Los descarta con un aviso, los cuenta en `rows_skipped` y guarda su contenido en `_sync_errors`. Si se descartan demasiados, la ejecución falla ([decisión 0005](../adr/0005-per-run-reject-tolerance.md)) |
 | `ERR_MANTENIMIENTO_BBDD` en rangos largos | Divide las consultas en semanas, y el cliente lo reintenta como fallo pasajero |
@@ -72,7 +72,7 @@ Son fechas prudentes, no la del primer registro: pedir fechas anteriores al peri
 <a id="spurious-changes"></a>
 ## Cambios espurios: qué cuenta como cambio
 
-A veces la API devuelve el mismo dato escrito de otra manera ([los tres casos](https://cruzlorite.github.io/bdns-fetch/explanation/api-behavior/#spurious-changes)), y en un histórico SCD2 cada uno de esos casos es una versión que no aporta nada. En la pasada anual del 1 de septiembre de 2026, comparando cada versión nueva con la que cerraba:
+A veces la API devuelve el mismo dato escrito de otra manera ([los tres casos](../../fetch/explanation/api-behavior.md#spurious-changes)), y en un histórico SCD2 cada uno de esos casos es una versión que no aporta nada. En la pasada anual del 1 de septiembre de 2026, comparando cada versión nueva con la que cerraba:
 
 | Entidad | Versiones | Espurias | Campo responsable |
 |---|---|---|---|
@@ -126,4 +126,4 @@ Si algún día el patrón dejara de reconocer los códigos, el fallo sería inof
 <a id="intermittent-fields"></a>
 ### Campos que desaparecen y vuelven
 
-El tercer caso, campos que llegan vacíos y luego vuelven a tener valor ([las pruebas](https://cruzlorite.github.io/bdns-fetch/explanation/api-behavior/#intermittent-fields)), **no se puede resolver con reglas de hash**. Un `null` no se puede normalizar: o cuenta como cambio, o se saca el campo del hash y se pierde la posibilidad de saber cuándo se fija de verdad un plazo, que es información útil. Por eso esas versiones se dan por buenas; son unas 650 de las 4.320 versiones cerradas de `convocatorias`. Qué tener en cuenta al consultar los datos lo explicamos en [antes de consultar los datos](data-caveats.md).
+El tercer caso, campos que llegan vacíos y luego vuelven a tener valor ([las pruebas](../../fetch/explanation/api-behavior.md#intermittent-fields)), **no se puede resolver con reglas de hash**. Un `null` no se puede normalizar: o cuenta como cambio, o se saca el campo del hash y se pierde la posibilidad de saber cuándo se fija de verdad un plazo, que es información útil. Por eso esas versiones se dan por buenas; son unas 650 de las 4.320 versiones cerradas de `convocatorias`. Qué tener en cuenta al consultar los datos lo explicamos en [antes de consultar los datos](data-caveats.md).

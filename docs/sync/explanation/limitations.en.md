@@ -2,7 +2,7 @@
 
 The source API's problematic behaviors (malformed records, `ERR_MANTENIMIENTO_BBDD`, inconsistent date semantics, and so on) are consolidated in [known API issues](sync-behavior.md#api-issues). Limitations of the tool itself:
 
-- `organos_codigo` and `organos_codigoadmin` are not implemented (group H); see the [roadmap](../roadmap.md).
+- `organos_codigo` and `organos_codigoadmin` are not implemented (group H); see the [roadmap](../../roadmap.md).
 - `convocatorias_ultimas` is not synced. It is a rolling feed of the most recently received calls, not a catalog: versioning it under SCD2 closed about 30 rows a day that were not withdrawals, just calls dropping out of the latest N. Everything it holds is in `convocatorias_busqueda`, with its registration date and without that noise.
 - `partidospoliticos_busqueda` has no deletion detection: its payload exposes no registration-date field (see [known API issues](sync-behavior.md#api-issues)).
 - Records that cannot be versioned are discarded and recorded in `_sync_errors`, with the reason and the content truncated to 200 characters, linked by `run_id`. Rejected: anything that is not a JSON object, a missing or null natural key, and a registration date that is missing, null, or not an ISO date. They never reach the synced tables: without a valid natural key there is nothing to version.

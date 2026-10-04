@@ -2,7 +2,7 @@
 
 How the BDNS API actually behaves, checked against the live service. None of this is in the [official documentation](https://www.infosubvenciones.es/bdnstrans/api), or it contradicts it, and each point loses or duplicates data silently when mishandled.
 
-Each claim names the measurement behind it. Most were made while building [`bdns-sync`](https://cruzlorite.github.io/bdns-sync/en/), which downloads the whole API every day; this page is their home because they are about the API, not about storage. What `bdns-sync` does about each one is in its own documentation.
+Each claim names the measurement behind it. Most were made while building [`bdns-sync`](../../sync/index.md), which downloads the whole API every day; this page is their home because they are about the API, not about storage. What `bdns-sync` does about each one is in its own documentation.
 
 <a id="upper-bound"></a>
 ## The two date filters disagree on the upper bound

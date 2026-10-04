@@ -100,7 +100,7 @@ The schema only grows, by nullable columns. At the start of each run the
 engine adds to existing tables whatever columns they lack
 ([`add_missing_columns`][bdns.sync.sinks.sql.migrate.add_missing_columns]),
 so a target created by an earlier version upgrades itself and nothing is
-migrated by hand. See [compatibility](../compatibility.md).
+migrated by hand. See [compatibility](../../compatibility.md).
 
 ## Run lifecycle
 

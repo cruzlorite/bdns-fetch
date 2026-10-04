@@ -9,7 +9,7 @@ Esta guía explica cómo mantener la base de datos sincronizada sin tener una m�
 Con cada versión se publica una imagen en GitHub Container Registry que ya incluye el extra de BigQuery:
 
 ```bash
-docker pull ghcr.io/cruzlorite/bdns-sync:latest    # o una versión concreta, por ejemplo :0.6.0
+docker pull ghcr.io/cruzlorite/bdns-sync:latest    # o una versión concreta, por ejemplo :2.0.0
 ```
 
 - Por defecto ejecuta `bdns-sync delta`, la sincronización diaria, que elige sola el periodo y sigue aunque falle alguna entidad ([sincronización diaria](scheduling.md)).

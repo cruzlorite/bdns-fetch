@@ -2,7 +2,7 @@
 
 En esta página está recogido cómo se comporta de verdad la API de la BDNS, comprobado contra el servicio real. Nada de esto aparece en la [documentación oficial](https://www.infosubvenciones.es/bdnstrans/api), o aparece de otra manera, y si no se tiene en cuenta se pierden o se duplican datos sin que nadie se entere.
 
-Cada afirmación va acompañada de la prueba en la que se basa. Casi todas se hicieron mientras se desarrollaba [`bdns-sync`](https://cruzlorite.github.io/bdns-sync/), que descarga la API entera todos los días, pero están aquí porque hablan de la API y no de cómo se guardan los datos. Lo que `bdns-sync` hace con cada una lo explica su propia documentación.
+Cada afirmación va acompañada de la prueba en la que se basa. Casi todas se hicieron mientras se desarrollaba [`bdns-sync`](../../sync/index.md), que descarga la API entera todos los días, pero están aquí porque hablan de la API y no de cómo se guardan los datos. Lo que `bdns-sync` hace con cada una lo explica su propia documentación.
 
 <a id="upper-bound"></a>
 ## Las dos familias de fechas no tratan igual el último día

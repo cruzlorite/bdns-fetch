@@ -1,0 +1,13 @@
+# Only pyproject.toml, uv.lock, README.md, LICENSE and src/ go into the image.
+.git
+.github
+.venv
+**/__pycache__
+**/*.pyc
+**/tests
+htmlcov
+.coverage
+coverage.xml
+docs
+site
+dist

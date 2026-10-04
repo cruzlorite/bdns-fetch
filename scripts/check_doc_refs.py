@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify that every docs/ reference in the code points somewhere real.
 
-Docstrings, tests and the Makefile link to the
+Docstrings, tests, scripts, Dockerfiles and the Makefile link to the
 documents instead of copying them, which is what stops the two from
 drifting. That only works while the links do: a renamed file or a
 reworded heading silently turns a reference into a dead end that nothing
@@ -14,15 +14,15 @@ import pathlib
 import re
 import sys
 
+from modules import ROOT, SRC, modules
+
 REF = re.compile(r"docs/[\w./-]+\.md(?:#([\w-]+))?")
 # A docstring links relative to the page it renders on, and every module's
-# page is in docs/reference/api/. mkdocs does not validate these: they come
-# out of mkdocstrings after its own link checks have run.
+# page is in docs/<module>/reference/api/. mkdocs does not validate these:
+# they come out of mkdocstrings after its own link checks have run.
 REL = re.compile(r"\]\((\.\./[\w./-]+\.md)(?:#([\w-]+))?\)")
-API_PAGES = pathlib.Path("docs/reference/api")
 ANCHOR = re.compile(r'<a id="([\w-]+)"></a>')
-
-ROOT = pathlib.Path(__file__).resolve().parent.parent
+SOURCES = ("src/**/*.py", "tests/**/*.py", "scripts/*.sh", "Dockerfile", "Makefile")
 
 
 def anchors_in(path: pathlib.Path) -> set[str]:
@@ -35,13 +35,16 @@ def main() -> int:
     problems: list[str] = []
     checked = 0
 
-    sources = [
-        path
-        for pattern in ("src/**/*.py", "tests/**/*.py", "Makefile")
-        for path in sorted(ROOT.glob(pattern))
-    ]
+    # Each source with the directory its docstrings' relative links resolve
+    # against: the API pages of its module. Only Python under src/ renders.
+    api_pages = {module.path: module.docs / "reference" / "api" for module in modules()}
+    sources: list[tuple[pathlib.Path, pathlib.Path | None]] = []
+    for pattern in SOURCES:
+        for path in sorted(ROOT.glob(pattern)):
+            module = SRC / "bdns" / path.relative_to(SRC).parts[1] if SRC in path.parents else None
+            sources.append((path, api_pages.get(module)))
 
-    for source in sources:
+    for source, api_pages in sources:
         text = source.read_text(encoding="utf-8")
         for match in REF.finditer(text):
             checked += 1
@@ -55,16 +58,17 @@ def main() -> int:
             elif anchor and anchor not in anchors_in(target):
                 problems.append(f"{where}: {ref} -> no anchor '{anchor}' in that file")
 
-        if source.suffix != ".py" or "src" not in source.relative_to(ROOT).parts:
+        if api_pages is None:
             continue
         for match in REL.finditer(text):
             checked += 1
             rel, anchor = match.group(1), match.group(2)
             line = text.count("\n", 0, match.start()) + 1
-            target = (ROOT / API_PAGES / rel).resolve()
+            target = (api_pages / rel).resolve()
             where = f"{source.relative_to(ROOT)}:{line}"
             if not target.exists():
-                problems.append(f"{where}: {rel} -> no such file (relative to {API_PAGES})")
+                relative_to = api_pages.relative_to(ROOT)
+                problems.append(f"{where}: {rel} -> no such file (relative to {relative_to})")
             elif anchor and anchor not in anchors_in(target):
                 problems.append(f"{where}: {rel}#{anchor} -> no anchor '{anchor}' in that file")
 

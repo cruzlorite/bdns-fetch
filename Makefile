@@ -1,50 +1,44 @@
-# Makefile for BDNS Fetch project
+# Makefile for bdns.
 
-.PHONY: help install dev-install test test-integration lint format check-docs docs clean all
+.PHONY: help install test test-sync test-integration lint format check-docs docs clean all
 
 .DEFAULT_GOAL := help
 
 help: ## Show this help message
-	@echo "BDNS Fetch - Available Make Targets:"
-	@echo "====================================="
+	@echo "BDNS - Available Make Targets:"
+	@echo "=============================="
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
-install: ## Install project dependencies
-	poetry install --only main
+install: ## Install the package, its extras and the development tools
+	uv sync --all-extras
 
-dev-install: ## Install project with development dependencies
-	poetry install
+test: ## Run the unit tests (no network)
+	uv run pytest
 
-test: ## Run unit tests (no network)
-	poetry run python -m pytest tests/ -v
+test-sync: ## Run bdns.sync's tests only (BDNS_SYNC_TEST_URL picks the database)
+	uv run pytest tests/sync
 
-test-integration: ## Run live tests against the real BDNS API
-	poetry run python -m pytest tests/ -m integration --no-cov -v
+test-integration: ## Run the live tests against the real BDNS API
+	uv run pytest -m integration --no-cov
 
-lint: ## Run code linting with ruff
-	poetry run ruff check .
+lint: ## Lint and check formatting with ruff
+	uv run ruff check .
+	uv run ruff format --check .
 
-format: ## Format code with ruff formatter
-	poetry run ruff format .
+format: ## Format code with ruff
+	uv run ruff format .
 
-check-docs: ## Verify doc references, docstring conventions, and the site build
-	poetry run python scripts/check_doc_refs.py
-	poetry run python scripts/check_docstrings.py
-	poetry run mkdocs build --strict
-	poetry run python scripts/check_site_links.py
+check-docs: ## Verify doc references, docstring conventions and the site build
+	uv run python scripts/check_doc_refs.py
+	uv run python scripts/check_docstrings.py
+	uv run mkdocs build --strict
+	uv run python scripts/check_site_links.py
 
 docs: ## Serve the documentation site locally
-	poetry run mkdocs serve
+	uv run mkdocs serve
 
 clean: ## Remove build artifacts and cache files
-	rm -rf dist/
-	rm -rf build/
-	rm -rf *.egg-info
-	rm -rf .pytest_cache/
-	rm -rf .ruff_cache/
-	rm -rf htmlcov/
-	rm -f .coverage
-	find . -type d -name __pycache__ -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
+	rm -rf dist/ build/ site/ htmlcov/ .pytest_cache/ .ruff_cache/ .coverage
+	find . -path ./.venv -prune -o -type d -name __pycache__ -exec rm -rf {} +
 
-all: dev-install lint format check-docs test ## Install, lint, format, check docs, and test everything
+all: install lint check-docs test ## Install, lint, check docs and test everything

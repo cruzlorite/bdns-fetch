@@ -1,10 +1,10 @@
-site_name: BDNS Fetch
+site_name: BDNS
 site_description: >-
-  Cliente Python y CLI para la API de la Base de Datos Nacional de
-  Subvenciones (BDNS).
-site_url: https://cruzlorite.github.io/bdns-fetch/
-repo_url: https://github.com/cruzlorite/bdns-fetch
-repo_name: cruzlorite/bdns-fetch
+  Herramientas para descargar, conservar y reutilizar los datos de la Base
+  de Datos Nacional de Subvenciones (BDNS).
+site_url: https://cruzlorite.github.io/bdns/
+repo_url: https://github.com/cruzlorite/bdns
+repo_name: cruzlorite/bdns
 edit_uri: edit/main/docs/
 copyright: "Licencia MIT · Proyecto no oficial, sin relación con la BDNS ni con el Ministerio de Hacienda"
 
@@ -14,10 +14,12 @@ theme:
   favicon: assets/favicon.svg
   icon:
     repo: fontawesome/brands/github
-    logo: material/cloud-download
+    logo: material/database-sync
   features:
     # navigation.instant is deliberately absent: it is incompatible with
     # the i18n language switcher's contextual link.
+    - navigation.tabs
+    - navigation.sections
     - navigation.tracking
     - navigation.indexes
     - navigation.top
@@ -63,6 +65,8 @@ markdown_extensions:
   - toc:
       permalink: true
   - pymdownx.details
+  # Turns :material-*: / :octicons-*: shortcodes into inline SVG icons.
+  # Without it they render as literal text.
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
@@ -95,9 +99,10 @@ plugins:
           name: English
           build: true
           site_description: >-
-            Python client and CLI for the API of Spain's National Subsidies
-            Database (BDNS).
+            Tools to download, keep and reuse the data of Spain's National
+            Subsidies Database (BDNS).
           copyright: "MIT license · Unofficial project, not affiliated with the BDNS or Spain's Ministerio de Hacienda"
+          # Merged by index into theme.palette: only the toggle labels change.
           theme:
             palette:
               - toggle:
@@ -116,6 +121,13 @@ plugins:
             Decisiones de diseño: Decisions
             Cómo contribuir: Contributing
             Compatibilidad: Compatibility
+            Hoja de ruta: Roadmap
+            Proyecto: Project
+            Decisiones comunes: Shared decisions
+  # The reference is built once per locale, so every symbol has one URL per
+  # language and autorefs sees competing targets. `resolve_closest` picks
+  # the one in the same subtree as the linking page, which is the right
+  # answer: a Spanish page links to the Spanish build.
   - autorefs:
       resolve_closest: true
   - mkdocstrings:
@@ -136,41 +148,96 @@ plugins:
             merge_init_into_class: true
             members_order: source
             filters: []
+            # `[name][]` in a docstring resolves against the names in scope,
+            # so a docstring can link a sibling without spelling its path.
             scoped_crossrefs: true
 
 nav:
   - Inicio: index.md
-  - Primeros pasos: getting-started.md
-  - Guías:
-      - guides/incremental.md
-      - guides/errors.md
-      - guides/other-endpoints.md
-  - Conceptos:
-      - explanation/api-behavior.md
-      - explanation/policies.md
-  - Referencia:
-      - reference/cli.md
-      - API Python:
-          - reference/api/index.md
-          - reference/api/client.md
-          - reference/api/exceptions.md
-          - reference/api/dates.md
-          - reference/api/contract.md
-          - reference/api/types.md
-          - reference/api/utils.md
-          - reference/api/endpoints.md
-          - reference/api/options.md
-          - reference/api/cli.md
-  - Decisiones de diseño:
-      - adr/index.md
-      - adr/0001-api-parameter-names-keyword-only.md
-      - adr/0002-retry-only-transient-failures.md
-      - adr/0003-spaced-requests-no-bursts.md
-      - adr/0004-records-as-plain-dicts.md
-      - adr/0005-ordered-bounded-pagination.md
-      - adr/0006-cli-generated-from-client.md
-      - adr/0007-api-knowledge-lives-in-fetch.md
-      - adr/0008-one-call-at-a-time.md
-  - Compatibilidad: compatibility.md
-  - Cómo contribuir:
-      - contributing/docstrings.md
+  - BDNS Fetch:
+      - fetch/index.md
+      - Primeros pasos: fetch/getting-started.md
+      - Guías:
+          - fetch/guides/incremental.md
+          - fetch/guides/errors.md
+          - fetch/guides/other-endpoints.md
+      - Conceptos:
+          - fetch/explanation/api-behavior.md
+          - fetch/explanation/policies.md
+      - Referencia:
+          - fetch/reference/cli.md
+          - API Python:
+              - fetch/reference/api/index.md
+              - fetch/reference/api/client.md
+              - fetch/reference/api/exceptions.md
+              - fetch/reference/api/dates.md
+              - fetch/reference/api/contract.md
+              - fetch/reference/api/types.md
+              - fetch/reference/api/utils.md
+              - fetch/reference/api/endpoints.md
+              - fetch/reference/api/options.md
+              - fetch/reference/api/cli.md
+      - Decisiones de diseño:
+          - fetch/adr/index.md
+          - fetch/adr/0001-api-parameter-names-keyword-only.md
+          - fetch/adr/0002-retry-only-transient-failures.md
+          - fetch/adr/0003-spaced-requests-no-bursts.md
+          - fetch/adr/0004-records-as-plain-dicts.md
+          - fetch/adr/0005-ordered-bounded-pagination.md
+          - fetch/adr/0006-cli-generated-from-client.md
+          - fetch/adr/0007-api-knowledge-lives-in-fetch.md
+          - fetch/adr/0008-one-call-at-a-time.md
+  - BDNS Sync:
+      - sync/index.md
+      - Primeros pasos: sync/getting-started.md
+      - Guías:
+          - sync/guides/scheduling.md
+          - sync/guides/backfill.md
+          - sync/guides/deployment.md
+      - Conceptos:
+          - sync/explanation/endpoint-types.md
+          - sync/explanation/payload-policy.md
+          - sync/explanation/sync-behavior.md
+          - sync/explanation/official-practices.md
+          - sync/explanation/data-caveats.md
+          - sync/explanation/limitations.md
+          - sync/explanation/sinks.md
+      - Referencia:
+          - sync/reference/cli.md
+          - sync/reference/data-model.md
+          - API Python:
+              - sync/reference/api/index.md
+              - sync/reference/api/entities.md
+              - sync/reference/api/windows.md
+              - sync/reference/api/orchestration.md
+              - sync/reference/api/policy.md
+              - sync/reference/api/hashing.md
+              - sync/reference/api/pipeline.md
+              - sync/reference/api/sinks.md
+              - sync/reference/api/cli.md
+              - sync/reference/api/sinks.sql.md
+              - sync/reference/api/sinks.sql.scd2.md
+              - sync/reference/api/sinks.sql.schema.md
+              - sync/reference/api/sinks.sql.bookkeeping.md
+              - sync/reference/api/sinks.sql.migrate.md
+              - sync/reference/api/sinks.sql.dialects.md
+      - Decisiones de diseño:
+          - sync/adr/index.md
+          - sync/adr/0001-store-whole-record-version-by-hash.md
+          - sync/adr/0002-staging-and-bulk-diff.md
+          - sync/adr/0003-run-event-log.md
+          - sync/adr/0004-beneficiario-out-of-hash.md
+          - sync/adr/0005-per-run-reject-tolerance.md
+          - sync/adr/0006-entity-registry.md
+          - sync/adr/0007-cadence-in-the-cli.md
+          - sync/adr/0008-run-linked-versions-additive-migrations.md
+          - sync/adr/0009-natural-key-conflicts-fail-the-run.md
+          - sync/adr/0010-api-semantics-from-bdns-fetch.md
+  - Proyecto:
+      - Compatibilidad: compatibility.md
+      - Hoja de ruta: roadmap.md
+      - Decisiones comunes:
+          - adr/index.md
+          - adr/0001-one-package.md
+      - Cómo contribuir:
+          - contributing/docstrings.md

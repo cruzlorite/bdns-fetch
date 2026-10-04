@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Vulnerabilidad de seguridad / Security vulnerability
-    url: https://github.com/cruzlorite/bdns-fetch/security/advisories/new
+    url: https://github.com/cruzlorite/bdns/security/advisories/new
     about: Infórmala en privado, nunca en un issue público. / Report it privately, never in a public issue.
   - name: Documentación / Documentation
-    url: https://cruzlorite.github.io/bdns-fetch/
+    url: https://cruzlorite.github.io/bdns/
     about: Guías, referencia y comportamiento conocido de la API. / Guides, reference and known API behaviour.

@@ -2,7 +2,7 @@
 
 Los problemas de la propia API (registros que llegan mal, `ERR_MANTENIMIENTO_BBDD`, fechas que no se comportan igual en todos los endpoints...) y lo que hace `bdns-sync` con cada uno están en [cómo sincroniza](sync-behavior.md#api-issues). Estas son las limitaciones de la herramienta:
 
-- `organos_codigo` y `organos_codigoadmin` todavía no se sincronizan (lo tienes en la [hoja de ruta](../roadmap.md)).
+- `organos_codigo` y `organos_codigoadmin` todavía no se sincronizan (lo tienes en la [hoja de ruta](../../roadmap.md)).
 - `convocatorias_ultimas` no se sincroniza. Es una lista que va rotando con las últimas convocatorias recibidas, no un catálogo, y al guardarla con histórico se cerraban unas 30 filas al día que no eran bajas, sino convocatorias que simplemente habían dejado de estar entre las últimas. Todo lo que contiene está en `convocatorias_busqueda`, con su fecha de registro y sin ese ruido.
 - `partidospoliticos_busqueda` no detecta bajas, porque su respuesta no trae ningún campo con la fecha de registro.
 - Los registros que no se pueden guardar se descartan y quedan anotados en `_sync_errors`, con el motivo y los primeros 200 caracteres del contenido, enlazados a la ejecución por `run_id`. Se descarta lo que no es un objeto JSON, lo que no trae la clave natural o la trae vacía, y lo que no trae la fecha de registro, la trae vacía o no es una fecha ISO. Nunca llegan a las tablas sincronizadas, porque sin una clave natural válida no hay nada que versionar.

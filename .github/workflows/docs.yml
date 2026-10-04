@@ -12,25 +12,28 @@ on:
 permissions:
   contents: read
 
+# Each job installs what it needs with an explicit `uv sync`; `uv run` must
+# use exactly that, not sync again with the default groups.
+env:
+  UV_NO_SYNC: "1"
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
 
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
         with:
+          version: "0.12.23"
           python-version: "3.12"
-
-      - name: Install Poetry
-        run: pipx install poetry==2.2.1
+          enable-cache: true
 
       - name: Install dependencies
-        run: poetry install --only main,docs
+        run: uv sync --frozen --only-group docs
 
       - name: Build
-        run: poetry run mkdocs build --strict
+        run: uv run mkdocs build --strict
 
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa  # v3.0.1
         with:

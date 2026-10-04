@@ -7,9 +7,9 @@ En unos diez minutos vas a tener una tabla sincronizada que puedes consultar, si
 Necesitas Python 3.11 o posterior (hasta la 3.14).
 
 ```console
-$ pip install bdns-sync
+$ pip install bdns
 $ bdns-sync --version
-bdns-sync 0.6.0
+bdns-sync 2.0.0
 ```
 
 ## 2. Elegir dónde se guardan los datos

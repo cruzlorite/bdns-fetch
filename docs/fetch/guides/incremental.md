@@ -58,4 +58,4 @@ Solo termina con código 1 si la API devuelve datos válidos que contradicen ese
 
 ## Si necesitas guardar el histórico
 
-Detectar qué ha cambiado entre descargas, cerrar los registros que desaparecen y conservar todas las versiones es justo lo que hace [`bdns-sync`](https://cruzlorite.github.io/bdns-sync/), que se apoya en esta librería.
+Detectar qué ha cambiado entre descargas, cerrar los registros que desaparecen y conservar todas las versiones es justo lo que hace [`bdns-sync`](../../sync/index.md), que se apoya en esta librería.

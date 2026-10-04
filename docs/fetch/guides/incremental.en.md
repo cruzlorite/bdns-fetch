@@ -58,4 +58,4 @@ It exits 1 only when the API returned valid data contradicting the semantics; an
 
 ## If you want versioned history
 
-Detecting what changed between downloads, closing withdrawn records and keeping history is exactly what [`bdns-sync`](https://cruzlorite.github.io/bdns-sync/en/) does, on top of this library.
+Detecting what changed between downloads, closing withdrawn records and keeping history is exactly what [`bdns-sync`](../../sync/index.md) does, on top of this library.

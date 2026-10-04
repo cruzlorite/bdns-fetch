@@ -3,7 +3,7 @@
 Cliente de Python y herramienta de línea de comandos para descargar datos de la API de la [Base de Datos Nacional de Subvenciones](https://www.infosubvenciones.es/) (BDNS). Cubre los 29 endpoints de consulta y se encarga por ti de la paginación, de los reintentos y del límite de peticiones que fija la API.
 
 ```console
-$ pip install bdns-fetch
+$ pip install bdns
 $ bdns-fetch convocatorias-busqueda --fechaDesde 2024-01-01 --num-pages 0 > convocatorias.jsonl
 ```
 
@@ -54,7 +54,7 @@ for convocatoria in BDNSClient().fetch_convocatorias_busqueda(descripcion="inves
 
 ## Los dos proyectos
 
-`bdns-fetch` se ocupa solo de **descargar**: sabe todo lo necesario sobre la API y nada sobre cómo guardar los datos. [`bdns-sync`](https://cruzlorite.github.io/bdns-sync/) se apoya en él para mantener una copia local con histórico de versiones (SCD2) en cualquier base de datos compatible con SQLAlchemy.
+`bdns-fetch` se ocupa solo de **descargar**: sabe todo lo necesario sobre la API y nada sobre cómo guardar los datos. [`bdns-sync`](../sync/index.md) se apoya en él para mantener una copia local con histórico de versiones (SCD2) en cualquier base de datos compatible con SQLAlchemy.
 
 ```mermaid
 flowchart LR
@@ -66,4 +66,4 @@ flowchart LR
 
 ## Aviso
 
-Es un proyecto personal y no oficial, sin ninguna relación con la Intervención General de la Administración del Estado (IGAE), que es quien gestiona la BDNS. Algunos endpoints devuelven nombres y NIF de personas físicas, y su reutilización está limitada por las condiciones de la IGAE; las tienes resumidas en el [aviso legal del README](https://github.com/cruzlorite/bdns-fetch#aviso-legal).
+Es un proyecto personal y no oficial, sin ninguna relación con la Intervención General de la Administración del Estado (IGAE), que es quien gestiona la BDNS. Algunos endpoints devuelven nombres y NIF de personas físicas, y su reutilización está limitada por las condiciones de la IGAE; las tienes resumidas en el [aviso legal del README](https://github.com/cruzlorite/bdns#aviso-legal).

@@ -5,13 +5,13 @@ Mantiene en tu base de datos una copia de la [Base de Datos Nacional de Subvenci
 Basta con un comando al día: comprueba que la API no ha cambiado, sincroniza las 22 entidades con el periodo que toque y deja anotada cada ejecución. No necesita fichero de configuración.
 
 ```console
-$ pip install bdns-sync
+$ pip install bdns
 $ export BDNS_SYNC_TARGET_URL=sqlite:///bdns.db
 $ bdns-sync backfill        # una sola vez, para cargar el histórico
 $ bdns-sync delta           # todos los días
 ```
 
-Para hablar con la API se apoya en [`bdns-fetch`](https://cruzlorite.github.io/bdns-fetch/), que sabe todo lo necesario sobre ella; `bdns-sync` se encarga de guardar el histórico de versiones, detectar las bajas y llevar el registro de ejecuciones.
+Para hablar con la API se apoya en [`bdns-fetch`](../fetch/index.md), que sabe todo lo necesario sobre ella; `bdns-sync` se encarga de guardar el histórico de versiones, detectar las bajas y llevar el registro de ejecuciones.
 
 ## Por dónde empezar
 
@@ -71,4 +71,4 @@ Todos los detalles están en el [modelo de datos](reference/data-model.md).
 
 ## Aviso
 
-Es un proyecto personal y no oficial, sin ninguna relación con la Intervención General de la Administración del Estado (IGAE), que es quien gestiona la BDNS. Varias tablas guardan nombres y NIF de personas físicas, y su reutilización está limitada por las condiciones de la IGAE; las tienes resumidas en el [aviso legal del README](https://github.com/cruzlorite/bdns-sync#aviso-legal).
+Es un proyecto personal y no oficial, sin ninguna relación con la Intervención General de la Administración del Estado (IGAE), que es quien gestiona la BDNS. Varias tablas guardan nombres y NIF de personas físicas, y su reutilización está limitada por las condiciones de la IGAE; las tienes resumidas en el [aviso legal del README](https://github.com/cruzlorite/bdns#aviso-legal).

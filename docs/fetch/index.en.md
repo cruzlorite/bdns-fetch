@@ -6,7 +6,7 @@ endpoints, with pagination, retries and the API's rate limit applied by
 default.
 
 ```console
-$ pip install bdns-fetch
+$ pip install bdns
 $ bdns-fetch convocatorias-busqueda --fechaDesde 2024-01-01 --num-pages 0 > convocatorias.jsonl
 ```
 
@@ -57,7 +57,7 @@ for convocatoria in BDNSClient().fetch_convocatorias_busqueda(descripcion="inves
 
 ## The family
 
-`bdns-fetch` is the **extraction** layer: it knows everything there is to know about the API and nothing about storage. [`bdns-sync`](https://cruzlorite.github.io/bdns-sync/en/) builds on it to keep a local, versioned (SCD2) copy of the same data in any database with a SQLAlchemy dialect.
+`bdns-fetch` is the **extraction** layer: it knows everything there is to know about the API and nothing about storage. [`bdns-sync`](../sync/index.md) builds on it to keep a local, versioned (SCD2) copy of the same data in any database with a SQLAlchemy dialect.
 
 ```mermaid
 flowchart LR
@@ -69,4 +69,4 @@ flowchart LR
 
 ## Notice
 
-A personal, unofficial project with no relationship to the Intervención General de la Administración del Estado (IGAE), which runs the BDNS. Some endpoints return names and tax IDs of natural persons, and their reuse is limited by the IGAE's conditions, summarised in the [README's legal notice](https://github.com/cruzlorite/bdns-fetch/blob/main/README.en.md#legal-notice).
+A personal, unofficial project with no relationship to the Intervención General de la Administración del Estado (IGAE), which runs the BDNS. Some endpoints return names and tax IDs of natural persons, and their reuse is limited by the IGAE's conditions, summarised in the [README's legal notice](https://github.com/cruzlorite/bdns/blob/main/README.en.md#legal-notice).

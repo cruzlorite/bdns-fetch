@@ -95,7 +95,7 @@ WHERE _closed_reason = 'removed';
 
 ## Cuando el esquema cambia
 
-El esquema solo crece, y siempre con columnas que admiten valores nulos. Al empezar cada ejecución se añaden a las tablas existentes las columnas que les falten ([`add_missing_columns`][bdns.sync.sinks.sql.migrate.add_missing_columns]), así que una base de datos creada con una versión anterior se actualiza sola y no tienes que migrar nada a mano. Lo explicamos en [compatibilidad](../compatibility.md).
+El esquema solo crece, y siempre con columnas que admiten valores nulos. Al empezar cada ejecución se añaden a las tablas existentes las columnas que les falten ([`add_missing_columns`][bdns.sync.sinks.sql.migrate.add_missing_columns]), así que una base de datos creada con una versión anterior se actualiza sola y no tienes que migrar nada a mano. Lo explicamos en [compatibilidad](../../compatibility.md).
 
 ## Cómo transcurre una ejecución
 

@@ -9,13 +9,13 @@ not changed, syncs the 22 entities with the window that day calls for,
 and records every run. No configuration file.
 
 ```console
-$ pip install bdns-sync
+$ pip install bdns
 $ export BDNS_SYNC_TARGET_URL=sqlite:///bdns.db
 $ bdns-sync backfill        # once: the history
 $ bdns-sync delta           # daily
 ```
 
-It builds on [`bdns-fetch`](https://cruzlorite.github.io/bdns-fetch/en/),
+It builds on [`bdns-fetch`](../fetch/index.md),
 which knows everything there is to know about the API; `bdns-sync` adds
 versioned history, deletion detection and the run log.
 
@@ -80,4 +80,4 @@ versions are never deleted — history is append-only.
 
 ## Notice
 
-A personal, unofficial project with no relationship to the Intervención General de la Administración del Estado (IGAE), which runs the BDNS. Several tables hold names and tax IDs of natural persons, and their reuse is limited by the IGAE's conditions, summarised in the [README's legal notice](https://github.com/cruzlorite/bdns-sync/blob/main/README.en.md#legal-notice).
+A personal, unofficial project with no relationship to the Intervención General de la Administración del Estado (IGAE), which runs the BDNS. Several tables hold names and tax IDs of natural persons, and their reuse is limited by the IGAE's conditions, summarised in the [README's legal notice](https://github.com/cruzlorite/bdns/blob/main/README.en.md#legal-notice).

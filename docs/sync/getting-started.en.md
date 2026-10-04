@@ -7,9 +7,9 @@ file.
 ## 1. Install
 
 ```console
-$ pip install bdns-sync
+$ pip install bdns
 $ bdns-sync --version
-bdns-sync 0.6.0
+bdns-sync 2.0.0
 ```
 
 ## 2. Pick a target

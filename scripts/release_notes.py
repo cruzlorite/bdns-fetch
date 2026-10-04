@@ -10,9 +10,10 @@ Usage: python scripts/release_notes.py X.Y.Z
 
 import re
 import sys
-from pathlib import Path
 
-CHANGELOG = Path("CHANGELOG.md")
+from modules import ROOT
+
+CHANGELOG = ROOT / "CHANGELOG.md"
 
 
 def section(changelog: str, version: str) -> str | None:
@@ -43,7 +44,7 @@ def main() -> int:
     version = sys.argv[1]
     notes = section(CHANGELOG.read_text(encoding="utf-8"), version)
     if notes is None:
-        print(f"{CHANGELOG} has no section for {version}", file=sys.stderr)
+        print(f"CHANGELOG.md has no section for {version}", file=sys.stderr)
         return 1
     print(notes)
     return 0

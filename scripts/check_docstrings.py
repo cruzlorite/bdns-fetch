@@ -13,17 +13,15 @@ failure here is a failure the rendered reference would have shown.
 Run from the repository root, or via `make check-docs`.
 """
 
-import pathlib
 import sys
 
 import griffe
-
-ROOT = pathlib.Path(__file__).resolve().parent.parent
+from modules import SRC, modules
 
 # __init__ is documented on its class (ruff's D107 is off for the same
 # reason), and a module with no module-level names has nothing to export.
 SKIP_MEMBERS = {"__init__"}
-NO_PUBLIC_SURFACE = {"bdns.fetch.__main__"}
+NO_PUBLIC_SURFACE = {f"{module.name}.__main__" for module in modules()}
 
 
 def check(pkg: griffe.Module) -> list[str]:
@@ -85,15 +83,20 @@ def check(pkg: griffe.Module) -> list[str]:
 
 
 def main() -> int:
-    """Load the package and report. Returns an exit code."""
-    pkg = griffe.load("bdns.fetch", search_paths=[str(ROOT / "src")], docstring_parser="google")
-    problems = check(pkg)
-
-    for problem in problems:
-        print(problem, file=sys.stderr)
-
-    print(f"checked bdns.fetch against docs/contributing/docstrings.md, {len(problems)} problems")
-    return 1 if problems else 0
+    """Load every module and report. Returns an exit code."""
+    failed = False
+    for module in modules():
+        problems = check(
+            griffe.load(module.name, search_paths=[str(SRC)], docstring_parser="google")
+        )
+        for problem in problems:
+            print(problem, file=sys.stderr)
+        print(
+            f"checked {module.name} against docs/contributing/docstrings.md, "
+            f"{len(problems)} problems"
+        )
+        failed = failed or bool(problems)
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":

@@ -1,0 +1,119 @@
+[project]
+name = "bdns"
+version = "2.0.0rc1"
+description = "Tools to download, keep and reuse the data of Spain's National Subsidies Database (BDNS): an API client and CLI, and an SCD2 sync engine"
+readme = "README.md"
+authors = [{ name = "José María Cruz Lorite", email = "josemariacruzlorite@gmail.com" }]
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11,<3.15"
+keywords = ["bdns", "subsidies", "spanish-government", "api", "data", "cli", "sync", "scd2"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "requests>=2.32.5,<3",
+    "typer>=0.17.4,<0.18",
+    "tqdm>=4.67.1,<5",
+    "tenacity>=9.1.2,<10",
+    # Below 2.1 until the DuckDB and BigQuery dialects support it: with 2.1,
+    # duckdb-engine 0.17 fails reflecting the schema.
+    "sqlalchemy>=2.0.0,<2.1",
+]
+
+[project.optional-dependencies]
+# BigQuery support is opt-in (`pip install "bdns[bigquery]"`), so the
+# google-cloud stack stays out of SQLite, DuckDB and PostgreSQL installs.
+bigquery = [
+    "sqlalchemy-bigquery>=1.17.0,<2",
+    "google-cloud-bigquery-storage>=2.32.0,<3",
+]
+
+[project.urls]
+Documentation = "https://cruzlorite.github.io/bdns/"
+Repository = "https://github.com/cruzlorite/bdns"
+Changelog = "https://github.com/cruzlorite/bdns/blob/main/CHANGELOG.md"
+Issues = "https://github.com/cruzlorite/bdns/issues"
+
+[project.scripts]
+bdns-fetch = "bdns.fetch.__main__:app"
+bdns-sync = "bdns.sync.__main__:app"
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
+
+# `bdns` is a namespace without an __init__.py of its own: each module
+# under it is self-contained, so one could later ship as its own
+# distribution without changing a single import.
+[tool.uv.build-backend]
+module-name = "bdns"
+namespace = true
+
+[tool.uv]
+default-groups = ["dev", "docs"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2,<9",
+    "pytest-cov>=6.3.0,<7",
+    "pytest-mock>=3.15.0,<4",
+    "ruff>=0.12.12,<0.13",
+    # bdns.fetch: HTTP mocking.
+    "responses>=0.25,<0.26",
+    # bdns.sync: the same tests run against PostgreSQL and DuckDB.
+    "psycopg2-binary>=2.9,<3",
+    "duckdb-engine>=0.17,<0.18",
+    # DuckDB needs pytz to return timezone-aware timestamps; nothing else pulls it in.
+    "pytz>=2025.2",
+]
+docs = [
+    "mkdocs-material>=9.7.7,<10",
+    "mkdocstrings[python]>=1.0.6,<2",
+    "mkdocs-static-i18n>=1.3.1,<2",
+]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers -m 'not integration' --cov=bdns --cov-report=term-missing --cov-report=html"
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: live tests against the real BDNS API (run with -m integration)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "D"]
+ignore = [
+    "E741",  # ambiguous variable name (O is required by API)
+    "E501",  # long lines: help texts, URLs and measured evidence read better unbroken
+    "D105",  # magic methods: covered by the class docstring
+    "D107",  # __init__: documented on the class
+]
+
+[tool.ruff.lint.flake8-bugbear]
+# Typer declares options as argument defaults; they are evaluated once, by design.
+extend-immutable-calls = ["typer.Option", "typer.Argument"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]

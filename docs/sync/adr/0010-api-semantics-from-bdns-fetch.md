@@ -10,9 +10,9 @@ Si la parte que guarda los datos lo resolviera por su cuenta, el cliente de la A
 
 ## Decisión
 
-`bdns-sync` usa lo que aporta `bdns-fetch`: `registration_range` y `period_range` para traducir los periodos, `split_range` para dividirlos, `check_api_contract` para comprobar la API, y el propio cliente para espaciar las peticiones. Es la otra mitad de la decisión que `bdns-fetch` recoge en su [decisión 0007](https://cruzlorite.github.io/bdns-fetch/adr/0007-api-knowledge-lives-in-fetch/).
+`bdns-sync` usa lo que aporta `bdns-fetch`: [`registration_range`][bdns.fetch.dates.registration_range] y [`period_range`][bdns.fetch.dates.period_range] para traducir los periodos, [`split_range`][bdns.fetch.dates.split_range] para dividirlos, [`check_api_contract`][bdns.fetch.contract.check_api_contract] para comprobar la API, y el propio cliente para espaciar las peticiones. Es la otra mitad de la decisión que `bdns-fetch` recoge en su [decisión 0007](../../fetch/adr/0007-api-knowledge-lives-in-fetch.md).
 
 ## Consecuencias
 
 - Lo que se ha medido sobre la API está en un solo sitio, la documentación de `bdns-fetch`, y la de `bdns-sync` enlaza a ella y solo explica sus propias decisiones.
-- `bdns-sync` depende de una versión mayor concreta de `bdns-fetch`, y su integración continua se prueba también contra la rama principal de `bdns-fetch` para detectar cualquier incompatibilidad antes de que se publique.
+- `bdns-sync` depende de lo que `bdns-fetch` declara público, y no de sus detalles internos. Como los dos van en el mismo paquete ([decisión común 0001](../../adr/0001-one-package.md)), un cambio en uno que rompa el otro se ve en los tests del mismo pull request.

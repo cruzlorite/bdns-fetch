@@ -30,8 +30,8 @@ from collections import defaultdict
 from html.parser import HTMLParser
 
 import griffe
+from modules import ROOT, SRC, modules
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 PATHS = re.compile(r"docs/[\w./-]+\.md(?:#[\w-]+)?|scripts/\w+\.sh")
 SCRIPT = re.compile(r"(?:scripts/)?\w+_load\.sh")
@@ -48,32 +48,39 @@ def documented_names() -> tuple[dict[str, set[str]], set[str]]:
         mapped to the paths it can mean, and every parameter name in the
         package.
     """
-    pkg = griffe.load("bdns.fetch", search_paths=[str(ROOT / "src")], docstring_parser="google")
-    paths, params = {pkg.path}, set()
+    paths: set[str] = set()
+    params: set[str] = set()
 
-    def walk(obj: griffe.Object) -> None:
+    def walk(obj: griffe.Object, cli: str) -> None:
         for member in obj.members.values():
             # CLI command functions share their names with the commands
             # (`delta`, `backfill`...), which pages mention as commands;
             # the CLI reference documents those, not the API reference.
-            if member.is_alias or member.path.startswith("bdns.fetch.cli."):
+            if member.is_alias or member.path.startswith(cli):
                 continue
             if (member.is_module or member.is_class or member.is_function) and member.docstring:
                 paths.add(member.path)
             if member.is_function:
                 params.update(p.name for p in member.parameters)
             if member.is_module or member.is_class:
-                walk(member)
+                walk(member, cli)
 
-    walk(pkg)
+    loaded = [
+        griffe.load(module.name, search_paths=[str(SRC)], docstring_parser="google")
+        for module in modules()
+    ]
+    for module in loaded:
+        paths.add(module.path)
+        walk(module, f"{module.path}.cli.")
     names: dict[str, set[str]] = defaultdict(set)
     for path in paths:
         parts = path.split(".")
         for i in range(len(parts)):
             names[".".join(parts[i:])].add(path)
-    # The package's last name on its own (`sync`, `fetch`) is the tool's
-    # verb in running text, not a reference to the package.
-    names.pop(pkg.path.split(".")[-1], None)
+    # A package's last name on its own (`sync`, `fetch`) is the tool's verb
+    # in running text, not a reference to the package.
+    for module in loaded:
+        names.pop(module.path.split(".")[-1], None)
     return names, params
 
 

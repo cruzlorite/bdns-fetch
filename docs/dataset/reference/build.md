@@ -36,7 +36,7 @@ Las tablas intermedias se quedan en el fichero privado, y solo las del esquema `
 
 | Fichero | Qué hace |
 |---|---|
-| `01_beneficiarios.sql` | Define cómo se clasifica a cada beneficiario a partir de su NIF ([el SQL](#sql)) |
+| `01_beneficiarios.sql` | Define cómo se clasifica a cada beneficiario a partir de su NIF |
 | `02_privacy.sql` | Define las piezas de los controles de privacidad y los [umbrales](#thresholds) |
 | `03_publish.sql` | Crea el esquema `publish`, donde va todo lo que se publica |
 | `10_concesiones.sql` | Lee las concesiones de `bdns-sync`, con la última versión de cada una y sus columnas con tipo. Privada |
@@ -72,12 +72,3 @@ Si un control encuentra algo, la ejecución termina con código 1 y uno de estos
 | `N rows with 10th or 90th percentiles below 20 beneficiaries` | Filas del resumen con los percentiles 10 o 90 y menos de 20 personas |
 
 Cualquiera de ellos indica un error en un paso anterior. Si te ocurre, abre una [incidencia](https://github.com/cruzlorite/bdns-tools/issues) con el mensaje, sin copiar ningún dato de las filas que lo han provocado.
-
-<a id="sql"></a>
-## El SQL
-
-Este es el paso que clasifica a los beneficiarios, mostrado directamente desde el código:
-
-```sql
---8<-- "dataset/sql/01_beneficiarios.sql"
-```

@@ -36,7 +36,7 @@ Intermediate tables stay in the private file, and only those in the `publish` sc
 
 | File | What it does |
 |---|---|
-| `01_beneficiarios.sql` | Defines how each beneficiary is classified by its tax ID ([the SQL](#sql)) |
+| `01_beneficiarios.sql` | Defines how each beneficiary is classified by its tax ID |
 | `02_privacy.sql` | Defines the building blocks of the privacy checks and the [thresholds](#thresholds) |
 | `03_publish.sql` | Creates the `publish` schema, where everything to be published goes |
 | `10_concesiones.sql` | Reads awards from `bdns-sync`, each one's last version, with typed columns. Private |
@@ -72,12 +72,3 @@ If a check finds something, the run exits with code 1 and one of these messages,
 | `N rows with 10th or 90th percentiles below 20 beneficiaries` | Summary rows with the 10th or 90th percentiles and fewer than 20 people |
 
 Any of them points to a fault in an earlier step. If it happens to you, open an [issue](https://github.com/cruzlorite/bdns-tools/issues) with the message, without copying any data from the rows that caused it.
-
-<a id="sql"></a>
-## The SQL
-
-This is the step that classifies beneficiaries, shown straight from the code:
-
-```sql
---8<-- "dataset/sql/01_beneficiarios.sql"
-```

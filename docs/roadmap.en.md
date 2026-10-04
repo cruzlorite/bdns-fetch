@@ -5,7 +5,7 @@ What remains to be done, in rough order of priority within each section. What is
 <a id="dataset"></a>
 ## An anonymised dataset with the whole history
 
-A new module that builds, from `bdns-sync`'s tables, a ready-to-use dataset with the whole history, not only the years the portal still publishes. What is published will always be anonymised and aggregated: protecting natural persons comes first, and the whole process must comply with the IGAE's reuse conditions, the GDPR and Spain's LOPDGDD. Before any code, a design decision will record what is published, at what level of detail and why, and the first release will not go out without a legal review.
+A new module that builds, from `bdns-sync`'s tables, a ready-to-use dataset with the whole history, not only the years the portal still publishes. What is published will always be anonymised and aggregated: protecting natural persons comes first, and the whole process must comply with the IGAE's reuse conditions, the GDPR and Spain's LOPDGDD. What is published, at what detail and why is in [decision 0002](adr/0002-anonymised-dataset.md), still a proposal, and progress is in the [dataset section](dataset/index.md#status). The first release will not go out without a legal review.
 
 ## bdns-sync
 

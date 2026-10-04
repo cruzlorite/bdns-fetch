@@ -85,6 +85,8 @@ markdown_extensions:
       # extra.css uses to wrap terminal sessions instead of scrolling them.
       pygments_lang_class: true
   - pymdownx.inlinehilite
+  - pymdownx.tasklist:
+      custom_checkbox: true
   # Every page gets the glossary, so BDNS, SCD2, NIF... show their meaning
   # on hover (content.tooltips) wherever they appear in running text.
   - pymdownx.snippets:
@@ -244,6 +246,13 @@ nav:
           - sync/adr/0008-run-linked-versions-additive-migrations.md
           - sync/adr/0009-natural-key-conflicts-fail-the-run.md
           - sync/adr/0010-api-semantics-from-bdns-fetch.md
+  - BDNS Dataset:
+      - dataset/index.md
+      - Referencia:
+          - API Python:
+              - dataset/reference/api/index.md
+              - dataset/reference/api/beneficiaries.md
+              - dataset/reference/api/privacy.md
   - Proyecto:
       - Compatibilidad: compatibility.md
       - Hoja de ruta: roadmap.md
@@ -251,5 +260,6 @@ nav:
       - Decisiones comunes:
           - adr/index.md
           - adr/0001-one-package.md
+          - adr/0002-anonymised-dataset.md
       - Cómo contribuir:
           - contributing/docstrings.md

@@ -31,6 +31,10 @@ El esquema de la base de datos solo cambia **añadiendo columnas que admiten val
 
 Cambiar la clave natural o las reglas de hash de una entidad no cambia el esquema, pero sí los hashes, de modo que la siguiente ejecución volvería a crear versiones de las filas afectadas. Cambios así se anuncian siempre en el CHANGELOG.
 
+## bdns.dataset, todavía experimental
+
+Mientras no se publique la primera versión del dataset, [`bdns.dataset`](dataset/reference/api/index.md) es experimental: cualquier nombre puede cambiar en cualquier versión, sin que cuente como cambio incompatible.
+
 ## Versiones de Python
 
 Se da soporte a las versiones de Python que se prueban en la integración continua (ahora mismo, de la 3.11 a la 3.14). Una versión solo se deja de soportar cuando llega al final de su vida, y se avisa en el CHANGELOG.

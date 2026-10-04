@@ -46,6 +46,9 @@ bigquery = [
     { name = "google-cloud-bigquery-storage" },
     { name = "sqlalchemy-bigquery" },
 ]
+dataset = [
+    { name = "duckdb" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -66,6 +69,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
+    { name = "duckdb", marker = "extra == 'dataset'", specifier = ">=1.1,<2" },
     { name = "google-cloud-bigquery-storage", marker = "extra == 'bigquery'", specifier = ">=2.32.0,<3" },
     { name = "requests", specifier = ">=2.32.5,<3" },
     { name = "sqlalchemy", specifier = ">=2.0.0,<2.1" },
@@ -74,7 +78,7 @@ requires-dist = [
     { name = "tqdm", specifier = ">=4.67.1,<5" },
     { name = "typer", specifier = ">=0.17.4,<0.18" },
 ]
-provides-extras = ["bigquery"]
+provides-extras = ["bigquery", "dataset"]
 
 [package.metadata.requires-dev]
 dev = [

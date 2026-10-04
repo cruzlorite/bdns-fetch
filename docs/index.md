@@ -40,6 +40,8 @@ $ pip install bdns-tools                # para BigQuery: pip install "bdns-tools
 
 </div>
 
+Y en preparación, un [dataset anonimizado y agregado](dataset/index.md) con todo el histórico, listo para usar.
+
 ## Por qué usarlo
 
 <div class="grid cards" markdown>

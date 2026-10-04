@@ -5,3 +5,4 @@ Aquí están las decisiones que afectan a todo el proyecto y no a una herramient
 | Nº | Decisión | Estado |
 | --- | --- | --- |
 | [0001](0001-one-package.md) | Un solo paquete con varias herramientas | Aceptada |
+| [0002](0002-anonymised-dataset.md) | Un dataset anonimizado y agregado | Propuesta |

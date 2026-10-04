@@ -5,3 +5,4 @@ The decisions that affect the whole project rather than one tool. Each tool also
 | No. | Decision | Status |
 | --- | --- | --- |
 | [0001](0001-one-package.md) | One package with several tools | Accepted |
+| [0002](0002-anonymised-dataset.md) | An anonymised, aggregated dataset | Proposed |

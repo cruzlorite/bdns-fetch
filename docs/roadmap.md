@@ -5,7 +5,7 @@ Esto es lo que queda por hacer, más o menos por orden de prioridad dentro de ca
 <a id="dataset"></a>
 ## Un dataset anonimizado con todo el histórico
 
-Un módulo nuevo que genere, a partir de las tablas de `bdns-sync`, un conjunto de datos listo para usar con todo el histórico, y no solo con los años que todavía publica el portal. Lo que se publique irá siempre anonimizado y agregado: proteger a las personas físicas es la prioridad, y todo el proceso tiene que cumplir las condiciones de reutilización de la IGAE, el RGPD y la LOPDGDD. Antes de escribir código se recogerá en una decisión de diseño qué se publica, con qué nivel de detalle y por qué, y la primera versión no se publicará sin una revisión legal.
+Un módulo nuevo que genere, a partir de las tablas de `bdns-sync`, un conjunto de datos listo para usar con todo el histórico, y no solo con los años que todavía publica el portal. Lo que se publique irá siempre anonimizado y agregado: proteger a las personas físicas es la prioridad, y todo el proceso tiene que cumplir las condiciones de reutilización de la IGAE, el RGPD y la LOPDGDD. Qué se publica, con qué detalle y por qué está en la [decisión 0002](adr/0002-anonymised-dataset.md), todavía como propuesta, y cómo va el trabajo, en la [sección del dataset](dataset/index.md#estado). La primera versión no se publicará sin una revisión legal.
 
 ## bdns-sync
 

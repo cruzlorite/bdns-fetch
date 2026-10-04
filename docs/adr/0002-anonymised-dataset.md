@@ -1,0 +1,48 @@
+# 0002. Un dataset anonimizado y agregado
+
+**Estado:** propuesta · **Fecha:** 2026-10-04
+
+## Contexto
+
+La API de la BDNS solo devuelve una ventana de tiempo, distinta para cada tipo de dato: unos 12 años de convocatorias, unos 10 de ayudas de Estado y minimis, unos 4 de concesiones, y solo el año de la concesión y el siguiente cuando el beneficiario es una persona física ([cada endpoint guarda un histórico distinto](../fetch/explanation/api-behavior.md#history-depth)). Lo que sale de esa ventana solo lo conserva quien lo guardó a tiempo, y `bdns-sync` lo guarda. Ese histórico es lo que hace valioso un dataset publicado: nadie más puede ofrecerlo, ni siquiera el portal, que permite descargar lo que sigue publicado, pero no lo que ya ha retirado.
+
+Ese mismo histórico contiene datos personales. La BDNS publica el nombre completo de las personas físicas y oculta solo parte de su NIF (`***1234** NOMBRE APELLIDOS`), y en un día cualquiera de 2026 el 94 % de las concesiones fueron a personas físicas, aunque solo sumaron el 12 % del importe. Además, cada registro lleva campos que permiten identificar a la persona aunque se quite el nombre: `idPersona`, un identificador que se repite en todas sus concesiones; `urlBR`, el enlace al boletín oficial que la nombra, y `codConcesion` o `id`, que permiten buscar el registro en el portal mientras siga publicado.
+
+El marco legal limita lo que se puede hacer con esos datos:
+
+- Las condiciones de reutilización de la IGAE solo permiten reutilizar datos personales para controlar la actuación de los gestores públicos o con fines históricos, estadísticos o científicos, y en este caso exigen disociarlos antes.
+- El RGPD deja fuera de su ámbito los datos anónimos, pero no los seudonimizados: sustituir un NIF por un código, aunque sea un hash, sigue siendo tratar datos personales, porque el código permite seguir a la persona.
+- El límite temporal con el que se publican las concesiones a personas físicas tiene una finalidad, y republicarlas identificables pasado ese plazo iría contra ella.
+
+Las estadísticas oficiales resuelven este mismo problema publicando agregados y suprimiendo las celdas que podrían identificar a alguien, lo que se conoce como control de revelación estadística.
+
+## Decisión
+
+El dataset **no contiene ningún dato personal**. Puede identificar a personas jurídicas y entidades públicas, pero nunca a personas físicas.
+
+1. **Cada beneficiario se clasifica** como persona física, entidad formada por personas (comunidades de bienes y sociedades civiles, que suelen llevar el nombre de sus miembros), persona jurídica, entidad pública o dudoso. La clasificación es conservadora: lo dudoso se trata como persona física ([`classify`][bdns.dataset.beneficiaries.classify]).
+2. **Lo que se publica, y con qué detalle:**
+
+    | Datos | Nivel |
+    |---|---|
+    | Catálogos | Tal cual |
+    | Convocatorias | Registro a registro, revisando los títulos que nombran a personas |
+    | Concesiones, ayudas de Estado y minimis a personas jurídicas y entidades públicas | Registro a registro *(pendiente de confirmar)* |
+    | Las mismas, a personas físicas, entidades formadas por personas y beneficiarios dudosos | Solo agregadas por convocatoria y año (con su órgano, región e instrumento): número de concesiones, número de beneficiarios e importe total |
+    | Sanciones a personas físicas | No se publican |
+
+3. **En los agregados se suprime** cualquier celda con menos de *k* beneficiarios (*k* = 10, *pendiente de confirmar*) o en la que uno solo concentre la mayor parte del importe, y también las celdas que permitirían recalcular una suprimida por resta (supresión secundaria).
+4. **Nunca se publica**, en nada que se refiera a personas físicas, ni el nombre, ni el NIF (completo, parcial o cifrado), ni `idPersona`, `urlBR`, `codConcesion` o `id`.
+5. **La generación se para** si lo que va a publicarse contiene un valor con forma de DNI, NIE o NIF enmascarado, un campo prohibido o una celda por debajo de *k* ([`bdns.dataset.privacy`][bdns.dataset.privacy]).
+6. **El dataset se genera donde están los datos**, a partir de las tablas de `bdns-sync`. El resultado queda en un sitio privado hasta que una persona lo revisa, y se publica fuera del repositorio (en Zenodo, con un DOI por versión) con la metodología, la cita a la IGAE y la fecha de actualización.
+7. **Antes de la primera publicación** se hacen una evaluación de riesgos y una revisión legal.
+
+Quedan pendientes de decidir, además de lo marcado: cada cuánto se publica una versión y la licencia del dataset (las condiciones de la IGAE más, por ejemplo, CC BY 4.0 para el trabajo propio).
+
+## Consecuencias
+
+- Si la anonimización es sólida, lo publicado deja de ser un dato personal, y quien lo reutilice no queda sujeto al RGPD por ello.
+- No se puede seguir a una persona física concreta a lo largo del tiempo. Es justo lo que se busca, aunque limite algunos análisis.
+- Los agregados de personas físicas no suman exactamente el total real, porque faltan las celdas suprimidas. Lo suprimido se publica agrupado en una celda de "resto", siempre que esa celda cumpla también los umbrales.
+- El modelo de datos de `bdns-sync` pasa a ser un contrato del generador: un cambio en él puede obligar a cambiar el dataset.
+- Cada versión del dataset se puede regenerar a partir de una base de datos de `bdns-sync`, y el método es público, así que se puede revisar.

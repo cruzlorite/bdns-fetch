@@ -41,6 +41,10 @@ bigquery = [
     "sqlalchemy-bigquery>=1.17.0,<2",
     "google-cloud-bigquery-storage>=2.32.0,<3",
 ]
+# Building the anonymised dataset (bdns.dataset): the transforms run in DuckDB.
+dataset = [
+    "duckdb>=1.1,<2",
+]
 
 [project.urls]
 Documentation = "https://cruzlorite.github.io/bdns-tools/"

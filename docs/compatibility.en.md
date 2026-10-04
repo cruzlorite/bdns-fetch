@@ -31,6 +31,10 @@ The target schema changes only by **adding nullable columns**, and each run adds
 
 Changing an entity's natural key or hash rules does not change the schema, but it does change the hashes: the next run re-versions the affected rows. Such changes are announced in the CHANGELOG.
 
+## bdns.dataset, still experimental
+
+Until the first version of the dataset is published, [`bdns.dataset`](dataset/reference/api/index.md) is experimental: any name may change in any release, and that does not count as an incompatible change.
+
 ## Python versions
 
 The Python versions CI tests are supported (today, 3.11 to 3.14). Dropping one, only once it reaches end of life, is announced in the CHANGELOG.

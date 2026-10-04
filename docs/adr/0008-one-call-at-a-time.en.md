@@ -6,7 +6,7 @@
 
 The IGAE's [official good practices](https://www.infosubvenciones.es/bdnstrans/estaticos/ayuda/Buenas%20pr%C3%A1cticas%20API%20SNPSAP.pdf) explicitly ask for no concurrent calls ("no realizar llamadas de forma concurrente, ya que los recursos son limitados y es necesario un uso racional de los mismos") and warn that abusive use can get access cut off.
 
-Concurrent calls make downloads faster, but they are not what makes them possible. What lets years of data be downloaded without errors is splitting queries by date into week-long ranges ([measurements](../explanation/api-behavior.md#range-reliability)); concurrency only shortens the total time, mostly when thousands of small calls are needed, such as fetching each call for applications' detail.
+Concurrent calls make downloads faster, but they are not what makes them possible. What lets years of data be downloaded without errors is splitting queries by date into week-long ranges ([measurements](../explanation/api-behavior.md#range-reliability)); concurrency only shortens the total time, mostly on paginated searches, where each page takes a couple of seconds to arrive.
 
 ## Decision
 
@@ -15,5 +15,6 @@ One call at a time by default (`max_workers=1`). Anyone who needs to go faster c
 ## Consequences
 
 - Default use follows the recommendation of whoever runs the API, reducing the risk of access being cut off.
-- Large downloads take longer. It shows most in steps making one call per record: the detail of a month of calls for applications (about 6,000) goes from about 11 minutes with eight threads to between 23 minutes and just over 3 hours, depending on server load.
+- Large paginated searches take longer: a week of awards (236,113 rows) downloads in about 60 seconds instead of 15 with five threads ([measurements](../explanation/api-behavior.md#concurrency)). Small calls, such as a call for applications' detail, are barely affected while the server answers fast, since the rate limit already caps them.
+- Within the recommendation there is no room to go faster from the client: each page takes as long as the server needs to prepare and send it.
 - Whoever raises `max_workers` takes responsibility for doing so.

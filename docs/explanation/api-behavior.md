@@ -51,6 +51,19 @@ Por eso el limitador de `bdns-fetch` ([`RateLimiter`][bdns.fetch.utils.RateLimit
 
 Las buenas prácticas oficiales piden también no hacer llamadas en paralelo, y por eso `bdns-fetch` hace una cada vez salvo que le indiques lo contrario con `--max-workers`.
 
+<a id="concurrency"></a>
+### Cuánto se gana con varias llamadas a la vez
+
+Depende del tipo de llamada. Lo medimos el 4 de octubre de 2026:
+
+| Descarga | 1 llamada cada vez | 2 | 3 | 5 |
+|---|---|---|---|---|
+| Una semana de `concesiones-busqueda` (236.113 filas, 24 páginas) | 57-64 s | 33 s | 22,5 s | 15 s |
+| El detalle de 120 convocatorias | 12,6 s | | | 12,7 s (con 8) |
+
+- **En las búsquedas paginadas**, cada página de 10.000 filas tarda unos 2,5 segundos: algo más de uno hasta que el servidor empieza a responder y casi otro en transferir unos 8 MB, porque el servidor no comprime las respuestas aunque se le pida. Con varias llamadas a la vez esas esperas se solapan, y por eso la descarga se acelera casi en proporción al número de hilos.
+- **En las llamadas pequeñas**, como el detalle de una convocatoria, la respuesta llega en menos de una décima de segundo cuando el servidor va bien, así que lo que marca el ritmo es el límite de peticiones y hacer varias a la vez no aporta nada. Solo ayuda cuando el servidor va cargado y cada llamada tarda más (ver [más abajo](#latency)).
+
 <a id="latency"></a>
 ## El tiempo de respuesta depende mucho de la carga
 

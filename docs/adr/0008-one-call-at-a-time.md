@@ -6,7 +6,7 @@
 
 Las [buenas prácticas oficiales](https://www.infosubvenciones.es/bdnstrans/estaticos/ayuda/Buenas%20pr%C3%A1cticas%20API%20SNPSAP.pdf) de la IGAE piden expresamente "no realizar llamadas de forma concurrente, ya que los recursos son limitados y es necesario un uso racional de los mismos", y advierten de que un uso abusivo puede acabar en el corte del acceso.
 
-Hacer varias llamadas en paralelo acelera las descargas, pero no es lo que las hace posibles. Lo que permite descargar años de datos sin errores es dividir las consultas por fechas en tramos semanales ([las pruebas](../explanation/api-behavior.md#range-reliability)); el paralelismo solo reduce el tiempo total, sobre todo cuando hay que hacer miles de llamadas pequeñas, como al pedir el detalle de cada convocatoria.
+Hacer varias llamadas en paralelo acelera las descargas, pero no es lo que las hace posibles. Lo que permite descargar años de datos sin errores es dividir las consultas por fechas en tramos semanales ([las pruebas](../explanation/api-behavior.md#range-reliability)); el paralelismo solo reduce el tiempo total, sobre todo en las búsquedas paginadas, donde cada página tarda un par de segundos en llegar.
 
 ## Decisión
 
@@ -15,5 +15,6 @@ Por defecto se hace una sola llamada cada vez (`max_workers=1`). Quien necesite 
 ## Consecuencias
 
 - El uso por defecto sigue la recomendación de quien gestiona la API, lo que reduce el riesgo de que corte el acceso.
-- Las descargas grandes tardan más. Donde más se nota es en los pasos que hacen una llamada por registro: el detalle de un mes de convocatorias (unas 6.000) pasa de unos 11 minutos con ocho hilos a entre 23 minutos y algo más de 3 horas, según la carga del servidor.
+- Las búsquedas paginadas grandes tardan más: una semana de concesiones (236.113 filas) se descarga en unos 60 segundos en lugar de 15 con cinco hilos ([las mediciones](../explanation/api-behavior.md#concurrency)). Las llamadas pequeñas, como el detalle de una convocatoria, apenas se ven afectadas mientras el servidor responde rápido, porque ya las limita el máximo de peticiones por segundo.
+- Dentro de la recomendación no hay margen para ir más rápido desde el cliente: cada página tarda lo que tarda el servidor en prepararla y enviarla.
 - Quien sube `max_workers` asume la responsabilidad de hacerlo.

@@ -51,6 +51,19 @@ That is why `bdns-fetch`'s limiter ([`RateLimiter`][bdns.fetch.utils.RateLimiter
 
 The official good practices also ask for no concurrent calls, so `bdns-fetch` makes one at a time unless told otherwise with `--max-workers`.
 
+<a id="concurrency"></a>
+### How much several calls at once gain
+
+It depends on the kind of call. Measured on 4 October 2026:
+
+| Download | 1 call at a time | 2 | 3 | 5 |
+|---|---|---|---|---|
+| One week of `concesiones-busqueda` (236,113 rows, 24 pages) | 57-64 s | 33 s | 22.5 s | 15 s |
+| The detail of 120 calls for applications | 12.6 s | | | 12.7 s (with 8) |
+
+- **On paginated searches**, each 10,000-row page takes about 2.5 seconds: just over one until the server starts answering and nearly another transferring about 8 MB, since the server does not compress responses even when asked. Several calls at once overlap those waits, so the download speeds up almost in proportion to the number of threads.
+- **On small calls**, such as a call for applications' detail, the answer arrives in under a tenth of a second when the server is well, so the rate limit sets the pace and several at once add nothing. They only help when the server is loaded and each call takes longer (see [below](#latency)).
+
 <a id="latency"></a>
 ## Latency varies with load
 

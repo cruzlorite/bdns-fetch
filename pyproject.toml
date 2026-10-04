@@ -41,10 +41,6 @@ bigquery = [
     "sqlalchemy-bigquery>=1.17.0,<2",
     "google-cloud-bigquery-storage>=2.32.0,<3",
 ]
-# Building the anonymised dataset (bdns.dataset): the transforms run in DuckDB.
-dataset = [
-    "duckdb>=1.1,<2",
-]
 
 [project.urls]
 Documentation = "https://cruzlorite.github.io/bdns-tools/"
@@ -81,6 +77,8 @@ dev = [
     # bdns.sync: the same tests run against PostgreSQL and DuckDB.
     "psycopg2-binary>=2.9,<3",
     "duckdb-engine>=0.17,<0.18",
+    # The dataset (dataset/) is DuckDB SQL; its tests run it through this.
+    "duckdb>=1.1,<2",
     # DuckDB needs pytz to return timezone-aware timestamps; nothing else pulls it in.
     "pytz>=2025.2",
 ]

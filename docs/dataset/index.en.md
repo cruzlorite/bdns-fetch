@@ -6,7 +6,7 @@ icon: material/chart-box
 
 !!! warning "In preparation"
 
-    No version has been published yet. This section explains what the dataset will be and how it is being built, and the code is experimental: it may change in any release until the first version is published.
+    No version has been published yet. This section explains what the dataset will be and how it is being built, and its SQL is experimental: it may change at any time until the first version is published.
 
 A ready-to-use dataset with **the whole history** of the BDNS that `bdns-sync` keeps, not only the years the portal still publishes ([why it matters](../sync/index.md#why-history)). It will always be **anonymised and aggregated**: protecting natural persons comes first, and the whole process must comply with the IGAE's reuse conditions, the GDPR and Spain's LOPDGDD. What is published, at what detail and why is in [decision 0002](../adr/0002-anonymised-dataset.md), still a proposal.
 
@@ -29,18 +29,25 @@ Before writing anything, the build checks what it is about to publish and **stop
 <a id="sql"></a>
 ## The SQL
 
-Every transform is an SQL file run in DuckDB, one after another, on a private copy of `bdns-sync`'s tables. They live in [`src/bdns/dataset/sql/`](https://github.com/cruzlorite/bdns-tools/tree/main/src/bdns/dataset/sql), and can be read, reviewed and rerun as they are. This is the one that classifies beneficiaries, shown straight from the code:
+The whole process is DuckDB SQL, without a line of Python. DuckDB connects to the `bdns-sync` database (SQLite, PostgreSQL, DuckDB or BigQuery), reads its tables and leaves the result in a private file, since it holds personal data until the end. The steps are SQL files in [`dataset/sql/`](https://github.com/cruzlorite/bdns-tools/tree/main/dataset/sql), which can be read, reviewed and rerun as they are, and are all run from the repository root with the DuckDB command line:
+
+```console
+$ duckdb /private/path/dataset.duckdb \
+    -cmd "ATTACH 'postgresql://user@host/bdns' AS sync (TYPE postgres, READ_ONLY)" \
+    -f dataset/build.sql
+```
+
+This is the step that classifies beneficiaries, shown straight from the code:
 
 ```sql
---8<-- "src/bdns/dataset/sql/00_beneficiaries.sql"
+--8<-- "dataset/sql/01_beneficiaries.sql"
 ```
 
 ## Status
 
 - [x] The design decision, as a proposal ([decision 0002](../adr/0002-anonymised-dataset.md))
-- [x] Beneficiary classification ([in SQL](#sql)) and privacy checks ([`privacy`][bdns.dataset.privacy])
-- [x] Extraction of each record's last known version, including those the API has withdrawn ([`extract`][bdns.dataset.extract])
-- [x] Awards with typed columns and the beneficiary's kind (`10_concesiones.sql`)
+- [x] Beneficiary classification and the building blocks of the privacy checks, in SQL
+- [x] Awards, read straight from `bdns-sync` with each one's last known version, including those the API has withdrawn, with typed columns and the beneficiary's kind
 - [ ] The aggregates, with statistical disclosure control
 - [ ] The dataset card, the schema and publication
 - [ ] The risk assessment and legal review, before the first version

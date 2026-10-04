@@ -25,20 +25,19 @@ now `bdns-tools` (`pip install bdns-tools`, or `pip install "bdns-tools[bigquery
 
 - Each release gets a GitHub release, with its changelog section as notes and the same files published to PyPI.
 
-### bdns.dataset (experimental)
+### The dataset (experimental)
 
 The start of the anonymised, aggregated dataset ([ADR 0002](https://cruzlorite.github.io/bdns-tools/adr/0002-anonymised-dataset/),
-still a proposal). Experimental: any of it may change until the first version of the dataset is published.
+still a proposal). It is DuckDB SQL in `dataset/`, not part of the Python package, and may change until its first
+version is published. `dataset/build.sql` runs the steps with the DuckDB command line against a bdns-sync database
+attached as `sync`:
 
-- The transforms are plain SQL files run in DuckDB in name order (`bdns/dataset/sql/`, run by `build`), so the
-  method can be read and reviewed as it is; the site shows them straight from the code.
-- `00_beneficiaries.sql`: classifies a BDNS beneficiary as a natural person, an entity made of persons, a legal
+- `01_beneficiaries.sql`: classifies a BDNS beneficiary as a natural person, an entity made of persons, a legal
   person, a public body or unknown, from its tax ID alone, and treats anything unrecognised as a natural person.
-- `10_concesiones.sql`: awards with typed columns, the beneficiary's kind and whether the API has withdrawn them.
-- `privacy`: SQL checks that stop the build if a table about to be published holds something shaped like a natural
-  person's tax ID, a column that identifies people, or an aggregated cell below the minimum count.
-- `extract`: copies each key's last known version from a bdns-sync table (the current one, or the one closed as
-  removed when the API withdrew it) into a private DuckDB table, through portable SQL on any bdns-sync database.
+- `02_privacy.sql`: the building blocks of the checks that stop the build if a table about to be published holds
+  something shaped like a natural person's tax ID or a column that identifies people.
+- `10_concesiones.sql`: each award's last known version, read straight from bdns-sync (withdrawn ones included),
+  with typed columns and the beneficiary's kind.
 
 ### bdns.fetch
 

@@ -1,0 +1,17 @@
+-- Builds the anonymised BDNS dataset from a bdns-sync database, in DuckDB
+-- SQL and nothing else. What may be published, and why, is in
+-- docs/adr/0002-anonymised-dataset.md.
+--
+-- Run it from the repository root, in a private DuckDB file (it holds
+-- personal data until the published tables are written), with the
+-- bdns-sync database attached as `sync`, read-only. For example:
+--
+--   duckdb /private/dataset.duckdb \
+--     -cmd "ATTACH 'postgresql://user@host/bdns' AS sync (TYPE postgres, READ_ONLY)" \
+--     -f dataset/build.sql
+--
+-- Each step is a file in dataset/sql/, run in this order.
+
+.read dataset/sql/01_beneficiaries.sql
+.read dataset/sql/02_privacy.sql
+.read dataset/sql/10_concesiones.sql

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify that every docs/ reference in the code points somewhere real.
 
-Docstrings, tests, scripts, Dockerfiles and the Makefile link to the
+Docstrings, tests, scripts, the dataset's SQL, the Dockerfile and the Makefile link to the
 documents instead of copying them, which is what stops the two from
 drifting. That only works while the links do: a renamed file or a
 reworded heading silently turns a reference into a dead end that nothing
@@ -22,7 +22,14 @@ REF = re.compile(r"docs/[\w./-]+\.md(?:#([\w-]+))?")
 # they come out of mkdocstrings after its own link checks have run.
 REL = re.compile(r"\]\((\.\./[\w./-]+\.md)(?:#([\w-]+))?\)")
 ANCHOR = re.compile(r'<a id="([\w-]+)"></a>')
-SOURCES = ("src/**/*.py", "tests/**/*.py", "scripts/*.sh", "Dockerfile", "Makefile")
+SOURCES = (
+    "src/**/*.py",
+    "tests/**/*.py",
+    "scripts/*.sh",
+    "dataset/**/*.sql",
+    "Dockerfile",
+    "Makefile",
+)
 
 
 def anchors_in(path: pathlib.Path) -> set[str]:

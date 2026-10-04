@@ -1,16 +1,14 @@
-"""The boundaries between modules: each builds only on the ones below it.
+"""The boundary between modules: bdns.fetch stands on its own.
 
-bdns.fetch stands on its own; bdns.sync builds on it; bdns.dataset builds on
-both. Never the other way round, so each module keeps working, and could
-ship on its own, without anything the ones above it need. See
+bdns.sync builds on bdns.fetch, never the other way round, so the client
+keeps working, and could ship on its own, without anything sync needs. See
 docs/adr/0001-one-package.md.
 """
 
 import ast
 import pathlib
 
-SRC = pathlib.Path(__file__).resolve().parent.parent / "src" / "bdns"
-FETCH = SRC / "fetch"
+FETCH = pathlib.Path(__file__).resolve().parent.parent / "src" / "bdns" / "fetch"
 
 
 def _imported_modules(path: pathlib.Path) -> set[str]:
@@ -33,15 +31,5 @@ def test_fetch_never_imports_other_bdns_modules():
         for module in _imported_modules(path)
         if (module.startswith("bdns.") and not module.startswith("bdns.fetch"))
         or module.startswith("..")
-    }
-    assert not offending
-
-
-def test_sync_never_imports_the_dataset():
-    offending = {
-        f"{path.relative_to(SRC)}: {module}"
-        for path in (SRC / "sync").rglob("*.py")
-        for module in _imported_modules(path)
-        if module.startswith("bdns.dataset")
     }
     assert not offending

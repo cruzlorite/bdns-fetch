@@ -1,79 +1,62 @@
-"""Privacy checks, run as SQL on DuckDB tables. Every ID here is made up."""
+"""Privacy building blocks (dataset/sql/02_privacy.sql). Every ID here is made up."""
 
 import duckdb
 import pytest
-
-from bdns.dataset.privacy import (
-    FORBIDDEN_FIELDS,
-    PERSONAL_ID_PATTERN,
-    PrivacyViolation,
-    check_table,
-    find_personal_ids,
-)
-
-
-@pytest.fixture
-def con():
-    connection = duckdb.connect()
-    yield connection
-    connection.close()
 
 
 @pytest.mark.parametrize(
     ("text", "found"),
     [
-        ("Ayuda a ***1234** para obras", ["***1234**"]),
-        ("Subvención nominativa a 12345678Z", ["12345678Z"]),
-        ("beneficiario X1234567L y Y7654321M", ["X1234567L", "Y7654321M"]),
-        ("residente L1234567A", ["L1234567A"]),
-        ("Empresa B12345678 y ayuntamiento P1234567D", []),
-        ("Convocatoria 2026 de ayudas por 12.345.678 euros", []),
+        ("Ayuda a ***1234** para obras", True),
+        ("Subvención nominativa a 12345678Z", True),
+        ("beneficiario X1234567L", True),
+        ("residente L1234567A", True),
+        ("Empresa B12345678 y ayuntamiento P1234567D", False),
+        ("Convocatoria 2026 de ayudas por 12.345.678 euros", False),
+        (None, False),
     ],
 )
-def test_find_personal_ids(con, text, found):
-    assert find_personal_ids(text) == found
-    # DuckDB, which runs the check on whole tables, must see the same thing.
-    matches = con.execute("SELECT regexp_matches(?, ?)", [text, PERSONAL_ID_PATTERN]).fetchone()[0]
-    assert matches is bool(found)
+def test_has_personal_id(macros, text, found):
+    assert macros.execute("SELECT has_personal_id(?::VARCHAR)", [text]).fetchone()[0] is found
 
 
-def test_a_clean_table_passes(con):
-    con.execute(
-        "CREATE TABLE agregados (anio INTEGER, organo VARCHAR, beneficiarios INTEGER, importe DOUBLE)"
+def test_rows_with_personal_ids_scans_every_column(macros):
+    macros.execute("CREATE TABLE t (titulo VARCHAR, importe DECIMAL(18, 2), nota VARCHAR)")
+    macros.execute(
+        "INSERT INTO t VALUES ('Ayudas 2026', 10, NULL), ('Ayudas', 20, 'a 12345678Z'), (NULL, 30, NULL)"
     )
-    con.execute("INSERT INTO agregados VALUES (2026, 'Ayuntamiento de Ejemplo', 25, 1000.0)")
-    check_table(con, "agregados", count_column="beneficiarios", k=10)
+    rows = macros.execute("SELECT importe FROM rows_with_personal_ids('t')").fetchall()
+    assert [float(r) for (r,) in rows] == [20.0]
 
 
-def test_a_personal_id_stops_the_build_naming_where_it_is(con):
-    con.execute("CREATE TABLE convocatorias (titulo VARCHAR, importe DOUBLE)")
-    con.execute("INSERT INTO convocatorias VALUES ('Ayudas 2026', 10), ('Ayuda a 12345678Z', 50)")
-    with pytest.raises(PrivacyViolation) as caught:
-        check_table(con, "convocatorias")
-    assert caught.value.problems == ["convocatorias.titulo: '12345678Z'"]
+def test_two_columns_never_form_one_match(macros):
+    macros.execute("CREATE TABLE t (a VARCHAR, b VARCHAR)")
+    macros.execute("INSERT INTO t VALUES ('1234567', '8Z')")
+    assert macros.execute("SELECT count(*) FROM rows_with_personal_ids('t')").fetchone() == (0,)
 
 
-def test_forbidden_columns_are_named(con):
-    con.execute('CREATE TABLE t (anio INTEGER, "idPersona" BIGINT, "urlBR" VARCHAR)')
-    with pytest.raises(PrivacyViolation) as caught:
-        check_table(con, "t")
-    assert caught.value.problems == ["t: forbidden column idPersona", "t: forbidden column urlBR"]
-    assert "beneficiario" in FORBIDDEN_FIELDS
+@pytest.mark.parametrize(
+    ("name", "identifying"),
+    [
+        ("beneficiario", True),
+        ("id_persona", True),
+        ("urlBR", True),
+        ("cod_concesion", True),
+        ("id", True),
+        ("anio", False),
+        ("importe", False),
+        ("convocatoria", False),
+    ],
+)
+def test_identifying_column(macros, name, identifying):
+    assert macros.execute("SELECT identifying_column(?)", [name]).fetchone()[0] is identifying
 
 
-def test_cells_below_k_are_named_and_suppressed_cells_pass(con):
-    con.execute("CREATE TABLE agregados (convocatoria VARCHAR, beneficiarios INTEGER)")
-    con.execute(
-        "INSERT INTO agregados VALUES ('A', 25), ('B', 3), ('C', NULL), ('D', 0), ('E', 10)"
-    )
-    with pytest.raises(PrivacyViolation) as caught:
-        check_table(con, "agregados", count_column="beneficiarios", k=10)
-    assert caught.value.problems == ["agregados: a cell counts 3 beneficiaries, below 10"]
-
-
-def test_findings_are_capped_per_check(con):
-    con.execute("CREATE TABLE t (titulo VARCHAR)")
-    con.execute("INSERT INTO t SELECT printf('***%04d**', i) FROM range(50) r(i)")
-    with pytest.raises(PrivacyViolation) as caught:
-        check_table(con, "t", limit=5)
-    assert len(caught.value.problems) == 5
+def test_a_check_stops_the_build_only_when_it_finds_something(macros):
+    # The shape every check in 90_checks.sql takes.
+    macros.execute("CREATE TABLE t (titulo VARCHAR)")
+    check = "SELECT CASE WHEN count(*) > 0 THEN error('personal data in t') END FROM rows_with_personal_ids('t')"
+    macros.execute(check)
+    macros.execute("INSERT INTO t VALUES ('Ayuda a ***1234**')")
+    with pytest.raises(duckdb.InvalidInputException, match="personal data in t"):
+        macros.execute(check)

@@ -20,7 +20,7 @@ def run_build(sync_db, output, tmp_path):
             "duckdb",
             str(tmp_path / "dataset.duckdb"),
             "-cmd",
-            f"ATTACH '{sync_db}' AS sync (READ_ONLY); SET VARIABLE salida = '{output}'",
+            f"ATTACH '{sync_db}' AS sync (READ_ONLY); SET VARIABLE output_dir = '{output}'",
             "-f",
             "dataset/build.sql",
         ],
@@ -35,7 +35,7 @@ def test_the_build_writes_one_parquet_file_per_published_table(sync_db, output, 
     result = run_build(sync_db, output, tmp_path)
     assert result.returncode == 0, result.stderr
     export = (ROOT / "dataset" / "sql" / "95_export.sql").read_text(encoding="utf-8")
-    expected = sorted(f"{table}.parquet" for table in re.findall(r"COPY publicar\.(\w+)", export))
+    expected = sorted(f"{table}.parquet" for table in re.findall(r"COPY publish\.(\w+)", export))
     assert sorted(path.name for path in output.iterdir()) == expected
     # Results are not printed; only errors would be.
     assert result.stdout == ""

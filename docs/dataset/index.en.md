@@ -24,7 +24,7 @@ Each beneficiary is classified by its tax ID, never by its name, and anything no
 
 Communities of property and civil partnerships have a tax ID of their own, but are usually named after their members, so they are protected like natural persons.
 
-Before writing anything, the build checks what it is about to publish and **stops** if it finds a value shaped like a DNI, NIE or masked tax ID, a column that identifies someone (`beneficiario`, `idPersona`, `urlBR`...) or an aggregated cell with fewer than ten beneficiaries. It does not clean up what it finds: it reports it, because such a finding points to an earlier fault that needs fixing.
+Before writing anything, the build checks what it is about to publish and **stops** if it finds a value shaped like a DNI, NIE or masked tax ID, a column that identifies someone (the beneficiary, their BDNS identifier, the bulletin link...) or a summary gathering fewer than ten people. It does not clean up what it finds: it reports it, because such a finding points to an earlier fault that needs fixing.
 
 <a id="sql"></a>
 ## The SQL
@@ -34,14 +34,14 @@ The whole process is DuckDB SQL, without a line of Python. DuckDB connects to th
 ```console
 $ duckdb /private/path/dataset.duckdb \
     -cmd "ATTACH 'postgresql://user@host/bdns' AS sync (TYPE postgres, READ_ONLY);
-          SET VARIABLE salida = '/path/to/output'" \
+          SET VARIABLE output_dir = '/path/to/output'" \
     -f dataset/build.sql
 ```
 
 This is the step that classifies beneficiaries, shown straight from the code:
 
 ```sql
---8<-- "dataset/sql/01_beneficiaries.sql"
+--8<-- "dataset/sql/01_beneficiarios.sql"
 ```
 
 ## Status
@@ -51,7 +51,7 @@ This is the step that classifies beneficiaries, shown straight from the code:
 - [x] Awards, read straight from `bdns-sync` with each one's last known version, including those the API has withdrawn, with typed columns and the beneficiary's kind
 - [x] Awards, state aid and de minimis aid to legal persons and public bodies, record by record, without the bulletin link or the BDNS internal identifier, and the checks that guard them
 - [x] The Parquet export, which only happens if every check passes
-- [x] Aggregates of awards to natural persons by call and year, with cell suppression and a "rest" row (on the real sample, 98.8% of beneficiaries are published)
-- [ ] The same aggregates for state and de minimis aid, and the distribution of amounts
+- [x] Awards to natural persons, as a summary per call: number of awards and beneficiaries, total amount, mean, standard deviation, median and quartiles of the amount, and the same percentiles of the award date
+- [ ] The same for state and de minimis aid
 - [ ] The dataset card, the schema and publication
 - [ ] The risk assessment and legal review, before the first version

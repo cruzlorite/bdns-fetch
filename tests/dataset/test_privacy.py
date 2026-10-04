@@ -39,12 +39,16 @@ def test_two_columns_never_form_one_match(macros):
     ("name", "identifying"),
     [
         ("beneficiario", True),
-        ("id_persona", True),
+        ("idPersona", True),
         ("urlBR", True),
+        ("id_persona", True),
+        ("url_br", True),
         ("cod_concesion", True),
-        ("id", True),
-        ("anio", False),
-        ("importe", False),
+        ("nif", True),
+        ("NOMBRE", True),
+        # Counts and summaries of people are what may be published.
+        ("beneficiarios", False),
+        ("importe_total", False),
         ("convocatoria", False),
     ],
 )

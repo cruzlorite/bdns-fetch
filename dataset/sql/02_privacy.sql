@@ -21,21 +21,25 @@ CREATE OR REPLACE MACRO rows_with_personal_ids(tbl) AS TABLE
     WHERE has_personal_id(concat_ws(' | ', *COLUMNS(*)));
 
 -- Columns that identify a beneficiary, or lead back to one: never in a
--- table about natural persons.
+-- table about natural persons. Both the API's names and this dataset's.
 CREATE OR REPLACE MACRO identifying_column(name) AS
     lower(name) IN (
-        'beneficiario', 'nifcif', 'nif_cif', 'idpersona', 'id_persona',
-        'urlbr', 'url_br', 'codconcesion', 'cod_concesion', 'id'
+        'beneficiario', 'nifcif', 'idpersona', 'urlbr', 'codconcesion', 'codigoconcesion',
+        'id', 'nif', 'nombre', 'id_persona', 'url_br', 'cod_concesion', 'codigo_concesion',
+        'id_concesion'
     );
 
--- The two thresholds of statistical disclosure control, in one place.
--- A published aggregate counts at least this many beneficiaries...
-CREATE OR REPLACE MACRO min_beneficiarios() AS 10;
+-- The thresholds of statistical disclosure control, in one place.
+-- A published summary covers at least this many beneficiaries...
+CREATE OR REPLACE MACRO min_beneficiaries() AS 10;
 -- ...and no single beneficiary holds more than this share of its amount.
-CREATE OR REPLACE MACRO max_cuota_dominante() AS 0.5;
+CREATE OR REPLACE MACRO max_dominant_share() AS 0.5;
+-- The 10th and 90th percentiles sit close to the smallest and largest
+-- values, each one person's, so they are only published from this many.
+CREATE OR REPLACE MACRO min_beneficiaries_for_tails() AS 20;
 
--- Whether an aggregate may be published, given its number of
--- beneficiaries, its total amount and its largest beneficiary's amount.
-CREATE OR REPLACE MACRO publicable(beneficiarios, total, mayor) AS
-    beneficiarios >= min_beneficiarios()
-    AND NOT (coalesce(total, 0) > 0 AND mayor > max_cuota_dominante() * total);
+-- Whether a summary may be published, given its number of beneficiaries,
+-- its total amount and its largest beneficiary's amount.
+CREATE OR REPLACE MACRO is_publishable(beneficiaries, total, largest) AS
+    beneficiaries >= min_beneficiaries()
+    AND NOT (coalesce(total, 0) > 0 AND largest > max_dominant_share() * total);

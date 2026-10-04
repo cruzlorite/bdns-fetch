@@ -151,7 +151,7 @@ def sync_db(tmp_path):
 @pytest.fixture
 def output(tmp_path):
     """The folder the build writes the Parquet files to."""
-    folder = tmp_path / "salida"
+    folder = tmp_path / "output"
     folder.mkdir()
     return folder
 
@@ -161,7 +161,7 @@ def built(sync_db, output):
     """A DuckDB connection after running the whole build against `sync_db`."""
     con = duckdb.connect()
     con.execute(f"ATTACH '{sync_db}' AS sync (READ_ONLY)")
-    con.execute(f"SET VARIABLE salida = '{output}'")
+    con.execute(f"SET VARIABLE output_dir = '{output}'")
     run_steps(con)
     yield con
     con.close()
@@ -171,6 +171,6 @@ def built(sync_db, output):
 def macros():
     """A DuckDB connection with only the macros defined."""
     con = duckdb.connect()
-    run_steps(con, {"01_beneficiaries.sql", "02_privacy.sql"})
+    run_steps(con, {"01_beneficiarios.sql", "02_privacy.sql"})
     yield con
     con.close()

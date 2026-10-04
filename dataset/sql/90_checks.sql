@@ -4,58 +4,61 @@
 -- finding points to a fault earlier in the build that has to be fixed.
 -- See docs/adr/0002-anonymised-dataset.md.
 
--- Awards published record by record are only to legal persons and public bodies.
+-- Record-level tables: only legal persons and public bodies, and no
+-- personal tax ID anywhere.
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publicar.concesiones_entidades: ' || count(*) || ' rows of protected beneficiaries'
+    'publish.concesiones_entidades: ' || count(*) || ' rows of protected beneficiaries'
 ) END
-FROM publicar.concesiones_entidades
-WHERE is_protected(tipo_beneficiario);
-
--- No published value looks like a natural person's tax ID.
-SELECT CASE WHEN count(*) > 0 THEN error(
-    'publicar.concesiones_entidades: ' || count(*) || ' rows with something shaped like a personal tax ID'
-) END
-FROM rows_with_personal_ids('publicar.concesiones_entidades');
-
--- ayudas_estado_entidades: only legal persons and public bodies, and no personal tax ID anywhere.
-SELECT CASE WHEN count(*) > 0 THEN error(
-    'publicar.ayudas_estado_entidades: ' || count(*) || ' rows of protected beneficiaries'
-) END
-FROM publicar.ayudas_estado_entidades
-WHERE is_protected(tipo_beneficiario);
+FROM publish.concesiones_entidades WHERE is_protected(tipo_persona);
 
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publicar.ayudas_estado_entidades: ' || count(*) || ' rows with something shaped like a personal tax ID'
+    'publish.concesiones_entidades: ' || count(*) || ' rows with something shaped like a personal tax ID'
 ) END
-FROM rows_with_personal_ids('publicar.ayudas_estado_entidades');
-
--- minimis_entidades: only legal persons and public bodies, and no personal tax ID anywhere.
-SELECT CASE WHEN count(*) > 0 THEN error(
-    'publicar.minimis_entidades: ' || count(*) || ' rows of protected beneficiaries'
-) END
-FROM publicar.minimis_entidades
-WHERE is_protected(tipo_beneficiario);
+FROM rows_with_personal_ids('publish.concesiones_entidades');
 
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publicar.minimis_entidades: ' || count(*) || ' rows with something shaped like a personal tax ID'
+    'publish.ayudas_estado_entidades: ' || count(*) || ' rows of protected beneficiaries'
 ) END
-FROM rows_with_personal_ids('publicar.minimis_entidades');
+FROM publish.ayudas_estado_entidades WHERE is_protected(tipo_persona);
 
--- concesiones_personas: no column that identifies people, no cell (rest
--- included) below the minimum, and no personal tax ID anywhere.
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publicar.concesiones_personas: identifying columns: ' || string_agg(column_name, ', ')
+    'publish.ayudas_estado_entidades: ' || count(*) || ' rows with something shaped like a personal tax ID'
+) END
+FROM rows_with_personal_ids('publish.ayudas_estado_entidades');
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publish.minimis_entidades: ' || count(*) || ' rows of protected beneficiaries'
+) END
+FROM publish.minimis_entidades WHERE is_protected(tipo_persona);
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publish.minimis_entidades: ' || count(*) || ' rows with something shaped like a personal tax ID'
+) END
+FROM rows_with_personal_ids('publish.minimis_entidades');
+
+-- concesiones_personas: no column that identifies people, no row below
+-- the minimum, tails only in rows with enough people, and no personal tax
+-- ID anywhere.
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publish.concesiones_personas: identifying columns: ' || string_agg(column_name, ', ')
 ) END
 FROM information_schema.columns
-WHERE table_schema = 'publicar' AND table_name = 'concesiones_personas' AND identifying_column(column_name);
+WHERE table_schema = 'publish' AND table_name = 'concesiones_personas' AND identifying_column(column_name);
 
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publicar.concesiones_personas: ' || count(*) || ' rows below ' || min_beneficiarios() || ' beneficiaries'
+    'publish.concesiones_personas: ' || count(*) || ' rows below ' || min_beneficiaries() || ' beneficiaries'
 ) END
-FROM publicar.concesiones_personas
-WHERE beneficiarios < min_beneficiarios();
+FROM publish.concesiones_personas WHERE beneficiarios < min_beneficiaries();
 
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publicar.concesiones_personas: ' || count(*) || ' rows with something shaped like a personal tax ID'
+    'publish.concesiones_personas: ' || count(*) || ' rows with 10th or 90th percentiles below '
+    || min_beneficiaries_for_tails() || ' beneficiaries'
 ) END
-FROM rows_with_personal_ids('publicar.concesiones_personas');
+FROM publish.concesiones_personas
+WHERE beneficiarios < min_beneficiaries_for_tails()
+    AND (importe_p10 IS NOT NULL OR importe_p90 IS NOT NULL OR fecha_p10 IS NOT NULL OR fecha_p90 IS NOT NULL);
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publish.concesiones_personas: ' || count(*) || ' rows with something shaped like a personal tax ID'
+) END
+FROM rows_with_personal_ids('publish.concesiones_personas');

@@ -6,18 +6,17 @@
 -- Private: it still holds personal data, like concesiones.
 
 CREATE OR REPLACE TABLE minimis AS
-WITH ultimas AS (
-    SELECT CAST(payload AS JSON) AS r, CAST(_is_current AS BOOLEAN) AS vigente
+WITH latest AS (
+    SELECT CAST(payload AS JSON) AS r, CAST(_is_current AS BOOLEAN) AS is_current
     FROM sync.minimis_busqueda
     QUALIFY row_number() OVER (PARTITION BY _natural_key ORDER BY _valid_from DESC) = 1
 )
 SELECT
     CAST(r->>'idConcesion' AS BIGINT)                         AS id_concesion,
-    r->>'codigoConcesion'                                     AS cod_concesion,
+    r->>'codigoConcesion'                                     AS codigo_concesion,
     TRY_CAST(r->>'fechaConcesion' AS DATE)                    AS fecha_concesion,
-    year(TRY_CAST(r->>'fechaConcesion' AS DATE))              AS anio,
     r->>'beneficiario'                                        AS beneficiario,
-    beneficiary_kind(r->>'beneficiario')                      AS tipo_beneficiario,
+    beneficiary_kind(r->>'beneficiario')                      AS tipo_persona,
     TRY_CAST(r->>'idPersona' AS BIGINT)                       AS id_persona,
     TRY_CAST(r->>'ayudaEquivalente' AS DECIMAL(18, 2))        AS ayuda_equivalente,
     trim(r->>'instrumento')                                   AS instrumento,
@@ -27,5 +26,5 @@ SELECT
     r->>'sectorActividad'                                     AS sector_actividad,
     r->>'sectorProducto'                                      AS sector_producto,
     TRY_CAST(r->>'fechaRegistro' AS DATE)                     AS fecha_registro,
-    NOT vigente                                               AS retirada
-FROM ultimas;
+    NOT is_current                                            AS retirada
+FROM latest;

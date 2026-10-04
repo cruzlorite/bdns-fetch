@@ -1,24 +1,25 @@
 -- Writes each published table as a Parquet file, the dataset's only
--- format, in the folder named by the `salida` variable, which must exist:
+-- format, in the folder named by the `output_dir` variable, which must
+-- exist:
 --
---   SET VARIABLE salida = '/path/to/output';
+--   SET VARIABLE output_dir = '/path/to/output';
 --
--- Only tables in the `publicar` schema are exported, and only after the
--- privacy checks (90_checks.sql) have passed. A table added to `publicar`
+-- Only tables in the `publish` schema are exported, and only after the
+-- privacy checks (90_checks.sql) have passed. A table added to `publish`
 -- needs its line here.
 
-SELECT CASE WHEN getvariable('salida') IS NULL THEN error(
-    'No output folder: run SET VARIABLE salida = ''/path/to/output'' before the build'
+SELECT CASE WHEN getvariable('output_dir') IS NULL THEN error(
+    'No output folder: run SET VARIABLE output_dir = ''/path/to/output'' before the build'
 ) END;
 
-COPY publicar.concesiones_entidades
-    TO (getvariable('salida') || '/concesiones_entidades.parquet') (FORMAT parquet, COMPRESSION zstd);
+COPY publish.concesiones_entidades
+    TO (getvariable('output_dir') || '/concesiones_entidades.parquet') (FORMAT parquet, COMPRESSION zstd);
 
-COPY publicar.ayudas_estado_entidades
-    TO (getvariable('salida') || '/ayudas_estado_entidades.parquet') (FORMAT parquet, COMPRESSION zstd);
+COPY publish.ayudas_estado_entidades
+    TO (getvariable('output_dir') || '/ayudas_estado_entidades.parquet') (FORMAT parquet, COMPRESSION zstd);
 
-COPY publicar.minimis_entidades
-    TO (getvariable('salida') || '/minimis_entidades.parquet') (FORMAT parquet, COMPRESSION zstd);
+COPY publish.minimis_entidades
+    TO (getvariable('output_dir') || '/minimis_entidades.parquet') (FORMAT parquet, COMPRESSION zstd);
 
-COPY publicar.concesiones_personas
-    TO (getvariable('salida') || '/concesiones_personas.parquet') (FORMAT parquet, COMPRESSION zstd);
+COPY publish.concesiones_personas
+    TO (getvariable('output_dir') || '/concesiones_personas.parquet') (FORMAT parquet, COMPRESSION zstd);

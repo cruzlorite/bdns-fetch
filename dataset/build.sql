@@ -5,11 +5,11 @@
 -- Run it from the repository root, in a private DuckDB file (it holds
 -- personal data until the published tables are written), with the
 -- bdns-sync database attached as `sync`, read-only, and the folder for the
--- Parquet files in the `salida` variable. For example:
+-- Parquet files in the `output_dir` variable. For example:
 --
 --   duckdb /private/dataset.duckdb \
 --     -cmd "ATTACH 'postgresql://user@host/bdns' AS sync (TYPE postgres, READ_ONLY);
---           SET VARIABLE salida = '/path/to/output'" \
+--           SET VARIABLE output_dir = '/path/to/output'" \
 --     -f dataset/build.sql
 --
 -- Each step is a file in dataset/sql/, run in this order. The run stops at
@@ -20,9 +20,9 @@
 .bail on
 .mode trash
 
-.read dataset/sql/01_beneficiaries.sql
+.read dataset/sql/01_beneficiarios.sql
 .read dataset/sql/02_privacy.sql
-.read dataset/sql/03_publicar.sql
+.read dataset/sql/03_publish.sql
 .read dataset/sql/10_concesiones.sql
 .read dataset/sql/11_ayudas_estado.sql
 .read dataset/sql/12_minimis.sql

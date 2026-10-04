@@ -24,7 +24,7 @@ Cada beneficiario se clasifica a partir de su NIF, nunca de su nombre, y lo que 
 
 Las comunidades de bienes y las sociedades civiles tienen NIF propio, pero suelen llevar el nombre de sus miembros, y por eso se protegen igual que una persona física.
 
-Antes de escribir nada, la generación comprueba lo que va a publicar y **se para** si encuentra un valor con forma de DNI, NIE o NIF enmascarado, una columna que identifica a alguien (`beneficiario`, `idPersona`, `urlBR`...) o una celda agregada con menos de diez beneficiarios. No limpia lo que encuentra: lo señala, porque un fallo así indica un error anterior que hay que corregir.
+Antes de escribir nada, la generación comprueba lo que va a publicar y **se para** si encuentra un valor con forma de DNI, NIE o NIF enmascarado, una columna que identifica a alguien (el beneficiario, su identificador en la BDNS, el enlace al boletín...) o un resumen que junte a menos de diez personas. No limpia lo que encuentra: lo señala, porque un fallo así indica un error anterior que hay que corregir.
 
 <a id="sql"></a>
 ## El SQL
@@ -34,14 +34,14 @@ Todo el proceso es SQL de DuckDB, sin una línea de Python. DuckDB se conecta a 
 ```console
 $ duckdb /ruta/privada/dataset.duckdb \
     -cmd "ATTACH 'postgresql://usuario@servidor/bdns' AS sync (TYPE postgres, READ_ONLY);
-          SET VARIABLE salida = '/ruta/de/salida'" \
+          SET VARIABLE output_dir = '/ruta/de/salida'" \
     -f dataset/build.sql
 ```
 
 Este es el paso que clasifica a los beneficiarios, mostrado directamente desde el código:
 
 ```sql
---8<-- "dataset/sql/01_beneficiaries.sql"
+--8<-- "dataset/sql/01_beneficiarios.sql"
 ```
 
 ## Estado
@@ -51,7 +51,7 @@ Este es el paso que clasifica a los beneficiarios, mostrado directamente desde e
 - [x] Las concesiones, leídas directamente de `bdns-sync` con la última versión conocida de cada una, incluidas las que la API ya ha retirado, con sus columnas y el tipo de beneficiario
 - [x] Las concesiones, ayudas de Estado y minimis a personas jurídicas y entidades públicas, registro a registro, sin el enlace al boletín ni el identificador interno de la BDNS, y los controles que las vigilan
 - [x] La exportación a Parquet, que solo se hace si pasan todos los controles
-- [x] Los agregados de concesiones a personas físicas por convocatoria y año, con supresión de celdas y fila de "resto" (en la muestra real se publica el 98,8 % de los beneficiarios)
-- [ ] Los mismos agregados para ayudas de Estado y minimis, y el reparto de importes
+- [x] Las concesiones a personas físicas, como un resumen por convocatoria: número de concesiones y de beneficiarios, importe total, media, desviación típica, mediana y cuartiles del importe, y los mismos percentiles de la fecha de concesión
+- [ ] Lo mismo para ayudas de Estado y minimis
 - [ ] La ficha del dataset, el esquema y la publicación
 - [ ] La evaluación de riesgos y la revisión legal, antes de la primera versión

@@ -27,29 +27,31 @@ now `bdns-tools` (`pip install bdns-tools`, or `pip install "bdns-tools[bigquery
 
 ### The dataset (experimental)
 
-The start of the anonymised, aggregated dataset ([ADR 0002](https://cruzlorite.github.io/bdns-tools/adr/0002-anonymised-dataset/),
+The start of the anonymised dataset ([ADR 0002](https://cruzlorite.github.io/bdns-tools/adr/0002-anonymised-dataset/),
 still a proposal). It is DuckDB SQL in `dataset/`, not part of the Python package, and may change until its first
 version is published. `dataset/build.sql` runs the steps with the DuckDB command line against a bdns-sync database
-attached as `sync`:
+attached as `sync`, stops at the first error, and writes Parquet files to the `output_dir` folder:
 
-- `01_beneficiaries.sql`: classifies a BDNS beneficiary as a natural person, an entity made of persons, a legal
+- `01_beneficiarios.sql`: classifies a BDNS beneficiary as a natural person, an entity made of persons, a legal
   person, a public body or unknown, from its tax ID alone, and treats anything unrecognised as a natural person.
-- `02_privacy.sql`: the building blocks of the checks that stop the build if a table about to be published holds
-  something shaped like a natural person's tax ID or a column that identifies people.
-- `10_concesiones.sql`: each award's last known version, read straight from bdns-sync (withdrawn ones included),
-  with typed columns and the beneficiary's kind.
-- `11_ayudas_estado.sql`, `12_minimis.sql`: state and de minimis aid, likewise.
+- `02_privacy.sql`: the building blocks of the privacy checks, and the disclosure-control thresholds as macros.
+- `10_concesiones.sql`, `11_ayudas_estado.sql`, `12_minimis.sql`: each record's last known version, read straight
+  from bdns-sync (withdrawn ones included), with typed columns and the beneficiary's kind (`tipo_persona`).
 - `20_entidades.sql`: awards, state aid and de minimis aid to legal persons and public bodies, record by record, in
-  the `publicar` schema that holds everything to be published; without `url_br` (the bulletin usually lists natural
-  persons too) or `id_persona`.
+  the `publish` schema that holds everything to be published (`concesiones_entidades`, `ayudas_estado_entidades`,
+  `minimis_entidades`); without `url_br` (the bulletin usually lists natural persons too) or `id_persona`.
 - `30_personas.sql`: awards to natural persons, entities made of persons and unrecognised beneficiaries, only as
-  aggregates by call and award year: a cell is published with at least 10 beneficiaries and none holding more than
-  half its amount; the rest go, per year, into a "rest" row published only if it gathers two or more suppressed cells
-  and meets the same thresholds. Both thresholds are macros in `02_privacy.sql`.
+  one summary row per call (`concesiones_personas`): counts, total, mean, standard deviation, median and quartiles
+  of the amount, and the same percentiles of the award date. A row needs at least 10 people, none holding more than
+  half its amount; the 10th and 90th percentiles need 20; the smallest and largest values are never published.
+  Suppressed calls go into one rest row per year, published only if it gathers two or more of them and meets the
+  same thresholds.
 - `90_checks.sql`: stops the build if a record-level table holds a protected beneficiary or anything shaped like a
-  natural person's tax ID, or an aggregate table has an identifying column or a cell below the minimum.
-- `95_export.sql`: writes each table in `publicar`, and nothing else, as a Parquet file (the dataset's only format)
-  in the folder named by the `salida` variable, once the checks have passed.
+  natural person's tax ID, or the summary table breaks any of its rules.
+- `95_export.sql`: writes each table in `publish`, and nothing else, as a Parquet file (the dataset's only format),
+  once the checks have passed.
+
+The data is in Spanish, like the BDNS: tables, columns and the values the SQL computes. The code is in English.
 
 ### bdns.fetch
 

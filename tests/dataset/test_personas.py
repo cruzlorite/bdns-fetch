@@ -1,23 +1,32 @@
-"""Natural-person aggregates (dataset/sql/30_personas.sql): statistical
-disclosure control, case by case. Everyone here is made up."""
+"""The per-call summary of awards to natural persons (dataset/sql/30_personas.sql):
+statistical disclosure control, case by case. Everyone here is made up."""
+
+from datetime import date, timedelta
 
 import duckdb
 import pytest
 
 from tests.dataset.conftest import ROOT, T1, award, make_sync_db, run_steps, version
 
+CHECKS = ROOT / "dataset" / "sql" / "90_checks.sql"
 
-def people(call, count, start, importe=100, year="2026"):
-    """Awards from `count` different natural persons in one call."""
+
+def people(call, count, start, importe=100, day=date(2026, 5, 10), **extra):
+    """Awards from `count` different natural persons in one call.
+
+    `importe` and `day` may be functions of the person's position, to spread
+    amounts and dates.
+    """
     return [
         award(
             start + n,
             f"***{start + n:04d}** NOMBRE",
-            importe,
+            importe(n) if callable(importe) else importe,
             numeroConvocatoria=call,
             convocatoria=f"Convocatoria {call}",
-            fechaConcesion=f"{year}-05-10",
+            fechaConcesion=str(day(n) if callable(day) else day),
             idPersona=start + n,
+            **extra,
         )
         for n in range(count)
     ]
@@ -41,13 +50,22 @@ def con(tmp_path):
         award(
             998, "B12345678 EMPRESA SL", 5000, numeroConvocatoria="A", convocatoria="Convocatoria A"
         ),
+        # Two calls too small to publish, in 2026.
         *people("B", 6, 200),
         *people("C", 6, 300),
-        # 2025: one cell, suppressed because one person dominates.
-        *people("D", 14, 400, year="2025"),
-        *people("D", 1, 450, importe=10_000, year="2025"),
+        # 2025: a large call, suppressed because one person holds most of it.
+        *people("D", 14, 400, day=date(2025, 5, 10)),
+        *people("D", 1, 450, importe=10_000, day=date(2025, 5, 10)),
         # A title shaped like a tax ID.
         *[dict(a, convocatoria="Ayudas a 12345678Z") for a in people("E", 10, 500)],
+        # Enough people for the tails: 100 to 2,500 euros, one day apart.
+        *people(
+            "F",
+            25,
+            600,
+            importe=lambda n: 100 * (n + 1),
+            day=lambda n: date(2026, 3, 1) + timedelta(days=n),
+        ),
     ]
     sync_db = make_sync_db(
         tmp_path / "sync.duckdb",
@@ -65,52 +83,109 @@ def con(tmp_path):
     connection.close()
 
 
-def rows(con):
-    return {
-        (anio, convocatoria_id, resto): (concesiones, beneficiarios, float(importe))
-        for anio, convocatoria_id, resto, concesiones, beneficiarios, importe in con.execute(
-            "SELECT anio, numero_convocatoria, resto, concesiones, beneficiarios, importe_total "
-            "FROM publicar.concesiones_personas"
-        ).fetchall()
-    }
+def row(con, call):
+    """The published row of a call, as a dict, or None."""
+    result = con.execute(
+        "SELECT * FROM publish.concesiones_personas WHERE numero_convocatoria IS NOT DISTINCT FROM ?",
+        [call],
+    )
+    names = [d[0] for d in result.description]
+    found = result.fetchall()
+    return dict(zip(names, found[0], strict=True)) if found else None
 
 
-def test_a_large_cell_is_published_counting_each_person_once(con):
+def rest(con, ejercicio):
+    """The published rest row of a year, as a dict, or None."""
+    result = con.execute(
+        "SELECT * FROM publish.concesiones_personas WHERE es_resto AND ejercicio = ?", [ejercicio]
+    )
+    names = [d[0] for d in result.description]
+    found = result.fetchall()
+    return dict(zip(names, found[0], strict=True)) if found else None
+
+
+def test_a_large_call_is_published_counting_each_person_once(con):
+    a = row(con, "A")
     # 13 awards to 12 people; the company stays out.
-    assert rows(con)[(2026, "A", False)] == (13, 12, 1300.0)
+    assert (a["concesiones"], a["beneficiarios"], float(a["importe_total"])) == (13, 12, 1300.0)
+    assert (a["es_resto"], a["ejercicio"]) == (False, None)
+    assert a["convocatoria"] == "Convocatoria A"
 
 
-def test_small_cells_are_suppressed_and_gathered_into_a_rest_row(con):
-    published = rows(con)
-    assert (2026, "B", False) not in published and (2026, "C", False) not in published
-    # B and C together: 12 people, two cells, so the rest row can be published.
-    assert published[(2026, None, True)] == (12, 12, 1200.0)
+def test_below_twenty_people_the_tails_are_left_out(con):
+    a = row(con, "A")
+    assert [a[c] for c in ("importe_p10", "importe_p90", "fecha_p10", "fecha_p90")] == [None] * 4
+    assert float(a["importe_mediana"]) == 100.0
+    assert a["fecha_mediana"] == date(2026, 5, 10)
 
 
-def test_a_dominated_cell_is_suppressed_and_a_lone_rest_is_not_published(con):
-    published = rows(con)
-    assert (2025, "D", False) not in published
-    # D is 2025's only suppressed cell: its rest would be D itself.
-    assert (2025, None, True) not in published
+def test_from_twenty_people_the_tails_are_published(con):
+    f = row(con, "F")
+    amounts = [
+        float(f[c])
+        for c in ("importe_p10", "importe_p25", "importe_mediana", "importe_p75", "importe_p90")
+    ]
+    # Interpolated between the awards: 25 amounts from 100 to 2,500.
+    assert amounts == [340.0, 700.0, 1300.0, 1900.0, 2260.0]
+    assert float(f["importe_media"]) == 1300.0
+    assert f["importe_desviacion"] == pytest.approx(735.98, abs=0.01)
+    dates = [f[c] for c in ("fecha_p10", "fecha_p25", "fecha_mediana", "fecha_p75", "fecha_p90")]
+    # Real award dates, one day apart from 1 March.
+    assert dates == sorted(dates)
+    assert all(date(2026, 3, 1) <= d <= date(2026, 3, 25) for d in dates)
+
+
+def test_the_smallest_and_largest_values_are_never_published(con):
+    f = row(con, "F")
+    values = set(f.values())
+    assert not values & {100, 2500, date(2026, 3, 1), date(2026, 3, 25)}
+
+
+def test_small_calls_are_suppressed_and_gathered_into_a_rest_row(con):
+    assert row(con, "B") is None and row(con, "C") is None
+    # B and C together: 12 people in two calls, so the rest row may be published.
+    resto = rest(con, 2026)
+    assert (resto["concesiones"], resto["beneficiarios"], float(resto["importe_total"])) == (
+        12,
+        12,
+        1200.0,
+    )
+    # Nothing in a rest row says which calls it gathers.
+    assert [resto[c] for c in ("numero_convocatoria", "convocatoria", "nivel3", "instrumento")] == [
+        None
+    ] * 4
+
+
+def test_a_dominated_call_is_suppressed_and_a_lone_rest_is_not_published(con):
+    assert row(con, "D") is None
+    # D is 2025's only suppressed call: its rest would be D itself.
+    assert rest(con, 2025) is None
 
 
 def test_a_title_shaped_like_a_tax_id_is_blanked(con):
-    (convocatoria,) = con.execute(
-        "SELECT convocatoria FROM publicar.concesiones_personas WHERE numero_convocatoria = 'E'"
-    ).fetchone()
-    assert convocatoria is None
+    e = row(con, "E")
+    assert e["beneficiarios"] == 10
+    assert e["convocatoria"] is None
 
 
-def test_the_checks_stop_a_cell_below_the_minimum(con):
+def test_the_checks_stop_a_row_below_the_minimum(con):
     con.execute(
-        "INSERT INTO publicar.concesiones_personas (anio, numero_convocatoria, beneficiarios, resto) "
-        "VALUES (2026, 'Z', 3, false)"
+        "INSERT INTO publish.concesiones_personas (numero_convocatoria, beneficiarios, es_resto) "
+        "VALUES ('Z', 3, false)"
     )
     with pytest.raises(duckdb.InvalidInputException, match="below 10 beneficiaries"):
-        con.execute((ROOT / "dataset" / "sql" / "90_checks.sql").read_text(encoding="utf-8"))
+        con.execute(CHECKS.read_text(encoding="utf-8"))
+
+
+def test_the_checks_stop_tails_below_twenty_people(con):
+    con.execute(
+        "UPDATE publish.concesiones_personas SET importe_p90 = 999 WHERE numero_convocatoria = 'A'"
+    )
+    with pytest.raises(duckdb.InvalidInputException, match="10th or 90th percentiles below 20"):
+        con.execute(CHECKS.read_text(encoding="utf-8"))
 
 
 def test_the_checks_stop_an_identifying_column(con):
-    con.execute("ALTER TABLE publicar.concesiones_personas ADD COLUMN id_persona BIGINT")
+    con.execute("ALTER TABLE publish.concesiones_personas ADD COLUMN id_persona BIGINT")
     with pytest.raises(duckdb.InvalidInputException, match="identifying columns: id_persona"):
-        con.execute((ROOT / "dataset" / "sql" / "90_checks.sql").read_text(encoding="utf-8"))
+        con.execute(CHECKS.read_text(encoding="utf-8"))

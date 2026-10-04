@@ -138,10 +138,6 @@ def period_window(method: str) -> WindowRows:
 
 # --- discover-then-detail sources --------------------------------------------
 
-DETAIL_WORKERS = 8
-"""Threads fetching detail records. The client spaces their requests, so this
-only needs to cover latency."""
-
 
 def _skip_malformed(items: Iterable[Any], context: str, errors: Errors) -> Iterator[dict]:
     """Yield only the records that are JSON objects, recording the rest.
@@ -162,6 +158,7 @@ def _skip_malformed(items: Iterable[Any], context: str, errors: Errors) -> Itera
 
 
 def _details(
+    client: BDNSClient,
     keys: Collection[Any],
     fetch_one: Callable[[Any], Iterable[Any]],
     label: str,
@@ -169,9 +166,15 @@ def _details(
     errors: Errors,
     tag: str | None = None,
 ) -> Iterator[dict]:
-    """Fetch the detail records of every discovered key, in parallel.
+    """Fetch the detail records of every discovered key.
+
+    One call per key, on as many threads as the client's `max_workers`:
+    one by default, as the official good-practice guide asks. More threads
+    shorten the detail step, which is where most of a large load's time
+    goes ([measurements](../../explanation/sync-behavior.md#performance)).
 
     Args:
+        client: The client, whose `max_workers` sizes the pool.
         keys: The discovered keys.
         fetch_one: Returns one key's records.
         label: Name used in logs and in recorded skips.
@@ -186,7 +189,8 @@ def _details(
     """
     total = len(keys)
     for done, (key, items) in enumerate(
-        bounded_map(keys, lambda key: list(fetch_one(key)), DETAIL_WORKERS), start=1
+        bounded_map(keys, lambda key: list(fetch_one(key)), getattr(client, "max_workers", 1)),
+        start=1,
     ):
         if done % 500 == 0 or done == total:
             logger.info("%s: detail %d/%d keys", label, done, total)
@@ -210,6 +214,7 @@ def convocatoria_details(
         for item in client.fetch_convocatorias_busqueda(**period_range(start, end))
     }
     return _details(
+        client,
         codes,
         lambda code: client.fetch_convocatorias(numConv=code),
         "convocatorias",
@@ -232,6 +237,7 @@ def _pes_ids(client: BDNSClient) -> set[int]:
 def pes_details(client: BDNSClient, errors: Errors) -> Iterator[dict]:
     """Detail record of every strategic plan, tagged with its `idPES`."""
     return _details(
+        client,
         _pes_ids(client),
         lambda id_pes: client.fetch_planesestrategicos(idPES=id_pes),
         "planesestrategicos",
@@ -244,6 +250,7 @@ def pes_details(client: BDNSClient, errors: Errors) -> Iterator[dict]:
 def pes_vigencias(client: BDNSClient, errors: Errors) -> Iterator[dict]:
     """Validity records of every strategic plan, tagged with its `idPES`."""
     return _details(
+        client,
         _pes_ids(client),
         lambda id_pes: client.fetch_planesestrategicos_vigencia(idPES=id_pes),
         "planesestrategicos_vigencia",

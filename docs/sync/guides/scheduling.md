@@ -1,70 +1,47 @@
-# Operación programada
+# Sincronización diaria
 
-Una instalación en producción ejecuta **un comando al día**:
+Para tener la base de datos al día basta con ejecutar un comando una vez al día:
 
 ```console
 $ bdns-sync delta
 ```
 
-`delta` comprueba que la API no ha cambiado, sincroniza las 16 entidades
-completas y después las 6 de ventana, con la ventana que toca ese día.
-Si una entidad falla, sigue con las demás y termina con código 1 para que
-salte la alerta.
+`delta` comprueba primero que la API sigue comportándose como esperamos y, si todo está en orden, sincroniza las 16 entidades completas y después las 6 incrementales, cada una con el periodo que toque ese día. Si alguna falla, sigue con las demás y al terminar devuelve un código de error para que salte la alerta.
 
-Antes de programarlo, lanza una sola vez la carga histórica: ver
-[cargas iniciales y backfills](backfill.md). Para ver qué haría hoy sin
-tocar nada: `bdns-sync delta --dry-run`.
+Antes de programarlo tienes que hacer una vez la carga del histórico (lo explicamos en [carga inicial](backfill.md)). Y si quieres ver qué haría hoy sin descargar ni escribir nada, ejecuta `bdns-sync delta --dry-run`.
 
-## Una línea de cron
+## Programarlo con cron
 
 ```crontab
 0 2 * * * BDNS_SYNC_TARGET_URL=bigquery://proyecto/dataset bdns-sync delta
 ```
 
-Si prefieres no mantener una máquina propia, la imagen de contenedor
-ejecuta `bdns-sync delta` por defecto y hay una receta de job programado
-en la nube: ver [despliegue](deployment.md).
+Si prefieres no mantener una máquina propia, la imagen de Docker ejecuta `bdns-sync delta` por defecto, y en [despliegue en la nube](deployment.md) tienes una receta para programarla como tarea en Google Cloud.
 
-## Qué ventana toca cada día
+## Qué periodo se descarga cada día
 
-Las ventanas están **anidadas, no son independientes**: todas terminan
-ayer, así que en cualquier día `annual ⊃ monthly ⊃ weekly ⊃ daily`.
-Lanzar la más ancha que aplique ya cubre todas las estrechas, así que
-`delta` lanza exactamente una
-([`cadence_window`][bdns.sync.windows.cadence_window]):
+Las entidades incrementales no se descargan enteras: se pide lo registrado en un periodo que siempre termina ayer, y ese periodo depende del día ([`cadence_window`][bdns.sync.windows.cadence_window]):
 
-| Cuándo | Ventana | Alcance |
+| Cuándo | Periodo | Días de fecha de registro |
 | --- | --- | --- |
-| A diario | `weekly` | 7 días de fecha de registro |
-| Lunes | `monthly` | 30 días |
-| 1 de enero, mayo y septiembre | `annual` | 365 días |
+| Todos los días | `weekly` | 7 |
+| Los lunes | `monthly` | 30 |
+| El 1 de enero, el 1 de mayo y el 1 de septiembre | `annual` | 365 |
 
-`--window` fuerza otra, por ejemplo para recuperar un mes concreto tras
-una avería.
+Como todos los periodos terminan ayer, el anual incluye al mensual y el mensual al semanal, así que basta con lanzar el más largo que toque y no hace falta encadenarlos. Si un día necesitas otro, por ejemplo para recuperar un mes concreto después de una caída, puedes forzarlo con `--window`.
 
-## Por qué la base es semanal y no diaria
+## Por qué se repasa cada día la última semana
 
-Dos motivos, y los dos son de corrección, no de comodidad:
+Podría parecer suficiente con descargar lo que se registró ayer, pero hay dos motivos para repasar cada día los últimos siete:
 
-- Un registro puede aparecer con fecha de registro de días atrás. Una
-  ventana de un día no lo vería nunca.
-- La detección de bajas solo mira dentro de la ventana con la que corre.
-  Con una ventana de un día, una baja registrada hace tres días no se
-  detecta hasta la siguiente pasada ancha.
+- Algunos registros aparecen con una fecha de registro de hace varios días. Si solo miráramos el día anterior, no los veríamos nunca.
+- Las bajas solo se detectan dentro del periodo que se sincroniza. Con un solo día, si se retira algo registrado hace tres días no nos enteraríamos hasta el siguiente repaso mensual.
 
-Siete días de vuelta atrás cada día atrapan las dos cosas.
+## Si una entidad falla, las demás siguen
 
-## Por qué no se aborta al primer fallo
+Cada entidad se sincroniza por separado y no depende de las otras, así que no tiene sentido dar por perdido el día entero porque falle una. Nos pasó el 2 de septiembre de 2026: `sectores`, un catálogo de 24 filas, agotó la cuota diaria de BigQuery y, como el script de entonces se paraba en el primer error, arrastró con él a las otras 22 entidades.
 
-Una entidad que falla no debe cancelar las otras 21. Son sincronizaciones
-independientes que no comparten nada salvo el destino, así que abortar el
-día entero por una de ellas solo amplía la avería. Pasó de verdad: el 2
-de septiembre de 2026 `sectores`, un catálogo de 24 filas, agotó la cuota
-diaria de BigQuery y, con un orquestador que abortaba al primer fallo,
-se llevó por delante a las otras 22 entidades.
-
-`delta` registra cada fallo en `_sync_runs`, sigue con las demás e
-informa al final:
+Ahora `delta` anota el fallo en `_sync_runs`, continúa con el resto y al final muestra un resumen como este:
 
 ```console
 ok      sectores                         fetched=24 new=0 changed=0 unchanged=24 removed=0 skipped=0
@@ -75,19 +52,11 @@ FAILED  concesiones_busqueda             BDNSTransientError: HTTP 503: Server er
 
 ## La comprobación de la API va incluida
 
-Antes de sincronizar, `delta` ejecuta la comprobación de contrato de
-`bdns-fetch`: que `fechaRegFin` sigue siendo exclusivo, `fechaHasta`
-inclusivo, y los días consecutivos disjuntos. Si la API devuelve datos
-válidos que contradicen algo de eso, **no se sincroniza nada** y sale con
-código 1. Un error pasajero o un día vacío no bloquean
-([por qué](../explanation/sync-behavior.md#boundary-check)).
-`--skip-api-check` la omite.
+Antes de sincronizar, `delta` usa la comprobación de `bdns-fetch` para confirmar que la API sigue tratando las fechas como siempre: que `fechaRegFin` no incluye el propio día, que `fechaHasta` sí lo incluye y que dos días seguidos no comparten registros. Si la API devuelve datos válidos que contradicen alguna de estas reglas, no se sincroniza nada y el comando termina con error, porque seguir adelante supondría perder o duplicar registros sin que nadie se diera cuenta. Si el problema es pasajero (un error del servidor, un día sin datos), no se bloquea nada ([más detalle](../explanation/sync-behavior.md#boundary-check)). Si quieres saltarte la comprobación, usa `--skip-api-check`.
 
-## Saber si un día fue bien
+## Cómo saber si ha ido bien
 
-El estado de una ejecución es su último evento en `_sync_runs`. La regla
-de operación es la misma en todos los motores: **si no hay evento
-`success`, se vuelve a lanzar.** La herramienta es idempotente.
+Cada ejecución deja su rastro en `_sync_runs`, y su estado es el del último evento anotado. La regla es la misma con cualquier base de datos: **si no hay un evento `success`, vuelve a lanzarla**. Repetir una sincronización no duplica nada.
 
 ```sql
 SELECT table_name, run_type, event, occurred_at, window_start, window_end,
@@ -98,6 +67,4 @@ ORDER BY occurred_at DESC
 LIMIT 25;
 ```
 
-Vigila también `rows_skipped`: una ejecución puede terminar bien
-descartando registros malformados, que quedan en `_sync_errors`. Las
-garantías por motor están en [el modelo de datos](../reference/data-model.md).
+Fíjate también en `rows_skipped`: una ejecución puede terminar bien aunque haya descartado registros mal formados, que se guardan en `_sync_errors`. Qué garantiza cada base de datos cuando algo falla a medias lo tienes en [el modelo de datos](../reference/data-model.md).

@@ -94,6 +94,15 @@ WAIT_TIME = typer.Option(
     help="Initial seconds between retries; doubles on each, up to 60. "
     "With the defaults a request rides out about 3-4 minutes of trouble.",
 )
+MAX_WORKERS = typer.Option(
+    1,
+    "--max-workers",
+    envvar="BDNS_SYNC_MAX_WORKERS",
+    min=1,
+    max=20,
+    help="Concurrent API calls (pages and detail calls). The official guide asks for one; "
+    "more only make a load faster.",
+)
 RATE_LIMIT = typer.Option(
     9.5,
     "--rate-limit",
@@ -122,10 +131,13 @@ DRY_RUN = typer.Option(
 )
 
 
-def _client(max_retries: int, wait_time: float, rate_limit: float) -> BDNSClient:
+def _client(max_retries: int, wait_time: float, rate_limit: float, max_workers: int) -> BDNSClient:
     """Build the API client a run uses."""
     return BDNSClient(
-        max_retries=max_retries, wait_time=wait_time, rate_limiter=RateLimiter(rate=rate_limit)
+        max_retries=max_retries,
+        wait_time=wait_time,
+        max_workers=max_workers,
+        rate_limiter=RateLimiter(rate=rate_limit),
     )
 
 
@@ -214,6 +226,7 @@ def sync(
     max_retries: int = MAX_RETRIES,
     wait_time: float = WAIT_TIME,
     rate_limit: float = RATE_LIMIT,
+    max_workers: int = MAX_WORKERS,
     max_reject_ratio: float = MAX_REJECT_RATIO,
     max_rejects: int | None = MAX_REJECTS,
     dry_run: bool = DRY_RUN,
@@ -260,7 +273,7 @@ def sync(
     stats = sync_entity(
         entity,
         get_sink(target_url, limits),
-        _client(max_retries, wait_time, rate_limit),
+        _client(max_retries, wait_time, rate_limit, max_workers),
         window,
         since=since_date,
         until=until_date,
@@ -283,6 +296,7 @@ def delta(
     max_retries: int = MAX_RETRIES,
     wait_time: float = WAIT_TIME,
     rate_limit: float = RATE_LIMIT,
+    max_workers: int = MAX_WORKERS,
     max_reject_ratio: float = MAX_REJECT_RATIO,
     max_rejects: int | None = MAX_REJECTS,
     dry_run: bool = DRY_RUN,
@@ -302,7 +316,7 @@ def delta(
         _echo_steps(target_url, steps, limits)
         return
 
-    client = _client(max_retries, wait_time, rate_limit)
+    client = _client(max_retries, wait_time, rate_limit, max_workers)
     if not skip_api_check:
         report = check_api_contract(client)
         for message in report.messages:
@@ -328,6 +342,7 @@ def backfill(
     max_retries: int = MAX_RETRIES,
     wait_time: float = WAIT_TIME,
     rate_limit: float = RATE_LIMIT,
+    max_workers: int = MAX_WORKERS,
     max_reject_ratio: float = MAX_REJECT_RATIO,
     max_rejects: int | None = MAX_REJECTS,
     dry_run: bool = DRY_RUN,
@@ -346,7 +361,11 @@ def backfill(
         _echo_steps(target_url, steps, limits)
         return
     _report(
-        run_plan(steps, get_sink(target_url, limits), _client(max_retries, wait_time, rate_limit))
+        run_plan(
+            steps,
+            get_sink(target_url, limits),
+            _client(max_retries, wait_time, rate_limit, max_workers),
+        )
     )
 
 
@@ -374,6 +393,7 @@ def check_api(
     max_retries: int = MAX_RETRIES,
     wait_time: float = WAIT_TIME,
     rate_limit: float = RATE_LIMIT,
+    max_workers: int = MAX_WORKERS,
 ) -> None:
     """Check that the live API still has the date semantics syncs rely on.
 
@@ -382,7 +402,7 @@ def check_api(
     contradicts them; transient trouble or an empty probe day exits 0.
     """
     report = check_api_contract(
-        _client(max_retries, wait_time, rate_limit), day=_parse_iso_date(day, "--day")
+        _client(max_retries, wait_time, rate_limit, max_workers), day=_parse_iso_date(day, "--day")
     )
     for message in report.messages:
         typer.echo(message)

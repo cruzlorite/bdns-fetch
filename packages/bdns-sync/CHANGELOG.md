@@ -24,7 +24,8 @@ Planned as 0.6.0, on bdns-fetch 2.0.
   coverage of the history can be audited from the log.
 - Targets written by earlier versions are upgraded in place: each run adds the nullable columns a table lacks. The
   schema only ever grows that way.
-- `--max-retries`, `--wait-time` and `--rate-limit`, each with an environment variable (`BDNS_SYNC_MAX_RETRIES`...).
+- `--max-retries`, `--wait-time`, `--rate-limit` and `--max-workers`, each with an environment variable
+  (`BDNS_SYNC_MAX_RETRIES`...).
   The defaults (5 retries from 10 s) ride out about 3-4 minutes of server trouble per request.
 - A CI job runs the suite against bdns-fetch's main branch, to catch a break before it is released.
 - `--max-reject-ratio` and `--max-rejects` set how much of a batch may be unusable before the run refuses it. The
@@ -60,6 +61,9 @@ Planned as 0.6.0, on bdns-fetch 2.0.
 - **Breaking.** Sinks return a `SyncStats` (`fetched`, `new`, `changed`, `unchanged`, `removed`, `skipped`) instead of
   a dict with `inserted`, `updated`, `touched` and `soft_deleted`. Run logs print the new names.
 - `list --kind windowed` replaces `search`, which is still accepted.
+- One API call at a time by default, pages and detail calls alike, as the official good-practice guide asks. The
+  detail step of `convocatorias` and `planesestrategicos` used 8 threads; `--max-workers` (`BDNS_SYNC_MAX_WORKERS`)
+  raises it again. An initial load of `convocatorias` takes considerably longer with one.
 - Requires bdns-fetch 2.0, which now owns the API's date semantics (`bdns.fetch.dates`), the contract check
   (`bdns.fetch.contract`) and request spacing. The tqdm patch, the all-pages wrapper and the per-call spacing are gone.
 - The scripts are one-line wrappers around `delta` and `backfill`, kept for existing crontabs, and the image runs

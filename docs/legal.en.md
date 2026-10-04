@@ -26,12 +26,6 @@ Bear in mind that `bdns-sync`'s history **keeps them even after the portal withd
 
 The dataset planned for publication will always be anonymised and aggregated, precisely so that it holds no personal data ([roadmap](roadmap.md#dataset)).
 
-## This site
-
-This site uses no cookies or analytics, and collects no data about its visitors. Fonts are served from the site itself, so loading it makes no requests to third parties either. Your preferences, such as light or dark mode, are kept only in your browser.
-
-The site is hosted on GitHub Pages, and GitHub, like any hosting provider, logs technical access data such as IP addresses for security. Its [privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement) explains it.
-
 ## Contact
 
 For questions or problems, open an [issue on GitHub](https://github.com/cruzlorite/bdns-tools/issues). For a vulnerability, follow the [security policy](https://github.com/cruzlorite/bdns-tools/blob/main/SECURITY.md).

@@ -26,12 +26,6 @@ Ten en cuenta que el histórico de `bdns-sync` **los conserva aunque el portal l
 
 El dataset que está previsto publicar irá siempre anonimizado y agregado, precisamente para que no contenga datos personales ([hoja de ruta](roadmap.md#dataset)).
 
-## Esta web
-
-Esta web no usa cookies ni herramientas de analítica, y no recoge ningún dato de quien la visita. Las tipografías se sirven desde la propia web, así que tampoco se hacen peticiones a terceros al cargarla. Tus preferencias, como el modo claro u oscuro, se guardan solo en tu navegador.
-
-La web está alojada en GitHub Pages, y GitHub, como cualquier proveedor de alojamiento, registra datos técnicos de acceso, como la dirección IP, por motivos de seguridad. Lo explica en su [declaración de privacidad](https://docs.github.com/es/site-policy/privacy-policies/github-general-privacy-statement).
-
 ## Contacto
 
 Para dudas o problemas, abre un [issue en GitHub](https://github.com/cruzlorite/bdns-tools/issues). Si se trata de una vulnerabilidad, sigue la [política de seguridad](https://github.com/cruzlorite/bdns-tools/blob/main/SECURITY.md).

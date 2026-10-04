@@ -65,3 +65,20 @@ def test_the_name_never_changes_the_verdict(macros):
 )
 def test_only_legal_persons_and_public_bodies_are_unprotected(macros, kind, protected):
     assert macros.execute("SELECT is_protected(?)", [kind]).fetchone()[0] is protected
+
+
+@pytest.mark.parametrize(
+    ("beneficiary", "name"),
+    [
+        ("B12345678 EMPRESA SL", "EMPRESA SL"),
+        ("B12345678 - EMPRESA SL", "EMPRESA SL"),
+        ("  B12345678   EMPRESA  SL ", "EMPRESA  SL"),
+        ("B12345678 GUION-EN EL NOMBRE", "GUION-EN EL NOMBRE"),
+        ("B12345678", ""),
+        (None, ""),
+    ],
+)
+def test_beneficiary_name_handles_both_separators(macros, beneficiary, name):
+    assert (
+        macros.execute("SELECT beneficiary_name(?::VARCHAR)", [beneficiary]).fetchone()[0] == name
+    )

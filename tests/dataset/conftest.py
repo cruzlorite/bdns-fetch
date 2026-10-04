@@ -69,30 +69,83 @@ def award(key, beneficiario, importe, **extra):
     }
 
 
-@pytest.fixture
-def sync_db(tmp_path):
-    """A bdns-sync database (DuckDB) with bdns-sync's real table schema."""
-    path = tmp_path / "sync.duckdb"
+def state_aid(key, beneficiario, importe):
+    """A made-up state aid payload, in the shape the API returns."""
+    return {
+        "idConcesion": str(key),
+        "codConcesion": f"PR{key}",
+        "fechaConcesion": "2026-09-25",
+        "beneficiario": beneficiario,
+        "importe": str(importe),
+        "ayudaEquivalente": str(importe / 2),
+        "instrumento": "PRÉSTAMO",
+        "region": "ES615 - Huelva",
+        "idPersona": str(2000 + key),
+        "ayudaEstado": "SA.000001",
+        "urlAyudaEstado": "https://competition-cases.ec.europa.eu/cases/SA.000001",
+    }
+
+
+def de_minimis(key, beneficiario, equivalente):
+    """A made-up de minimis payload, in the shape the API returns."""
+    return {
+        "idConcesion": str(key),
+        "codigoConcesion": f"SB{key}",
+        "fechaConcesion": "2026-09-29",
+        "beneficiario": beneficiario,
+        "ayudaEquivalente": str(equivalente),
+        "sectorActividad": "47 - Comercio al por menor",
+        "idPersona": str(3000 + key),
+    }
+
+
+def make_sync_db(path, concesiones, ayudas, minimis):
+    """Write a bdns-sync database (DuckDB) with bdns-sync's real table schema."""
     engine = create_engine(f"duckdb:///{path}")
     metadata = MetaData()
-    table = build_sync_table("concesiones_busqueda", metadata)
+    tables = {
+        name: build_sync_table(name, metadata)
+        for name in ("concesiones_busqueda", "ayudasestado_busqueda", "minimis_busqueda")
+    }
     metadata.create_all(engine)
     with engine.begin() as conn:
-        conn.execute(
-            insert(table),
-            [
-                # Corrected: the current version is the last known one.
-                version(1, T1, T2, False, "superseded", award(1, "B12345678 EMPRESA SL", 1000)),
-                version(1, T2, None, True, None, award(1, "B12345678 EMPRESA SL", 1200)),
-                # Withdrawn: its last version was closed as removed.
-                version(2, T1, T3, False, "removed", award(2, "***1234** NOMBRE APELLIDO", 500)),
-                # Versions written before closing reasons existed.
-                version(3, T1, T2, False, None, award(3, "123456789012 FOREIGN LTD", 70)),
-                version(3, T2, T4, False, None, award(3, "123456789012 FOREIGN LTD", 80)),
-            ],
-        )
+        for name, rows in [
+            ("concesiones_busqueda", concesiones),
+            ("ayudasestado_busqueda", ayudas),
+            ("minimis_busqueda", minimis),
+        ]:
+            if rows:
+                conn.execute(insert(tables[name]), rows)
     engine.dispose()
     return path
+
+
+@pytest.fixture
+def sync_db(tmp_path):
+    """A small bdns-sync database covering each kind of beneficiary and version."""
+    return make_sync_db(
+        tmp_path / "sync.duckdb",
+        concesiones=[
+            # Corrected: the current version is the last known one.
+            version(1, T1, T2, False, "superseded", award(1, "B12345678 EMPRESA SL", 1000)),
+            version(1, T2, None, True, None, award(1, "B12345678 EMPRESA SL", 1200)),
+            # Withdrawn: its last version was closed as removed.
+            version(2, T1, T3, False, "removed", award(2, "***1234** NOMBRE APELLIDO", 500)),
+            # Versions written before closing reasons existed.
+            version(3, T1, T2, False, None, award(3, "123456789012 FOREIGN LTD", 70)),
+            version(3, T2, T4, False, None, award(3, "123456789012 FOREIGN LTD", 80)),
+        ],
+        ayudas=[
+            version(11, T1, None, True, None, state_aid(11, "B12345678 - EMPRESA SL", 1000)),
+            version(12, T1, None, True, None, state_aid(12, "***1234** NOMBRE APELLIDO", 300)),
+        ],
+        minimis=[
+            version(21, T1, None, True, None, de_minimis(21, "G12345678 ASOCIACION", 900)),
+            version(
+                22, T1, None, True, None, de_minimis(22, "E12345678 APELLIDO Y APELLIDO CB", 400)
+            ),
+        ],
+    )
 
 
 @pytest.fixture

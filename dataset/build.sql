@@ -12,12 +12,20 @@
 --           SET VARIABLE salida = '/path/to/output'" \
 --     -f dataset/build.sql
 --
--- Each step is a file in dataset/sql/, run in this order.
+-- Each step is a file in dataset/sql/, run in this order. The run stops at
+-- the first error, so a failed privacy check (90_checks.sql) leaves the
+-- export (95_export.sql) unrun and nothing is written; results are not
+-- printed, only errors are.
+
+.bail on
+.mode trash
 
 .read dataset/sql/01_beneficiaries.sql
 .read dataset/sql/02_privacy.sql
 .read dataset/sql/03_publicar.sql
 .read dataset/sql/10_concesiones.sql
+.read dataset/sql/11_ayudas_estado.sql
+.read dataset/sql/12_minimis.sql
 .read dataset/sql/20_entidades.sql
 .read dataset/sql/90_checks.sql
 .read dataset/sql/95_export.sql

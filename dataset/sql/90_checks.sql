@@ -16,3 +16,27 @@ SELECT CASE WHEN count(*) > 0 THEN error(
     'publicar.concesiones_entidades: ' || count(*) || ' rows with something shaped like a personal tax ID'
 ) END
 FROM rows_with_personal_ids('publicar.concesiones_entidades');
+
+-- ayudas_estado_entidades: only legal persons and public bodies, and no personal tax ID anywhere.
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publicar.ayudas_estado_entidades: ' || count(*) || ' rows of protected beneficiaries'
+) END
+FROM publicar.ayudas_estado_entidades
+WHERE is_protected(tipo_beneficiario);
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publicar.ayudas_estado_entidades: ' || count(*) || ' rows with something shaped like a personal tax ID'
+) END
+FROM rows_with_personal_ids('publicar.ayudas_estado_entidades');
+
+-- minimis_entidades: only legal persons and public bodies, and no personal tax ID anywhere.
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publicar.minimis_entidades: ' || count(*) || ' rows of protected beneficiaries'
+) END
+FROM publicar.minimis_entidades
+WHERE is_protected(tipo_beneficiario);
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publicar.minimis_entidades: ' || count(*) || ' rows with something shaped like a personal tax ID'
+) END
+FROM rows_with_personal_ids('publicar.minimis_entidades');

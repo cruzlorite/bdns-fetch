@@ -13,3 +13,9 @@ SELECT CASE WHEN getvariable('salida') IS NULL THEN error(
 
 COPY publicar.concesiones_entidades
     TO (getvariable('salida') || '/concesiones_entidades.parquet') (FORMAT parquet, COMPRESSION zstd);
+
+COPY publicar.ayudas_estado_entidades
+    TO (getvariable('salida') || '/ayudas_estado_entidades.parquet') (FORMAT parquet, COMPRESSION zstd);
+
+COPY publicar.minimis_entidades
+    TO (getvariable('salida') || '/minimis_entidades.parquet') (FORMAT parquet, COMPRESSION zstd);

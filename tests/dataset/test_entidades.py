@@ -49,3 +49,32 @@ def test_a_personal_tax_id_anywhere_stops_the_build(built):
     )
     with pytest.raises(duckdb.InvalidInputException, match="personal tax ID"):
         built.execute(checks())
+
+
+def test_state_aid_names_lose_their_dash(built):
+    rows = built.execute(
+        "SELECT id_concesion, nif, nombre, region FROM publicar.ayudas_estado_entidades"
+    ).fetchall()
+    # The natural person (12) stays out; the company's name has no leading dash.
+    assert rows == [(11, "B12345678", "EMPRESA SL", "ES615 - Huelva")]
+
+
+def test_de_minimis_publishes_legal_persons_only(built):
+    rows = built.execute(
+        "SELECT id_concesion, nif, nombre FROM publicar.minimis_entidades"
+    ).fetchall()
+    # The community of property (22) is protected like a natural person.
+    assert rows == [(21, "G12345678", "ASOCIACION")]
+
+
+@pytest.mark.parametrize("table", ["ayudas_estado_entidades", "minimis_entidades"])
+def test_no_entity_table_carries_identifying_columns(built, table):
+    columns = {
+        name
+        for (name,) in built.execute(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_schema = 'publicar' AND table_name = ?",
+            [table],
+        ).fetchall()
+    }
+    assert not columns & {"beneficiario", "id_persona"}

@@ -11,6 +11,11 @@
 CREATE OR REPLACE MACRO beneficiary_id(beneficiario) AS
     upper(split_part(trim(coalesce(beneficiario, '')), ' ', 1));
 
+-- The name: everything after the identifier. State aid writes a dash
+-- between them ("B12345678 - EMPRESA SL"); the other tables, a space.
+CREATE OR REPLACE MACRO beneficiary_name(beneficiario) AS
+    trim(regexp_replace(trim(coalesce(beneficiario, '')), '^\S+\s*(-\s+)?', ''));
+
 CREATE OR REPLACE MACRO beneficiary_kind(beneficiario) AS
     CASE
         -- A person: a masked ID (***1234**), a DNI, an NIE, or a K/L/M ID

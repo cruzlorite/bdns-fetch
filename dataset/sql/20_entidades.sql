@@ -1,4 +1,5 @@
--- Awards to legal persons and public bodies, record by record. They are
+-- Awards, state aid and de minimis aid to legal persons and public bodies,
+-- record by record. They are
 -- not personal data, and who receives what from whom is what the dataset
 -- is most useful for. See docs/adr/0002-anonymised-dataset.md.
 --
@@ -13,7 +14,7 @@ SELECT
     fecha_concesion,
     anio,
     beneficiary_id(beneficiario)                            AS nif,
-    trim(substr(trim(beneficiario), length(split_part(trim(beneficiario), ' ', 1)) + 1)) AS nombre,
+    beneficiary_name(beneficiario)                          AS nombre,
     tipo_beneficiario,
     importe,
     ayuda_equivalente,
@@ -26,4 +27,58 @@ SELECT
     fecha_alta,
     retirada
 FROM concesiones
+WHERE NOT is_protected(tipo_beneficiario);
+
+-- State aid to legal persons and public bodies. The link to the European
+-- Commission's case (url_ayuda_estado) is about the aid scheme, not the
+-- beneficiary, so it stays.
+CREATE OR REPLACE TABLE publicar.ayudas_estado_entidades AS
+SELECT
+    id_concesion,
+    cod_concesion,
+    fecha_concesion,
+    anio,
+    beneficiary_id(beneficiario)                            AS nif,
+    beneficiary_name(beneficiario)                          AS nombre,
+    tipo_beneficiario,
+    categoria_beneficiario,
+    importe,
+    ayuda_equivalente,
+    instrumento,
+    numero_convocatoria,
+    convocatoria,
+    convocante,
+    reglamento,
+    objetivo,
+    region,
+    sectores,
+    ayuda_estado,
+    url_ayuda_estado,
+    entidad,
+    intermediario,
+    fecha_alta,
+    retirada
+FROM ayudas_estado
+WHERE NOT is_protected(tipo_beneficiario);
+
+-- De minimis aid to legal persons and public bodies.
+CREATE OR REPLACE TABLE publicar.minimis_entidades AS
+SELECT
+    id_concesion,
+    cod_concesion,
+    fecha_concesion,
+    anio,
+    beneficiary_id(beneficiario)                            AS nif,
+    beneficiary_name(beneficiario)                          AS nombre,
+    tipo_beneficiario,
+    ayuda_equivalente,
+    instrumento,
+    numero_convocatoria,
+    convocante,
+    reglamento,
+    sector_actividad,
+    sector_producto,
+    fecha_registro,
+    retirada
+FROM minimis
 WHERE NOT is_protected(tipo_beneficiario);

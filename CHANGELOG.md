@@ -42,6 +42,8 @@ attached as `sync`:
   holds everything to be published; without `url_br` (the bulletin usually lists natural persons too) or `id_persona`.
 - `90_checks.sql`: stops the build if a record-level table holds a protected beneficiary or anything shaped like a
   natural person's tax ID.
+- `95_export.sql`: writes each table in `publicar`, and nothing else, as a Parquet file (the dataset's only format)
+  in the folder named by the `salida` variable, once the checks have passed.
 
 ### bdns.fetch
 

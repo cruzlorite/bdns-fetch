@@ -33,7 +33,8 @@ Todo el proceso es SQL de DuckDB, sin una línea de Python. DuckDB se conecta a 
 
 ```console
 $ duckdb /ruta/privada/dataset.duckdb \
-    -cmd "ATTACH 'postgresql://usuario@servidor/bdns' AS sync (TYPE postgres, READ_ONLY)" \
+    -cmd "ATTACH 'postgresql://usuario@servidor/bdns' AS sync (TYPE postgres, READ_ONLY);
+          SET VARIABLE salida = '/ruta/de/salida'" \
     -f dataset/build.sql
 ```
 

@@ -34,13 +34,13 @@ def test_columns_are_typed_and_text_is_untouched(built):
 @pytest.mark.skipif(
     shutil.which("duckdb") is None, reason="the DuckDB command line is not installed"
 )
-def test_the_duckdb_command_line_runs_the_build(sync_db, tmp_path):
+def test_the_duckdb_command_line_runs_the_build(sync_db, output, tmp_path):
     result = subprocess.run(
         [
             "duckdb",
             str(tmp_path / "dataset.duckdb"),
             "-cmd",
-            f"ATTACH '{sync_db}' AS sync (READ_ONLY)",
+            f"ATTACH '{sync_db}' AS sync (READ_ONLY); SET VARIABLE salida = '{output}'",
             "-f",
             "dataset/build.sql",
         ],
@@ -50,3 +50,4 @@ def test_the_duckdb_command_line_runs_the_build(sync_db, tmp_path):
         env={**os.environ, "HOME": str(tmp_path)},
     )
     assert result.returncode == 0, result.stderr
+    assert (output / "concesiones_entidades.parquet").exists()

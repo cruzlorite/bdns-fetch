@@ -76,6 +76,9 @@ Planned as 2.0.0: the client's signatures change (see *Changed*).
   `OptionInfo` objects, so signatures, type hints and editor help are accurate. The CLI builds its
   commands from the client's signatures.
 - `wait_time` is the initial backoff rather than a fixed wait.
+- Paginated downloads make one call at a time by default (`max_workers=1`), as the official good-practice guide
+  asks ("no realizar llamadas de forma concurrente"). `max_workers` and `--max-workers` raise it. Splitting by date,
+  not concurrency, is what makes large downloads reliable.
 - Requests are spaced evenly, 9.5 per second, instead of allowing bursts of ten: the API answers 429
   to bursts even when the average is under its limit.
 - **Breaking.** `BDNSError` takes its fields as keywords; `suggestion` is gone (advice is the CLI's

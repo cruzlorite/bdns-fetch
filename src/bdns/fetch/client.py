@@ -20,9 +20,11 @@ Three policies apply to every request:
   signal a temporary condition (`ERR_MANTENIMIENTO_BBDD`) are retried with
   exponential backoff and jitter, honouring `Retry-After`. Any other error
   is raised at once: repeating a bad request cannot fix it.
-- **Pagination.** Pages are fetched concurrently but yielded in page
-  order, and at most `2 * max_workers` are held in memory at a time, so a
-  slow consumer slows the download rather than growing memory.
+- **Pagination.** Pages are fetched one at a time by default, as the
+  official good-practice guide asks. With `max_workers` above 1 they are
+  fetched concurrently but still yielded in page order, with at most
+  `2 * max_workers` held in memory, so a slow consumer slows the download
+  rather than growing memory.
 
 Each is explained in [how the client works](../../explanation/policies.md),
 and recorded with its alternatives in the [ADRs](../../adr/index.md).
@@ -133,6 +135,10 @@ class BDNSClient:
             each retry, plus up to as much random jitter, capped at
             `MAX_RETRY_WAIT` (or `wait_time`, if larger).
         max_workers: Threads fetching the pages of a paginated endpoint.
+            The default, 1, follows the official guide, which asks for no
+            concurrent calls. More threads only make a download faster;
+            what makes large downloads reliable is splitting them by date
+            ([`split_range`][bdns.fetch.dates.split_range]).
         progress: Show a progress bar while fetching pages. `None` shows
             it only when standard error is a terminal.
         timeout: Seconds to wait for each HTTP response.
@@ -147,7 +153,7 @@ class BDNSClient:
         *,
         max_retries: int = 3,
         wait_time: float = 2,
-        max_workers: int = 5,
+        max_workers: int = 1,
         progress: bool | None = None,
         timeout: float = 30,
         rate_limiter: RateLimiter | None = None,

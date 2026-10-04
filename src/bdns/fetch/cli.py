@@ -101,7 +101,11 @@ def main(
         help="Initial seconds between retries. Doubles on each retry, up to 60.",
     ),
     max_workers: int = typer.Option(
-        5, "--max-workers", min=1, max=20, help="Threads fetching pages concurrently."
+        1,
+        "--max-workers",
+        min=1,
+        max=20,
+        help="Threads fetching pages. The official guide asks for no concurrent calls; raise it at your own risk.",
     ),
     rate_limit: float = typer.Option(
         9.5,

@@ -28,7 +28,7 @@ El dataset **no contiene ningún dato personal**. Puede identificar a personas j
     | Catálogos | Tal cual |
     | Convocatorias | Registro a registro, revisando los títulos que nombran a personas |
     | Concesiones, ayudas de Estado y minimis a personas jurídicas y entidades públicas | Registro a registro |
-    | Las mismas, a personas físicas, entidades formadas por personas y beneficiarios dudosos | Solo agregadas por convocatoria y año (con su órgano, región e instrumento): número de concesiones, número de beneficiarios e importe total |
+    | Las mismas, a personas físicas, entidades formadas por personas y beneficiarios dudosos | Solo agregadas por convocatoria y año de la concesión, incluido el año en curso (con su órgano, región e instrumento): número de concesiones, número de beneficiarios e importe total |
     | Sanciones a personas físicas | No se publican |
 
 3. **En los agregados se suprime** cualquier celda con menos de 10 beneficiarios o en la que uno solo concentre la mayor parte del importe, y también las celdas que permitirían recalcular una suprimida por resta (supresión secundaria).
@@ -37,12 +37,13 @@ El dataset **no contiene ningún dato personal**. Puede identificar a personas j
 6. **El dataset se genera donde están los datos**, a partir de las tablas de `bdns-sync`. El resultado queda en un sitio privado hasta que una persona lo revisa, y se publica fuera del repositorio (en Zenodo, con un DOI por versión) con la metodología, la cita a la IGAE y la fecha de actualización.
 7. **Antes de la primera publicación** se hacen una evaluación de riesgos y una revisión legal.
 
-Quedan pendientes de decidir: si las comunidades de bienes y las sociedades civiles se protegen como personas físicas (mientras tanto, sí), el detalle exacto de los agregados, cada cuánto se publica una versión y la licencia del dataset (las condiciones de la IGAE más, por ejemplo, CC BY 4.0 para el trabajo propio).
+Quedan pendientes de decidir: si las comunidades de bienes y las sociedades civiles se protegen como personas físicas (mientras tanto, sí), cada cuánto se publica una versión y la licencia del dataset (las condiciones de la IGAE más, por ejemplo, CC BY 4.0 para el trabajo propio).
 
 ## Consecuencias
 
 - Si la anonimización es sólida, lo publicado deja de ser un dato personal, y quien lo reutilice no queda sujeto al RGPD por ello.
 - No se puede seguir a una persona física concreta a lo largo del tiempo. Es justo lo que se busca, aunque limite algunos análisis.
+- Comparando dos versiones, la diferencia en una celda del año en curso deja ver lo que recibieron quienes entraron entre una y otra, aunque no quiénes son. Se acepta como riesgo residual: no identifica a nadie, y esos importes los publica la propia BDNS con nombre mientras siguen en su plazo. Se revisará en la evaluación de riesgos, y si hiciera falta bastaría con no publicar más de una versión por trimestre.
 - Los agregados de personas físicas no suman exactamente el total real, porque faltan las celdas suprimidas. Lo suprimido se publica agrupado en una celda de "resto", siempre que esa celda cumpla también los umbrales.
 - El modelo de datos de `bdns-sync` pasa a ser un contrato del generador: un cambio en él puede obligar a cambiar el dataset.
 - Cada versión del dataset se puede regenerar a partir de una base de datos de `bdns-sync`, y el método es público, así que se puede revisar.

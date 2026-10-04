@@ -28,7 +28,7 @@ The dataset **holds no personal data**. It may identify legal persons and public
     | Catalogs | As they are |
     | Calls for applications | Record by record, reviewing titles that name people |
     | Awards, state aid and de minimis aid to legal persons and public bodies | Record by record |
-    | The same, to natural persons, entities made of persons and doubtful beneficiaries | Only aggregated by call and year (with its body, region and instrument): number of awards, number of beneficiaries and total amount |
+    | The same, to natural persons, entities made of persons and doubtful beneficiaries | Only aggregated by call and award year, the current year included (with its body, region and instrument): number of awards, number of beneficiaries and total amount |
     | Sanctions on natural persons | Not published |
 
 3. **In the aggregates, any cell is suppressed** with fewer than 10 beneficiaries or where a single one holds most of the amount, and so are the cells that would let a suppressed one be recomputed by subtraction (secondary suppression).
@@ -37,12 +37,13 @@ The dataset **holds no personal data**. It may identify legal persons and public
 6. **The dataset is built where the data lives**, from `bdns-sync`'s tables. The result stays private until a person reviews it, and is published outside the repository (on Zenodo, with a DOI per version) with the methodology, the IGAE citation and the update date.
 7. **Before the first publication**, a risk assessment and a legal review take place.
 
-Still to decide: whether communities of property and civil partnerships are protected like natural persons (meanwhile, they are), the exact detail of the aggregates, how often a version is published, and the dataset's license (the IGAE's conditions plus, for example, CC BY 4.0 for the project's own work).
+Still to decide: whether communities of property and civil partnerships are protected like natural persons (meanwhile, they are), how often a version is published, and the dataset's license (the IGAE's conditions plus, for example, CC BY 4.0 for the project's own work).
 
 ## Consequences
 
 - If the anonymisation holds, what is published is no longer personal data, and reusing it does not bring anyone under the GDPR.
 - A specific natural person cannot be followed over time. That is the point, even though it limits some analyses.
+- Comparing two versions, the difference in a current-year cell shows what those who came in between received, though not who they are. It is accepted as residual risk: it identifies no one, and the BDNS itself publishes those amounts with names while they are within their period. The risk assessment will revisit it, and if needed, publishing at most one version per quarter would be enough.
 - Natural-person aggregates do not add up exactly to the real total, since suppressed cells are missing. What is suppressed is published grouped in a "rest" cell, provided that cell meets the thresholds too.
 - `bdns-sync`'s data model becomes a contract of the generator: a change to it may require changing the dataset.
 - Each dataset version can be rebuilt from a `bdns-sync` database, and the method is public, so it can be reviewed.

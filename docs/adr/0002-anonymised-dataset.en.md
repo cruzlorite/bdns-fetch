@@ -27,17 +27,17 @@ The dataset **holds no personal data**. It may identify legal persons and public
     |---|---|
     | Catalogs | As they are |
     | Calls for applications | Record by record, reviewing titles that name people |
-    | Awards, state aid and de minimis aid to legal persons and public bodies | Record by record *(to be confirmed)* |
+    | Awards, state aid and de minimis aid to legal persons and public bodies | Record by record |
     | The same, to natural persons, entities made of persons and doubtful beneficiaries | Only aggregated by call and year (with its body, region and instrument): number of awards, number of beneficiaries and total amount |
     | Sanctions on natural persons | Not published |
 
-3. **In the aggregates, any cell is suppressed** with fewer than *k* beneficiaries (*k* = 10, *to be confirmed*) or where a single one holds most of the amount, and so are the cells that would let a suppressed one be recomputed by subtraction (secondary suppression).
+3. **In the aggregates, any cell is suppressed** with fewer than 10 beneficiaries or where a single one holds most of the amount, and so are the cells that would let a suppressed one be recomputed by subtraction (secondary suppression).
 4. **Never published**, in anything about natural persons: the name, the tax ID (full, partial or hashed), `idPersona`, `urlBR`, `codConcesion` or `id`.
-5. **Generation stops** if what is about to be published holds a value shaped like a DNI, NIE or masked tax ID, a forbidden field or a cell below *k* ([`bdns.dataset.privacy`][bdns.dataset.privacy]).
+5. **Generation stops** if what is about to be published holds a value shaped like a DNI, NIE or masked tax ID, a forbidden field or a cell below the minimum ([`bdns.dataset.privacy`][bdns.dataset.privacy]).
 6. **The dataset is built where the data lives**, from `bdns-sync`'s tables. The result stays private until a person reviews it, and is published outside the repository (on Zenodo, with a DOI per version) with the methodology, the IGAE citation and the update date.
 7. **Before the first publication**, a risk assessment and a legal review take place.
 
-Also still to decide, besides what is marked: how often a version is published, and the dataset's license (the IGAE's conditions plus, for example, CC BY 4.0 for the project's own work).
+Still to decide: whether communities of property and civil partnerships are protected like natural persons (meanwhile, they are), the exact detail of the aggregates, how often a version is published, and the dataset's license (the IGAE's conditions plus, for example, CC BY 4.0 for the project's own work).
 
 ## Consequences
 

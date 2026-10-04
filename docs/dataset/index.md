@@ -19,8 +19,8 @@ Cada beneficiario se clasifica a partir de su NIF, nunca de su nombre, y lo que 
 | `***1234** NOMBRE APELLIDOS` | Persona física | Solo agregado |
 | `E12345678 APELLIDO Y APELLIDO CB` | Entidad formada por personas | Solo agregado |
 | `123456789012 FOREIGN COMPANY LTD` | Dudoso | Solo agregado |
-| `B12345678 EMPRESA DE EJEMPLO SL` | Persona jurídica | Registro a registro *(pendiente de confirmar)* |
-| `P1234567D AYUNTAMIENTO DE EJEMPLO` | Entidad pública | Registro a registro *(pendiente de confirmar)* |
+| `B12345678 EMPRESA DE EJEMPLO SL` | Persona jurídica | Registro a registro |
+| `P1234567D AYUNTAMIENTO DE EJEMPLO` | Entidad pública | Registro a registro |
 
 Las comunidades de bienes y las sociedades civiles tienen NIF propio, pero suelen llevar el nombre de sus miembros, y por eso se protegen igual que una persona física.
 

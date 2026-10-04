@@ -27,17 +27,17 @@ El dataset **no contiene ningún dato personal**. Puede identificar a personas j
     |---|---|
     | Catálogos | Tal cual |
     | Convocatorias | Registro a registro, revisando los títulos que nombran a personas |
-    | Concesiones, ayudas de Estado y minimis a personas jurídicas y entidades públicas | Registro a registro *(pendiente de confirmar)* |
+    | Concesiones, ayudas de Estado y minimis a personas jurídicas y entidades públicas | Registro a registro |
     | Las mismas, a personas físicas, entidades formadas por personas y beneficiarios dudosos | Solo agregadas por convocatoria y año (con su órgano, región e instrumento): número de concesiones, número de beneficiarios e importe total |
     | Sanciones a personas físicas | No se publican |
 
-3. **En los agregados se suprime** cualquier celda con menos de *k* beneficiarios (*k* = 10, *pendiente de confirmar*) o en la que uno solo concentre la mayor parte del importe, y también las celdas que permitirían recalcular una suprimida por resta (supresión secundaria).
+3. **En los agregados se suprime** cualquier celda con menos de 10 beneficiarios o en la que uno solo concentre la mayor parte del importe, y también las celdas que permitirían recalcular una suprimida por resta (supresión secundaria).
 4. **Nunca se publica**, en nada que se refiera a personas físicas, ni el nombre, ni el NIF (completo, parcial o cifrado), ni `idPersona`, `urlBR`, `codConcesion` o `id`.
-5. **La generación se para** si lo que va a publicarse contiene un valor con forma de DNI, NIE o NIF enmascarado, un campo prohibido o una celda por debajo de *k* ([`bdns.dataset.privacy`][bdns.dataset.privacy]).
+5. **La generación se para** si lo que va a publicarse contiene un valor con forma de DNI, NIE o NIF enmascarado, un campo prohibido o una celda por debajo del mínimo ([`bdns.dataset.privacy`][bdns.dataset.privacy]).
 6. **El dataset se genera donde están los datos**, a partir de las tablas de `bdns-sync`. El resultado queda en un sitio privado hasta que una persona lo revisa, y se publica fuera del repositorio (en Zenodo, con un DOI por versión) con la metodología, la cita a la IGAE y la fecha de actualización.
 7. **Antes de la primera publicación** se hacen una evaluación de riesgos y una revisión legal.
 
-Quedan pendientes de decidir, además de lo marcado: cada cuánto se publica una versión y la licencia del dataset (las condiciones de la IGAE más, por ejemplo, CC BY 4.0 para el trabajo propio).
+Quedan pendientes de decidir: si las comunidades de bienes y las sociedades civiles se protegen como personas físicas (mientras tanto, sí), el detalle exacto de los agregados, cada cuánto se publica una versión y la licencia del dataset (las condiciones de la IGAE más, por ejemplo, CC BY 4.0 para el trabajo propio).
 
 ## Consecuencias
 

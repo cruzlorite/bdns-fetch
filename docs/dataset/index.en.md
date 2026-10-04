@@ -19,8 +19,8 @@ Each beneficiary is classified by its tax ID, never by its name, and anything no
 | `***1234** NOMBRE APELLIDOS` | Natural person | Aggregated only |
 | `E12345678 APELLIDO Y APELLIDO CB` | Entity made of persons | Aggregated only |
 | `123456789012 FOREIGN COMPANY LTD` | Doubtful | Aggregated only |
-| `B12345678 EMPRESA DE EJEMPLO SL` | Legal person | Record by record *(to be confirmed)* |
-| `P1234567D AYUNTAMIENTO DE EJEMPLO` | Public body | Record by record *(to be confirmed)* |
+| `B12345678 EMPRESA DE EJEMPLO SL` | Legal person | Record by record |
+| `P1234567D AYUNTAMIENTO DE EJEMPLO` | Public body | Record by record |
 
 Communities of property and civil partnerships have a tax ID of their own, but are usually named after their members, so they are protected like natural persons.
 

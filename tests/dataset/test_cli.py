@@ -7,7 +7,7 @@ import subprocess
 
 import pytest
 
-from tests.dataset.conftest import ROOT, T1, award, make_sync_db, version
+from tests.dataset.conftest import ROOT, T1, award, build_steps, make_sync_db, version
 
 pytestmark = pytest.mark.skipif(
     shutil.which("duckdb") is None, reason="the DuckDB command line is not installed"
@@ -37,8 +37,11 @@ def test_the_build_writes_one_parquet_file_per_published_table(sync_db, output, 
     export = (ROOT / "dataset" / "sql" / "95_export.sql").read_text(encoding="utf-8")
     expected = sorted(f"{table}.parquet" for table in re.findall(r"COPY publish\.(\w+)", export))
     assert sorted(path.name for path in output.iterdir()) == expected
-    # Results are not printed; only errors would be.
-    assert result.stdout == ""
+    # One line per step, with the time it starts, and one at the end; query
+    # results are never printed.
+    printed = result.stdout.splitlines()
+    assert all(re.fullmatch(r"\d\d:\d\d:\d\d  \S+", line) for line in printed), printed
+    assert [line.split()[1] for line in printed] == [step.name for step in build_steps()] + ["done"]
 
 
 def test_a_failed_check_stops_the_build_before_anything_is_written(output, tmp_path):

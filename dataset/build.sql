@@ -14,20 +14,68 @@
 --
 -- Each step is a file in dataset/sql/, run in this order. The run stops at
 -- the first error, so a failed privacy check (90_checks.sql) leaves the
--- export (95_export.sql) unrun and nothing is written; results are not
--- printed, only errors are.
+-- export (95_export.sql) unrun and nothing is written. Each step prints
+-- the time it starts and its name, so you can follow a long run; query
+-- results are not printed.
 
 .bail on
-.mode trash
+.headers off
 
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  01_beneficiarios.sql';
+.mode trash
 .read dataset/sql/01_beneficiarios.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  02_privacy.sql';
+.mode trash
 .read dataset/sql/02_privacy.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  03_publish.sql';
+.mode trash
 .read dataset/sql/03_publish.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  04_versions.sql';
+.mode trash
 .read dataset/sql/04_versions.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  10_concesiones.sql';
+.mode trash
 .read dataset/sql/10_concesiones.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  11_ayudas_estado.sql';
+.mode trash
 .read dataset/sql/11_ayudas_estado.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  12_minimis.sql';
+.mode trash
 .read dataset/sql/12_minimis.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  20_entidades.sql';
+.mode trash
 .read dataset/sql/20_entidades.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  30_personas.sql';
+.mode trash
 .read dataset/sql/30_personas.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  90_checks.sql';
+.mode trash
 .read dataset/sql/90_checks.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  95_export.sql';
+.mode trash
 .read dataset/sql/95_export.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  done';
+.mode trash

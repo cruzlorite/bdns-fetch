@@ -4,20 +4,13 @@
 -- Columns keep the API's names in snake_case; the ones added here are in
 -- Spanish too, like all the data.
 --
--- A key's newest version is its current one or, if the API stopped
--- serving it, its last one; a corrected key always has a newer version,
--- so the newest version is not the current one only when it was withdrawn.
+-- How the last version is chosen is in 04_versions.sql.
 --
 -- This table still holds personal data (beneficiario, id_persona,
 -- url_br...) and never leaves the private build. The published tables are
 -- built from it, and the privacy checks run on those.
 
 CREATE OR REPLACE TABLE concesiones AS
-WITH latest AS (
-    SELECT CAST(payload AS JSON) AS r, CAST(_is_current AS BOOLEAN) AS is_current
-    FROM sync.concesiones_busqueda
-    QUALIFY row_number() OVER (PARTITION BY _natural_key ORDER BY _valid_from DESC) = 1
-)
 SELECT
     CAST(r->>'id' AS BIGINT)                                  AS id,
     r->>'codConcesion'                                        AS cod_concesion,
@@ -36,4 +29,4 @@ SELECT
     r->>'urlBR'                                               AS url_br,
     TRY_CAST(r->>'fechaAlta' AS DATE)                         AS fecha_alta,
     NOT is_current                                            AS retirada
-FROM latest;
+FROM latest_versions('sync.concesiones_busqueda');

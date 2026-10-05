@@ -1,17 +1,12 @@
 -- State aid with typed columns, one row per award: the last known version
 -- of each in bdns-sync's ayudasestado_busqueda table, withdrawn ones
--- included (see 10_concesiones.sql for how the last version is chosen).
+-- included (see 04_versions.sql for how the last version is chosen).
 -- tipo_beneficiario is the BDNS's own category (SME, large company...);
 -- tipo_persona is this dataset's classification.
 --
 -- Private: it still holds personal data, like concesiones.
 
 CREATE OR REPLACE TABLE ayudas_estado AS
-WITH latest AS (
-    SELECT CAST(payload AS JSON) AS r, CAST(_is_current AS BOOLEAN) AS is_current
-    FROM sync.ayudasestado_busqueda
-    QUALIFY row_number() OVER (PARTITION BY _natural_key ORDER BY _valid_from DESC) = 1
-)
 SELECT
     CAST(r->>'idConcesion' AS BIGINT)                         AS id_concesion,
     r->>'codConcesion'                                        AS cod_concesion,
@@ -36,4 +31,4 @@ SELECT
     r->>'intermediario'                                       AS intermediario,
     TRY_CAST(r->>'fechaAlta' AS DATE)                         AS fecha_alta,
     NOT is_current                                            AS retirada
-FROM latest;
+FROM latest_versions('sync.ayudasestado_busqueda');

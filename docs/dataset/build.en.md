@@ -75,6 +75,7 @@ Intermediate tables stay in the private file, and only those in the `publish` sc
 | `01_beneficiarios.sql` | Defines how each beneficiary is classified by its tax ID |
 | `02_privacy.sql` | Defines the building blocks of the privacy checks and the [thresholds](#thresholds) |
 | `03_publish.sql` | Creates the `publish` schema, where everything to be published goes |
+| `04_versions.sql` | Defines how each record's last version is chosen, without loading every `payload` at once |
 | `10_concesiones.sql` | Reads awards from `bdns-sync`, each one's last version, with typed columns. Private |
 | `11_ayudas_estado.sql` | The same for state aid. Private |
 | `12_minimis.sql` | The same for de minimis aid. Private |

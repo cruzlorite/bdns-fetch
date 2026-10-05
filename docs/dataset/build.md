@@ -75,6 +75,7 @@ Las tablas intermedias se quedan en el fichero privado, y solo las del esquema `
 | `01_beneficiarios.sql` | Define cómo se clasifica a cada beneficiario a partir de su NIF |
 | `02_privacy.sql` | Define las piezas de los controles de privacidad y los [umbrales](#thresholds) |
 | `03_publish.sql` | Crea el esquema `publish`, donde va todo lo que se publica |
+| `04_versions.sql` | Define cómo se elige la última versión de cada registro, sin cargar todos los `payload` a la vez |
 | `10_concesiones.sql` | Lee las concesiones de `bdns-sync`, con la última versión de cada una y sus columnas con tipo. Privada |
 | `11_ayudas_estado.sql` | Lo mismo con las ayudas de Estado. Privada |
 | `12_minimis.sql` | Lo mismo con las ayudas de minimis. Privada |

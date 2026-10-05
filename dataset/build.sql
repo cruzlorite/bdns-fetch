@@ -23,6 +23,7 @@
 .read dataset/sql/01_beneficiarios.sql
 .read dataset/sql/02_privacy.sql
 .read dataset/sql/03_publish.sql
+.read dataset/sql/04_versions.sql
 .read dataset/sql/10_concesiones.sql
 .read dataset/sql/11_ayudas_estado.sql
 .read dataset/sql/12_minimis.sql

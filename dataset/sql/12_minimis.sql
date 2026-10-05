@@ -1,16 +1,11 @@
 -- De minimis aid with typed columns, one row per award: the last known
 -- version of each in bdns-sync's minimis_busqueda table, withdrawn ones
--- included (see 10_concesiones.sql for how the last version is chosen).
+-- included (see 04_versions.sql for how the last version is chosen).
 -- De minimis records carry the aid's gross grant equivalent, not an amount.
 --
 -- Private: it still holds personal data, like concesiones.
 
 CREATE OR REPLACE TABLE minimis AS
-WITH latest AS (
-    SELECT CAST(payload AS JSON) AS r, CAST(_is_current AS BOOLEAN) AS is_current
-    FROM sync.minimis_busqueda
-    QUALIFY row_number() OVER (PARTITION BY _natural_key ORDER BY _valid_from DESC) = 1
-)
 SELECT
     CAST(r->>'idConcesion' AS BIGINT)                         AS id_concesion,
     r->>'codigoConcesion'                                     AS codigo_concesion,
@@ -27,4 +22,4 @@ SELECT
     r->>'sectorProducto'                                      AS sector_producto,
     TRY_CAST(r->>'fechaRegistro' AS DATE)                     AS fecha_registro,
     NOT is_current                                            AS retirada
-FROM latest;
+FROM latest_versions('sync.minimis_busqueda');

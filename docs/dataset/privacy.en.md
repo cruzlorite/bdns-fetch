@@ -13,10 +13,11 @@ Each beneficiary is classified by the tax ID at the start of the `beneficiario` 
 | `12345678Z NOMBRE APELLIDOS` | `persona_fisica` | Summary only |
 | `E12345678 APELLIDO Y APELLIDO CB` | `comunidad_o_sociedad_civil` | Summary only |
 | `123456789012 FOREIGN COMPANY LTD` | `desconocido` | Summary only |
+| `B12345678 NOMBRE APELLIDOS 12345678Z SL` | `persona_juridica` | Summary only |
 | `B12345678 EMPRESA DE EJEMPLO SL` | `persona_juridica` | Record by record |
 | `P1234567D AYUNTAMIENTO DE EJEMPLO` | `entidad_publica` | Record by record |
 
-Communities of property and civil partnerships have a tax ID of their own, but are usually named after their members, so they are protected like natural persons.
+Communities of property and civil partnerships have a tax ID of their own, but are usually named after their members, so they are protected like natural persons. So are companies and associations whose `beneficiario` field carries a person's DNI, which the BDNS does for companies named after their partner and for some that add their representative's details. Removing only the DNI would not do, because the person's name usually sits next to it.
 
 Companies and public bodies are published record by record, with their tax ID and name, since they are not personal data. Even so, two fields are dropped from their awards: `urlBR`, because the bulletin it links to usually names natural persons too, and `idPersona`, which adds nothing the tax ID does not already say.
 

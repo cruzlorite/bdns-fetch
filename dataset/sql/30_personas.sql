@@ -1,5 +1,6 @@
--- Awards to natural persons, communities of property, civil partnerships
--- and unrecognised beneficiaries, only as one summary row per call (and
+-- Awards to natural persons, communities of property, civil partnerships,
+-- unrecognised beneficiaries and companies whose field carries a person's
+-- tax ID, only as one summary row per call (and
 -- per instrument, should a call mix several): how many awards, to how many
 -- people, and how their amounts and dates are distributed. No row says
 -- anything about a single person. See docs/adr/0020-anonymised-dataset.md.
@@ -35,7 +36,7 @@ SELECT
     nivel2,
     nivel3
 FROM concesiones
-WHERE is_protected(tipo_persona);
+WHERE is_protected_beneficiary(tipo_persona, beneficiario);
 
 -- A row's amount statistics, the same for a call and for a rest row.
 CREATE OR REPLACE MACRO amount_summary(amount) AS STRUCT_PACK(

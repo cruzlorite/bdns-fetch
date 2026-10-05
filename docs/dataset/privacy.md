@@ -13,10 +13,11 @@ Cada beneficiario se clasifica a partir del NIF que va al principio del campo `b
 | `12345678Z NOMBRE APELLIDOS` | `persona_fisica` | Solo en el resumen |
 | `E12345678 APELLIDO Y APELLIDO CB` | `comunidad_o_sociedad_civil` | Solo en el resumen |
 | `123456789012 FOREIGN COMPANY LTD` | `desconocido` | Solo en el resumen |
+| `B12345678 NOMBRE APELLIDOS 12345678Z SL` | `persona_juridica` | Solo en el resumen |
 | `B12345678 EMPRESA DE EJEMPLO SL` | `persona_juridica` | Registro a registro |
 | `P1234567D AYUNTAMIENTO DE EJEMPLO` | `entidad_publica` | Registro a registro |
 
-Las comunidades de bienes y las sociedades civiles tienen NIF propio, pero suelen llevar el nombre de sus miembros, y por eso se protegen igual que una persona física.
+Las comunidades de bienes y las sociedades civiles tienen NIF propio, pero suelen llevar el nombre de sus miembros, y por eso se protegen igual que una persona física. Lo mismo pasa con las empresas y asociaciones cuyo campo `beneficiario` lleva el DNI de una persona, algo que la BDNS hace con las sociedades que llevan el nombre de su socio y con algunas que añaden los datos de su representante. Quitar solo el DNI no bastaría, porque al lado suele quedar el nombre de la persona.
 
 Las empresas y entidades públicas se publican registro a registro, con su NIF y su nombre, porque no son datos personales. Aun así, de sus concesiones se quitan dos campos: `urlBR`, porque el boletín al que enlaza suele nombrar también a personas físicas, e `idPersona`, que no añade nada que no diga ya el NIF.
 

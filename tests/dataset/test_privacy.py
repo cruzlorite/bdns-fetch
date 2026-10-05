@@ -64,3 +64,21 @@ def test_a_check_stops_the_build_only_when_it_finds_something(macros):
     macros.execute("INSERT INTO t VALUES ('Ayuda a ***1234**')")
     with pytest.raises(duckdb.InvalidInputException, match="personal data in t"):
         macros.execute(check)
+
+
+@pytest.mark.parametrize(
+    ("kind", "beneficiary", "protected"),
+    [
+        ("persona_juridica", "B12345678 EMPRESA DE EJEMPLO SL", False),
+        ("entidad_publica", "P1234567D AYUNTAMIENTO DE EJEMPLO", False),
+        # A company named after its partner, or carrying its representative.
+        ("persona_juridica", "B12345678 NOMBRE APELLIDO APELLIDO 12345678Z SL", True),
+        ("persona_juridica", "G12345678 ASOCIACION DE EJEMPLO REPRESENTANTE: 12345678Z", True),
+        ("persona_fisica", "***1234** NOMBRE APELLIDO", True),
+    ],
+)
+def test_a_personal_id_in_the_name_protects_a_company(macros, kind, beneficiary, protected):
+    assert (
+        macros.execute("SELECT is_protected_beneficiary(?, ?)", [kind, beneficiary]).fetchone()[0]
+        is protected
+    )

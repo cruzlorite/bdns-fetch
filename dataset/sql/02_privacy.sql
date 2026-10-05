@@ -20,6 +20,15 @@ CREATE OR REPLACE MACRO rows_with_personal_ids(tbl) AS TABLE
     SELECT * FROM query_table(tbl)
     WHERE has_personal_id(concat_ws(' | ', *COLUMNS(*)));
 
+-- Whether awards to a beneficiary may only be published aggregated: a
+-- protected kind, or a field that carries a natural person's tax ID even
+-- though the beneficiary is a company or an association. The BDNS does
+-- that for companies named after their partner ("NOMBRE APELLIDOS
+-- 12345678Z SL") and for some that add their representative's details;
+-- removing only the ID would still leave the person's name.
+CREATE OR REPLACE MACRO is_protected_beneficiary(kind, beneficiary) AS
+    is_protected(kind) OR has_personal_id(beneficiary);
+
 -- Columns that identify a beneficiary, or lead back to one: never in a
 -- table about natural persons. Both the API's names and this dataset's.
 CREATE OR REPLACE MACRO identifying_column(name) AS

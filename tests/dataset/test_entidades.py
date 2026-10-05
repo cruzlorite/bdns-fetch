@@ -4,7 +4,7 @@
 import duckdb
 import pytest
 
-from tests.dataset.conftest import ROOT
+from tests.dataset.conftest import ROOT, T1, award, make_sync_db, run_steps, version
 
 
 def columns_of(con, table):
@@ -73,3 +73,22 @@ def test_a_personal_tax_id_anywhere_stops_the_build(built):
     )
     with pytest.raises(duckdb.InvalidInputException, match="personal tax ID"):
         built.execute(checks())
+
+
+def test_a_company_named_with_a_personal_id_goes_to_the_summary(tmp_path):
+    named = award(1, "B12345678 NOMBRE APELLIDO APELLIDO 12345678Z SL", 300)
+    people = [award(10 + n, f"***{n:04d}** NOMBRE", 100, idPersona=10 + n) for n in range(10)]
+    sync_db = make_sync_db(
+        tmp_path / "sync.duckdb",
+        [version(a["id"], T1, None, True, None, a) for a in [named, *people]],
+        [],
+        [],
+    )
+    con = duckdb.connect()
+    con.execute(f"ATTACH '{sync_db}' AS sync (READ_ONLY)")
+    con.execute(f"SET VARIABLE output_dir = '{tmp_path}'")
+    run_steps(con)  # the checks pass: nothing ID-shaped is published
+    assert con.execute("SELECT count(*) FROM publish.concesiones_entidades").fetchone() == (0,)
+    assert con.execute(
+        "SELECT concesiones, beneficiarios FROM publish.concesiones_personas"
+    ).fetchone() == (11, 11)

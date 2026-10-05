@@ -88,7 +88,7 @@ De minimis aid to legal persons and public bodies, one row per aid. It comes fro
 <a id="concesiones-personas"></a>
 ## Natural persons: `concesiones_personas`
 
-Awards to natural persons, communities of property, civil partnerships and unrecognised beneficiaries, as one summary per call and instrument, plus one rest row per year with the calls that cannot be published ([the rules](privacy.md#rules)).
+Awards to natural persons, communities of property, civil partnerships, unrecognised beneficiaries and companies whose name carries a person's DNI, as one summary per call and instrument, plus one rest row per year with the calls that cannot be published ([the rules](privacy.md#rules)).
 
 | Column | Type | What it is |
 |---|---|---|

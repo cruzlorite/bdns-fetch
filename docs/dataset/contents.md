@@ -88,7 +88,7 @@ Las ayudas de minimis a personas jurídicas y entidades públicas, una fila por 
 <a id="concesiones-personas"></a>
 ## Personas físicas: `concesiones_personas`
 
-Las concesiones a personas físicas, comunidades de bienes, sociedades civiles y beneficiarios que no se reconocen, como un resumen por convocatoria e instrumento, más una fila de resto por año con las convocatorias que no se pueden publicar ([las reglas](privacy.md#rules)).
+Las concesiones a personas físicas, comunidades de bienes, sociedades civiles, beneficiarios que no se reconocen y empresas cuyo nombre lleva el DNI de una persona, como un resumen por convocatoria e instrumento, más una fila de resto por año con las convocatorias que no se pueden publicar ([las reglas](privacy.md#rules)).
 
 | Columna | Tipo | Qué es |
 |---|---|---|

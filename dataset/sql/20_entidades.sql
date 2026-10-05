@@ -1,6 +1,8 @@
 -- Awards, state aid and de minimis aid to legal persons and public bodies,
 -- record by record. They are not personal data, and who receives what from
--- whom is what the dataset is most useful for.
+-- whom is what the dataset is most useful for. A company whose field
+-- carries a natural person's tax ID is left out too, and summarised with
+-- the natural persons (is_protected_beneficiary, in 02_privacy.sql).
 -- See docs/adr/0020-anonymised-dataset.md.
 --
 -- Left out even here: url_br, since the bulletin it links to usually lists
@@ -26,7 +28,7 @@ SELECT
     fecha_alta,
     retirada
 FROM concesiones
-WHERE NOT is_protected(tipo_persona);
+WHERE NOT is_protected_beneficiary(tipo_persona, beneficiario);
 
 -- State aid. The link to the European Commission's case is about the aid
 -- scheme, not the beneficiary, so it stays.
@@ -56,7 +58,7 @@ SELECT
     fecha_alta,
     retirada
 FROM ayudas_estado
-WHERE NOT is_protected(tipo_persona);
+WHERE NOT is_protected_beneficiary(tipo_persona, beneficiario);
 
 -- De minimis aid.
 CREATE OR REPLACE TABLE publish.minimis_entidades AS
@@ -77,4 +79,4 @@ SELECT
     fecha_registro,
     retirada
 FROM minimis
-WHERE NOT is_protected(tipo_persona);
+WHERE NOT is_protected_beneficiary(tipo_persona, beneficiario);

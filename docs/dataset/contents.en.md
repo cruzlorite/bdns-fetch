@@ -94,15 +94,15 @@ Awards to natural persons, communities of property, civil partnerships, unrecogn
 |---|---|---|
 | `numero_convocatoria` | `VARCHAR` | The call's BDNS code. Empty in rest rows |
 | `convocatoria` | `VARCHAR` | The call's title. Empty in rest rows and when it holds something shaped like a DNI |
-| `nivel1`, `nivel2`, `nivel3` | `VARCHAR` | Awarding administration, department and body, as in `concesiones_entidades`. Empty in rest rows |
+| `nivel1`, `nivel2`, `nivel3` | `VARCHAR` | Awarding administration, department and body, as in `concesiones_entidades`. If they differ across the call's awards, those of most of them. Empty in rest rows |
 | `instrumento` | `VARCHAR` | Aid instrument. Empty in rest rows |
 | `es_resto` | `BOOLEAN` | `true` in rest rows |
 | `ejercicio` | `BIGINT` | A rest row's year, that of the median award date of each call it gathers. Empty in other rows |
 | `concesiones` | `BIGINT` | Number of awards |
 | `beneficiarios` | `BIGINT` | Number of different people, always 10 or more |
 | `importe_total` | `DECIMAL(38,2)` | Sum of the amounts, in euros |
-| `importe_media` | `DOUBLE` | Mean amount per award |
-| `importe_desviacion` | `DOUBLE` | Standard deviation (sample) of the amounts |
+| `importe_media` | `DECIMAL(18,2)` | Mean amount per award, rounded to the cent |
+| `importe_desviacion` | `DECIMAL(18,2)` | Standard deviation (sample) of the amounts, rounded to the cent |
 | `importe_p10` | `DECIMAL(18,2)` | 10th percentile of the amount. Only with 20 people or more |
 | `importe_p25` | `DECIMAL(18,2)` | First quartile of the amount |
 | `importe_mediana` | `DECIMAL(18,2)` | Median amount |

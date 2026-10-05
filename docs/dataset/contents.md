@@ -94,15 +94,15 @@ Las concesiones a personas físicas, comunidades de bienes, sociedades civiles, 
 |---|---|---|
 | `numero_convocatoria` | `VARCHAR` | Código BDNS de la convocatoria. Vacío en las filas de resto |
 | `convocatoria` | `VARCHAR` | Título de la convocatoria. Vacío en las filas de resto y cuando contiene algo con forma de DNI |
-| `nivel1`, `nivel2`, `nivel3` | `VARCHAR` | Administración, departamento y órgano que conceden, como en `concesiones_entidades`. Vacíos en las filas de resto |
+| `nivel1`, `nivel2`, `nivel3` | `VARCHAR` | Administración, departamento y órgano que conceden, como en `concesiones_entidades`. Si no son los mismos en todas las concesiones de la convocatoria, los de la mayoría. Vacíos en las filas de resto |
 | `instrumento` | `VARCHAR` | Instrumento de ayuda. Vacío en las filas de resto |
 | `es_resto` | `BOOLEAN` | `true` en las filas de resto |
 | `ejercicio` | `BIGINT` | Año de una fila de resto, que es el de la fecha mediana de cada convocatoria que junta. Vacío en las demás filas |
 | `concesiones` | `BIGINT` | Número de concesiones |
 | `beneficiarios` | `BIGINT` | Número de personas distintas, siempre 10 o más |
 | `importe_total` | `DECIMAL(38,2)` | Suma de los importes, en euros |
-| `importe_media` | `DOUBLE` | Importe medio por concesión |
-| `importe_desviacion` | `DOUBLE` | Desviación típica (muestral) de los importes |
+| `importe_media` | `DECIMAL(18,2)` | Importe medio por concesión, redondeado al céntimo |
+| `importe_desviacion` | `DECIMAL(18,2)` | Desviación típica (muestral) de los importes, redondeada al céntimo |
 | `importe_p10` | `DECIMAL(18,2)` | Percentil 10 del importe. Solo con 20 personas o más |
 | `importe_p25` | `DECIMAL(18,2)` | Primer cuartil del importe |
 | `importe_mediana` | `DECIMAL(18,2)` | Mediana del importe |

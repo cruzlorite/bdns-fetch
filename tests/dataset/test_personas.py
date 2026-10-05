@@ -128,7 +128,8 @@ def test_from_twenty_people_the_tails_are_published(con):
     # Interpolated between the awards: 25 amounts from 100 to 2,500.
     assert amounts == [340.0, 700.0, 1300.0, 1900.0, 2260.0]
     assert float(f["importe_media"]) == 1300.0
-    assert f["importe_desviacion"] == pytest.approx(735.98, abs=0.01)
+    # Rounded to the cent, like every amount.
+    assert float(f["importe_desviacion"]) == 735.98
     dates = [f[c] for c in ("fecha_p10", "fecha_p25", "fecha_mediana", "fecha_p75", "fecha_p90")]
     # Real award dates, one day apart from 1 March.
     assert dates == sorted(dates)
@@ -189,3 +190,37 @@ def test_the_checks_stop_an_identifying_column(con):
     con.execute("ALTER TABLE publish.concesiones_personas ADD COLUMN id_persona BIGINT")
     with pytest.raises(duckdb.InvalidInputException, match="identifying columns: id_persona"):
         con.execute(CHECKS.read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize(
+    ("first_organ", "second_organ", "published"),
+    [
+        # Most of the call's awards come from one body: that one.
+        ((7, "ORGANO B"), (5, "ORGANO A"), "ORGANO B"),
+        # A tie: the first in alphabetical order, every time.
+        ((6, "ORGANO B"), (6, "ORGANO A"), "ORGANO A"),
+    ],
+)
+def test_a_call_with_several_bodies_shows_the_main_one(
+    tmp_path, first_organ, second_organ, published
+):
+    (n_first, organ_first), (n_second, organ_second) = first_organ, second_organ
+    awards = [
+        *people("G", n_first, 700, nivel3=organ_first),
+        *people("G", n_second, 800, nivel3=organ_second),
+    ]
+    sync_db = make_sync_db(
+        tmp_path / "sync.duckdb",
+        [version(a["id"], T1, None, True, None, a) for a in awards],
+        [],
+        [],
+    )
+    con = duckdb.connect()
+    con.execute(f"ATTACH '{sync_db}' AS sync (READ_ONLY)")
+    run_steps(
+        con,
+        {n for n in (p.name for p in (ROOT / "dataset" / "sql").iterdir()) if n != "95_export.sql"},
+    )
+    assert con.execute(
+        "SELECT nivel3 FROM publish.concesiones_personas WHERE numero_convocatoria = 'G'"
+    ).fetchone() == (published,)

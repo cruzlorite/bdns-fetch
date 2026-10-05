@@ -38,11 +38,14 @@ SELECT
 FROM concesiones
 WHERE is_protected_beneficiary(tipo_persona, beneficiario);
 
--- A row's amount statistics, the same for a call and for a rest row.
+-- A row's amount statistics, the same for a call and for a rest row. The
+-- mean and the standard deviation are rounded to the cent, like every
+-- other amount; unrounded, their last digits change with the order a
+-- parallel sum happens to take, and two builds would not agree.
 CREATE OR REPLACE MACRO amount_summary(amount) AS STRUCT_PACK(
     total := sum(amount),
-    media := avg(amount),
-    desviacion := stddev_samp(amount),
+    media := CAST(avg(amount) AS DECIMAL(18, 2)),
+    desviacion := CAST(stddev_samp(amount) AS DECIMAL(18, 2)),
     p10 := quantile_cont(amount, 0.10),
     p25 := quantile_cont(amount, 0.25),
     mediana := quantile_cont(amount, 0.50),
@@ -66,14 +69,30 @@ people AS (
         is_publishable(count(*), sum(share), max(share)) AS publishable
     FROM per_person
     GROUP BY ALL
+),
+-- A call's title and awarding body, which a few calls do not keep the same
+-- across their awards: those of most of its awards, and on a tie the first
+-- in alphabetical order, so that two builds always agree.
+labels AS (
+    SELECT
+        numero_convocatoria,
+        instrumento,
+        first(struct_pack(convocatoria, nivel1, nivel2, nivel3)
+              ORDER BY n DESC, convocatoria, nivel1, nivel2, nivel3) AS label
+    FROM (
+        SELECT numero_convocatoria, instrumento, convocatoria, nivel1, nivel2, nivel3, count(*) AS n
+        FROM concesiones_protegidas
+        GROUP BY ALL
+    )
+    GROUP BY ALL
 )
 SELECT
     c.numero_convocatoria,
     c.instrumento,
-    any_value(c.convocatoria)                       AS convocatoria,
-    any_value(c.nivel1)                             AS nivel1,
-    any_value(c.nivel2)                             AS nivel2,
-    any_value(c.nivel3)                             AS nivel3,
+    any_value(l.label).convocatoria                 AS convocatoria,
+    any_value(l.label).nivel1                       AS nivel1,
+    any_value(l.label).nivel2                       AS nivel2,
+    any_value(l.label).nivel3                       AS nivel3,
     count(*)                                        AS concesiones,
     any_value(p.beneficiarios)                      AS beneficiarios,
     any_value(p.publishable)                        AS publishable,
@@ -84,6 +103,9 @@ FROM concesiones_protegidas c
 JOIN people p
     ON  c.numero_convocatoria IS NOT DISTINCT FROM p.numero_convocatoria
     AND c.instrumento IS NOT DISTINCT FROM p.instrumento
+JOIN labels l
+    ON  c.numero_convocatoria IS NOT DISTINCT FROM l.numero_convocatoria
+    AND c.instrumento IS NOT DISTINCT FROM l.instrumento
 GROUP BY c.numero_convocatoria, c.instrumento;
 
 -- The rest of each year: the awards of its suppressed calls. Private.

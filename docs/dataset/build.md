@@ -55,7 +55,7 @@ El SQL lee las tablas de `bdns-sync` con el nombre `sync`, así que solo cambia 
 |---|---|---|
 | SQLite | `ATTACH '/ruta/a/bdns.db' AS sync (TYPE sqlite, READ_ONLY)` | Sí |
 | DuckDB | `ATTACH '/ruta/a/bdns.duckdb' AS sync (READ_ONLY)` | Sí |
-| PostgreSQL | `ATTACH 'postgresql://usuario@servidor/bdns' AS sync (TYPE postgres, READ_ONLY)` | Todavía no |
+| PostgreSQL | `ATTACH 'postgresql://usuario@servidor/bdns' AS sync (TYPE postgres, READ_ONLY)` | Sí |
 | BigQuery | Con la extensión de la comunidad [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) y una vista por tabla ([cómo](#bigquery)) | Sí |
 
 <a id="bigquery"></a>

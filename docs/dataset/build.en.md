@@ -27,7 +27,24 @@ $ ls ~/bdns-dataset/salida
 ayudas_estado_entidades.parquet  concesiones_entidades.parquet  concesiones_personas.parquet  minimis_entidades.parquet
 ```
 
-If all goes well, the command prints nothing. If you forget `output_dir`, it stops with the message `No output folder: run SET VARIABLE output_dir = '/path/to/output' before the build`.
+While it works, it prints the time each step starts and, at the end, `done`, so you can follow a long build and see how long each step takes. These are the real timings for a copy with 30 million awards since 2022:
+
+```text
+20:53:45  01_beneficiarios.sql
+20:53:45  02_privacy.sql
+20:53:45  03_publish.sql
+20:53:45  04_versions.sql
+20:53:45  10_concesiones.sql
+20:57:50  11_ayudas_estado.sql
+20:59:22  12_minimis.sql
+21:00:12  20_entidades.sql
+21:00:39  30_personas.sql
+21:01:05  90_checks.sql
+21:01:12  95_export.sql
+21:01:17  done
+```
+
+If you forget `output_dir`, it stops with the message `No output folder: run SET VARIABLE output_dir = '/path/to/output' before the build`.
 
 <a id="attach"></a>
 ### With another database
@@ -39,7 +56,32 @@ The SQL reads `bdns-sync`'s tables under the name `sync`, so only the `ATTACH` c
 | SQLite | `ATTACH '/path/to/bdns.db' AS sync (TYPE sqlite, READ_ONLY)` | Yes |
 | DuckDB | `ATTACH '/path/to/bdns.duckdb' AS sync (READ_ONLY)` | Yes |
 | PostgreSQL | `ATTACH 'postgresql://user@host/bdns' AS sync (TYPE postgres, READ_ONLY)` | Not yet |
-| BigQuery | With the [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) community extension | Not yet |
+| BigQuery | With the [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) community extension and one view per table ([how](#bigquery)) | Yes |
+
+<a id="bigquery"></a>
+### From BigQuery
+
+The [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) extension names tables after their dataset (`bq.YOUR_DATASET.concesiones_busqueda`), so three views give them the names the SQL expects. Data arrives compressed, and only the columns in use: with 30 million awards that is about 4.5 GB over the network, and the read costs cents. You need the credentials from `gcloud auth application-default login`:
+
+```console
+$ duckdb ~/bdns-dataset/privado.duckdb -cmd "
+    SET memory_limit = '4GB';
+    SET threads = 4;
+    SET preserve_insertion_order = false;
+    INSTALL bigquery FROM community; LOAD bigquery;
+    ATTACH 'project=YOUR_PROJECT' AS bq (TYPE bigquery, READ_ONLY);
+    ATTACH ':memory:' AS sync;
+    CREATE VIEW sync.concesiones_busqueda  AS SELECT * FROM bq.YOUR_DATASET.concesiones_busqueda;
+    CREATE VIEW sync.ayudasestado_busqueda AS SELECT * FROM bq.YOUR_DATASET.ayudasestado_busqueda;
+    CREATE VIEW sync.minimis_busqueda      AS SELECT * FROM bq.YOUR_DATASET.minimis_busqueda;
+    SET VARIABLE output_dir = '$HOME/bdns-dataset/salida'" \
+    -f dataset/build.sql
+```
+
+<a id="memory"></a>
+### With a long history
+
+By default DuckDB uses up to 80% of the machine's memory, and with other programs open at the same time the system may stop it for lack of memory. To avoid that, give it a limit at the start of `-cmd`, as in the BigQuery example; whatever does not fit goes to disk, next to the working file. With `memory_limit = '4GB'` and `threads = 4`, on a 12 GB laptop, the copy with 30 million awards was built in about eight minutes without DuckDB going past 5 GB.
 
 <a id="checks"></a>
 ## When a check stops the build

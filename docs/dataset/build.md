@@ -27,7 +27,24 @@ $ ls ~/bdns-dataset/salida
 ayudas_estado_entidades.parquet  concesiones_entidades.parquet  concesiones_personas.parquet  minimis_entidades.parquet
 ```
 
-Si todo va bien, el comando no muestra nada. Si olvidas `output_dir`, se para con el mensaje `No output folder: run SET VARIABLE output_dir = '/path/to/output' before the build`.
+Mientras trabaja, muestra la hora a la que empieza cada paso y, al final, `done`, así que puedes seguir una generación larga y ver cuánto tarda cada paso. Estos son los tiempos reales de una copia con 30 millones de concesiones desde 2022:
+
+```text
+20:53:45  01_beneficiarios.sql
+20:53:45  02_privacy.sql
+20:53:45  03_publish.sql
+20:53:45  04_versions.sql
+20:53:45  10_concesiones.sql
+20:57:50  11_ayudas_estado.sql
+20:59:22  12_minimis.sql
+21:00:12  20_entidades.sql
+21:00:39  30_personas.sql
+21:01:05  90_checks.sql
+21:01:12  95_export.sql
+21:01:17  done
+```
+
+Si olvidas `output_dir`, se para con el mensaje `No output folder: run SET VARIABLE output_dir = '/path/to/output' before the build`.
 
 <a id="attach"></a>
 ### Con otra base de datos
@@ -39,7 +56,32 @@ El SQL lee las tablas de `bdns-sync` con el nombre `sync`, así que solo cambia 
 | SQLite | `ATTACH '/ruta/a/bdns.db' AS sync (TYPE sqlite, READ_ONLY)` | Sí |
 | DuckDB | `ATTACH '/ruta/a/bdns.duckdb' AS sync (READ_ONLY)` | Sí |
 | PostgreSQL | `ATTACH 'postgresql://usuario@servidor/bdns' AS sync (TYPE postgres, READ_ONLY)` | Todavía no |
-| BigQuery | Con la extensión de la comunidad [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) | Todavía no |
+| BigQuery | Con la extensión de la comunidad [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) y una vista por tabla ([cómo](#bigquery)) | Sí |
+
+<a id="bigquery"></a>
+### Desde BigQuery
+
+La extensión [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) nombra las tablas con su dataset (`bq.TU_DATASET.concesiones_busqueda`), así que hacen falta tres vistas con el nombre que espera el SQL. Los datos llegan comprimidos, y solo las columnas que se usan: con 30 millones de concesiones son unos 4,5 GB por la red, y la lectura cuesta céntimos. Necesitas las credenciales de `gcloud auth application-default login`:
+
+```console
+$ duckdb ~/bdns-dataset/privado.duckdb -cmd "
+    SET memory_limit = '4GB';
+    SET threads = 4;
+    SET preserve_insertion_order = false;
+    INSTALL bigquery FROM community; LOAD bigquery;
+    ATTACH 'project=TU_PROYECTO' AS bq (TYPE bigquery, READ_ONLY);
+    ATTACH ':memory:' AS sync;
+    CREATE VIEW sync.concesiones_busqueda  AS SELECT * FROM bq.TU_DATASET.concesiones_busqueda;
+    CREATE VIEW sync.ayudasestado_busqueda AS SELECT * FROM bq.TU_DATASET.ayudasestado_busqueda;
+    CREATE VIEW sync.minimis_busqueda      AS SELECT * FROM bq.TU_DATASET.minimis_busqueda;
+    SET VARIABLE output_dir = '$HOME/bdns-dataset/salida'" \
+    -f dataset/build.sql
+```
+
+<a id="memory"></a>
+### Con mucho histórico
+
+DuckDB usa por defecto hasta el 80 % de la memoria del equipo, y si a la vez tienes otros programas abiertos, el sistema puede llegar a pararlo por falta de memoria. Para evitarlo, ponle un límite al principio de `-cmd`, como en el ejemplo de BigQuery; lo que no quepa lo vuelca a disco, junto al fichero de trabajo. Con `memory_limit = '4GB'` y `threads = 4`, en un portátil de 12 GB, la copia de 30 millones de concesiones se generó en unos ocho minutos sin que DuckDB pasara de 5 GB.
 
 <a id="checks"></a>
 ## Cuando un control para la generación

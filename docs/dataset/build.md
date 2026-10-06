@@ -27,26 +27,33 @@ $ ls ~/bdns-dataset/salida
 ayudasestado_personas_juridicas.parquet  concesiones_personas_juridicas.parquet  concesiones_personas_fisicas.parquet  minimis_personas_juridicas.parquet
 ```
 
-Mientras trabaja, muestra la hora a la que empieza cada paso y, al final, `done`, así que puedes seguir una generación larga y ver cuánto tarda cada paso. Estos son los tiempos reales de una copia con 30 millones de concesiones desde 2022:
+Mientras trabaja, muestra la hora a la que empieza cada paso y, al final, `done`, así que puedes seguir una generación larga y ver cuánto tarda cada paso. Estos son los tiempos reales de una copia con 30 millones de concesiones desde 2022, leída desde BigQuery:
 
 ```text
-02:00:21  01_beneficiarios.sql
-02:00:21  02_privacy.sql
-02:00:21  03_publish.sql
-02:00:21  04_versions.sql
-02:00:21  05_summaries.sql
-02:00:21  10_concesiones.sql
-02:04:09  11_ayudasestado.sql
-02:05:26  12_minimis.sql
-02:06:04  20_concesiones_personas_juridicas.sql
-02:06:37  21_concesiones_personas_fisicas.sql
-02:09:41  22_ayudasestado_personas_juridicas.sql
-02:09:51  23_ayudasestado_personas_fisicas.sql
-02:10:16  24_minimis_personas_juridicas.sql
-02:10:20  25_minimis_personas_fisicas.sql
-02:10:23  90_checks.sql
-02:10:35  95_export.sql
-02:10:45  done
+17:09:11  01_beneficiarios.sql
+17:09:11  02_privacy.sql
+17:09:11  03_publish.sql
+17:09:11  04_versions.sql
+17:09:11  05_summaries.sql
+17:09:11  10_concesiones.sql
+17:13:53  11_ayudasestado.sql
+17:15:26  12_minimis.sql
+17:16:26  13_partidospoliticos.sql
+17:16:29  14_grandesbeneficiarios.sql
+17:16:33  20_concesiones_personas_juridicas.sql
+17:17:06  21_concesiones_personas_fisicas.sql
+17:19:42  22_ayudasestado_personas_juridicas.sql
+17:20:11  23_ayudasestado_personas_fisicas.sql
+17:20:27  24_minimis_personas_juridicas.sql
+17:20:46  25_minimis_personas_fisicas.sql
+17:20:54  26_partidospoliticos.sql
+17:20:54  27_grandesbeneficiarios.sql
+17:20:54  30_convocatorias.sql
+17:21:37  31_planesestrategicos.sql
+17:21:40  32_catalogos.sql
+17:22:04  90_checks.sql
+17:22:12  95_export.sql
+17:22:19  done
 ```
 
 Si olvidas `output_dir`, se para con el mensaje `No output folder: run SET VARIABLE output_dir = '/path/to/output' before the build`.
@@ -70,7 +77,7 @@ La extensión [`bigquery`](https://duckdb.org/community_extensions/extensions/bi
 
 ```console
 $ duckdb ~/bdns-dataset/privado.duckdb -cmd "
-    SET memory_limit = '4GB';
+    SET memory_limit = '3GB';
     SET threads = 4;
     SET preserve_insertion_order = false;
     INSTALL bigquery FROM community; LOAD bigquery;
@@ -82,7 +89,7 @@ $ duckdb ~/bdns-dataset/privado.duckdb -cmd "
 <a id="memory"></a>
 ### Con mucho histórico
 
-DuckDB usa por defecto hasta el 80 % de la memoria del equipo, y si a la vez tienes otros programas abiertos, el sistema puede llegar a pararlo por falta de memoria. Para evitarlo, ponle un límite al principio de `-cmd`, como en el ejemplo de BigQuery; lo que no quepa lo vuelca a disco, junto al fichero de trabajo. Con `memory_limit = '4GB'` y `threads = 4`, en un portátil de 12 GB, la copia de 30 millones de concesiones se generó en unos ocho minutos sin que DuckDB pasara de 5 GB.
+DuckDB usa por defecto hasta el 80 % de la memoria del equipo, y si a la vez tienes otros programas abiertos, el sistema puede llegar a pararlo por falta de memoria. Para evitarlo, ponle un límite al principio de `-cmd`, como en el ejemplo de BigQuery; lo que no quepa lo vuelca a disco, junto al fichero de trabajo. Ten en cuenta que el proceso ocupa bastante más que ese límite, porque la extensión de BigQuery usa memoria por su cuenta: con `memory_limit = '3GB'` y `threads = 4`, en un portátil de 12 GB, la copia de 30 millones de concesiones se generó en 13 minutos y el proceso llegó a 7,8 GB.
 
 <a id="checks"></a>
 ## Cuando un control para la generación

@@ -27,26 +27,33 @@ $ ls ~/bdns-dataset/salida
 ayudasestado_personas_juridicas.parquet  concesiones_personas_juridicas.parquet  concesiones_personas_fisicas.parquet  minimis_personas_juridicas.parquet
 ```
 
-While it works, it prints the time each step starts and, at the end, `done`, so you can follow a long build and see how long each step takes. These are the real timings for a copy with 30 million awards since 2022:
+While it works, it prints the time each step starts and, at the end, `done`, so you can follow a long build and see how long each step takes. These are the real timings for a copy with 30 million awards since 2022, read from BigQuery:
 
 ```text
-02:00:21  01_beneficiarios.sql
-02:00:21  02_privacy.sql
-02:00:21  03_publish.sql
-02:00:21  04_versions.sql
-02:00:21  05_summaries.sql
-02:00:21  10_concesiones.sql
-02:04:09  11_ayudasestado.sql
-02:05:26  12_minimis.sql
-02:06:04  20_concesiones_personas_juridicas.sql
-02:06:37  21_concesiones_personas_fisicas.sql
-02:09:41  22_ayudasestado_personas_juridicas.sql
-02:09:51  23_ayudasestado_personas_fisicas.sql
-02:10:16  24_minimis_personas_juridicas.sql
-02:10:20  25_minimis_personas_fisicas.sql
-02:10:23  90_checks.sql
-02:10:35  95_export.sql
-02:10:45  done
+17:09:11  01_beneficiarios.sql
+17:09:11  02_privacy.sql
+17:09:11  03_publish.sql
+17:09:11  04_versions.sql
+17:09:11  05_summaries.sql
+17:09:11  10_concesiones.sql
+17:13:53  11_ayudasestado.sql
+17:15:26  12_minimis.sql
+17:16:26  13_partidospoliticos.sql
+17:16:29  14_grandesbeneficiarios.sql
+17:16:33  20_concesiones_personas_juridicas.sql
+17:17:06  21_concesiones_personas_fisicas.sql
+17:19:42  22_ayudasestado_personas_juridicas.sql
+17:20:11  23_ayudasestado_personas_fisicas.sql
+17:20:27  24_minimis_personas_juridicas.sql
+17:20:46  25_minimis_personas_fisicas.sql
+17:20:54  26_partidospoliticos.sql
+17:20:54  27_grandesbeneficiarios.sql
+17:20:54  30_convocatorias.sql
+17:21:37  31_planesestrategicos.sql
+17:21:40  32_catalogos.sql
+17:22:04  90_checks.sql
+17:22:12  95_export.sql
+17:22:19  done
 ```
 
 If you forget `output_dir`, it stops with the message `No output folder: run SET VARIABLE output_dir = '/path/to/output' before the build`.
@@ -70,7 +77,7 @@ The [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.htm
 
 ```console
 $ duckdb ~/bdns-dataset/privado.duckdb -cmd "
-    SET memory_limit = '4GB';
+    SET memory_limit = '3GB';
     SET threads = 4;
     SET preserve_insertion_order = false;
     INSTALL bigquery FROM community; LOAD bigquery;
@@ -82,7 +89,7 @@ $ duckdb ~/bdns-dataset/privado.duckdb -cmd "
 <a id="memory"></a>
 ### With a long history
 
-By default DuckDB uses up to 80% of the machine's memory, and with other programs open at the same time the system may stop it for lack of memory. To avoid that, give it a limit at the start of `-cmd`, as in the BigQuery example; whatever does not fit goes to disk, next to the working file. With `memory_limit = '4GB'` and `threads = 4`, on a 12 GB laptop, the copy with 30 million awards was built in about eight minutes without DuckDB going past 5 GB.
+By default DuckDB uses up to 80% of the machine's memory, and with other programs open at the same time the system may stop it for lack of memory. To avoid that, give it a limit at the start of `-cmd`, as in the BigQuery example; whatever does not fit goes to disk, next to the working file. Bear in mind the process takes quite a lot more than that limit, because the BigQuery extension uses memory of its own: with `memory_limit = '3GB'` and `threads = 4`, on a 12 GB laptop, the copy with 30 million awards was built in 13 minutes and the process reached 7.8 GB.
 
 <a id="checks"></a>
 ## When a check stops the build

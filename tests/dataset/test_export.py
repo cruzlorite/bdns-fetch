@@ -11,9 +11,12 @@ EXPORT = ROOT / "dataset" / "sql" / "95_export.sql"
 
 
 def test_each_published_table_becomes_a_parquet_file(built, output):
-    published = built.execute("SELECT count(*) FROM publish.concesiones_entidades").fetchone()
+    published = built.execute(
+        "SELECT count(*) FROM publish.concesiones_personas_juridicas"
+    ).fetchone()
     exported = built.execute(
-        "SELECT count(*) FROM read_parquet(?)", [str(output / "concesiones_entidades.parquet")]
+        "SELECT count(*) FROM read_parquet(?)",
+        [str(output / "concesiones_personas_juridicas.parquet")],
     ).fetchone()
     assert exported == published
 

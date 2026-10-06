@@ -1,16 +1,16 @@
 # Qué contiene el dataset
 
-Cada tabla se publica como un fichero Parquet con su mismo nombre (`concesiones_entidades.parquet`, por ejemplo) y con los tipos de cada columna, así que DuckDB, pandas o R la leen directamente. Los nombres van en español, como en la BDNS, y los textos, tal y como los devuelve la API, salvo los espacios sobrantes de algunos campos. Los ejemplos de esta página usan datos inventados.
+Cada tabla se publica como un fichero Parquet con su mismo nombre (`concesiones_personas_juridicas.parquet`, por ejemplo) y con los tipos de cada columna, así que DuckDB, pandas o R la leen directamente. Los nombres van en español, como en la BDNS, y los textos, tal y como los devuelve la API, salvo los espacios sobrantes de algunos campos. Los ejemplos de esta página usan datos inventados.
 
 <a id="entities"></a>
-## Empresas y entidades públicas
+## Personas jurídicas
 
 Las tres primeras tablas tienen, de cada concesión o ayuda a una persona jurídica o a una entidad pública ([cómo se clasifican](privacy.md#who)), la última versión que conoce `bdns-sync`. Dos cosas que conviene saber antes de usarlas:
 
 - **Las concesiones que la API ya ha retirado siguen ahí**, con `retirada = true`. Son justo las que no puedes conseguir de otra forma, así que fíltralas (`WHERE NOT retirada`) solo si quieres ver lo mismo que muestra hoy el portal.
 - **Un mismo NIF puede aparecer con el nombre escrito de varias formas**, así que, para agrupar por beneficiario, agrupa por `nif` y no por `nombre`.
 
-### `concesiones_entidades`
+### `concesiones_personas_juridicas`
 
 Las concesiones a personas jurídicas y entidades públicas, una fila por concesión. Sale de la búsqueda de concesiones (`concesiones_busqueda` en `bdns-sync`).
 
@@ -33,7 +33,7 @@ Las concesiones a personas jurídicas y entidades públicas, una fila por conces
 | `fecha_alta` | `DATE` | `fechaAlta` | Fecha en que la concesión se registró en la BDNS |
 | `retirada` | `BOOLEAN` | | `true` si la API ya no la devuelve. La fila conserva su última versión |
 
-### `ayudas_estado_entidades`
+### `ayudas_estado_personas_juridicas`
 
 Las ayudas de Estado a personas jurídicas y entidades públicas, una fila por ayuda. Sale de la búsqueda de ayudas de Estado (`ayudasestado_busqueda`).
 
@@ -63,7 +63,7 @@ Las ayudas de Estado a personas jurídicas y entidades públicas, una fila por a
 | `fecha_alta` | `DATE` | `fechaAlta` | Fecha en que la ayuda se registró en la BDNS |
 | `retirada` | `BOOLEAN` | | `true` si la API ya no la devuelve |
 
-### `minimis_entidades`
+### `minimis_personas_juridicas`
 
 Las ayudas de minimis a personas jurídicas y entidades públicas, una fila por ayuda. Sale de la búsqueda de minimis (`minimis_busqueda`).
 
@@ -85,16 +85,23 @@ Las ayudas de minimis a personas jurídicas y entidades públicas, una fila por 
 | `fecha_registro` | `DATE` | `fechaRegistro` | Fecha en que la ayuda se registró en la BDNS |
 | `retirada` | `BOOLEAN` | | `true` si la API ya no la devuelve |
 
-<a id="concesiones-personas"></a>
-## Personas físicas: `concesiones_personas`
+<a id="personas-fisicas"></a>
+## Personas físicas
 
-Las concesiones a personas físicas, comunidades de bienes, sociedades civiles, beneficiarios que no se reconocen y empresas cuyo nombre lleva el DNI de una persona, como un resumen por convocatoria e instrumento, más una fila de resto por año con las convocatorias que no se pueden publicar ([las reglas](privacy.md#rules)).
+Tres tablas, una por entidad, con un resumen por convocatoria e instrumento de las concesiones a personas físicas y a quien se protege como ellas (comunidades de bienes, sociedades civiles, beneficiarios que no se reconocen y empresas cuyo nombre lleva el DNI de una persona), más una fila de resto por año con las convocatorias que no se pueden publicar ([las reglas](privacy.md#rules)). En ayudas de Estado y minimis, casi todas estas personas son autónomos.
+
+Las tres tienen las mismas columnas, salvo las que identifican la convocatoria y las de importe, que dependen de lo que trae cada entidad:
+
+- **`concesiones_personas_fisicas`**: el número y el título de la convocatoria, los tres niveles del órgano que concede y estadísticas del importe y de la ayuda equivalente.
+- **`ayudas_estado_personas_fisicas`**: el número y el título de la convocatoria, el órgano convocante y estadísticas del importe y de la ayuda equivalente.
+- **`minimis_personas_fisicas`**: el número de la convocatoria, el órgano convocante y estadísticas de la ayuda equivalente, porque los registros de minimis no traen importe.
 
 | Columna | Tipo | Qué es |
 |---|---|---|
 | `numero_convocatoria` | `VARCHAR` | Código BDNS de la convocatoria. Vacío en las filas de resto |
 | `convocatoria` | `VARCHAR` | Título de la convocatoria. Vacío en las filas de resto y cuando contiene algo con forma de DNI |
-| `nivel1`, `nivel2`, `nivel3` | `VARCHAR` | Administración, departamento y órgano que conceden, como en `concesiones_entidades`. Si no son los mismos en todas las concesiones de la convocatoria, los de la mayoría. Vacíos en las filas de resto |
+| `nivel1`, `nivel2`, `nivel3` | `VARCHAR` | Administración, departamento y órgano que conceden, como en `concesiones_personas_juridicas` |
+| `convocante` | `VARCHAR` | Órgano convocante, como en las tablas de personas jurídicas |
 | `instrumento` | `VARCHAR` | Instrumento de ayuda. Vacío en las filas de resto |
 | `es_resto` | `BOOLEAN` | `true` en las filas de resto |
 | `ejercicio` | `BIGINT` | Año de una fila de resto, que es el de la fecha mediana de cada convocatoria que junta. Vacío en las demás filas |
@@ -114,13 +121,15 @@ Las concesiones a personas físicas, comunidades de bienes, sociedades civiles, 
 | `fecha_p75` | `DATE` | Tercer cuartil de la fecha de concesión |
 | `fecha_p90` | `DATE` | Percentil 90 de la fecha de concesión. Solo con 20 personas o más |
 
+Las columnas `ayuda_equivalente_total`, `ayuda_equivalente_media` y siguientes son las mismas estadísticas sobre la ayuda equivalente. Si el título o el órgano no son los mismos en todas las concesiones de una convocatoria, se publican los de la mayoría, y en las filas de resto van vacíos.
+
 ### Cómo se lee una fila
 
 Los importes y las fechas se calculan sobre las concesiones, de modo que una persona con dos concesiones cuenta dos veces en ellos, aunque en `beneficiarios` cuente una. Los percentiles del importe se interpolan entre las dos concesiones más cercanas, y los de la fecha son siempre una fecha de concesión real:
 
 ```sql
 SELECT concesiones, beneficiarios, importe_p10, importe_p25, importe_mediana, importe_p75, importe_p90
-FROM 'concesiones_personas.parquet'
+FROM 'concesiones_personas_fisicas.parquet'
 WHERE numero_convocatoria = '900101';
 ```
 
@@ -140,7 +149,7 @@ SELECT
     coalesce(ejercicio, year(fecha_mediana)) AS ejercicio,
     sum(concesiones) AS concesiones,
     sum(importe_total) AS importe
-FROM 'concesiones_personas.parquet'
+FROM 'concesiones_personas_fisicas.parquet'
 GROUP BY ALL
 ORDER BY ejercicio;
 ```
@@ -158,27 +167,27 @@ Aun así, el total se queda algo corto, porque las concesiones que no llegan a n
 Una convocatoria puede tener beneficiarios de los dos tipos, y para verla entera hay que juntar las dos partes por `numero_convocatoria`:
 
 ```sql
-WITH entidades AS (
+WITH juridicas AS (
     SELECT numero_convocatoria, count(*) AS concesiones, sum(importe) AS importe
-    FROM 'concesiones_entidades.parquet'
+    FROM 'concesiones_personas_juridicas.parquet'
     GROUP BY numero_convocatoria
 )
 SELECT
-    p.numero_convocatoria,
-    p.concesiones AS concesiones_personas,
-    p.importe_total AS importe_personas,
-    e.concesiones AS concesiones_entidades,
-    e.importe AS importe_entidades
-FROM 'concesiones_personas.parquet' p
-LEFT JOIN entidades e USING (numero_convocatoria)
-WHERE NOT p.es_resto
-ORDER BY p.numero_convocatoria;
+    f.numero_convocatoria,
+    f.concesiones AS concesiones_fisicas,
+    f.importe_total AS importe_fisicas,
+    j.concesiones AS concesiones_juridicas,
+    j.importe AS importe_juridicas
+FROM 'concesiones_personas_fisicas.parquet' f
+LEFT JOIN juridicas j USING (numero_convocatoria)
+WHERE NOT f.es_resto
+ORDER BY f.numero_convocatoria;
 ```
 
-| numero_convocatoria | concesiones_personas | importe_personas | concesiones_entidades | importe_entidades |
-|---------------------|---------------------:|-----------------:|----------------------:|------------------:|
-| 900101              | 250                  | 588000.00        | NULL                  | NULL              |
-| 900102              | 40                   | 8580.00          | NULL                  | NULL              |
-| 900103              | 14                   | 51000.00         | 1                     | 90000.00          |
+| numero_convocatoria | concesiones_fisicas | importe_fisicas | concesiones_juridicas | importe_juridicas |
+|---------------------|--------------------:|----------------:|----------------------:|------------------:|
+| 900101              | 250                 | 588000.00       | NULL                  | NULL              |
+| 900102              | 40                  | 8580.00         | NULL                  | NULL              |
+| 900103              | 14                  | 51000.00        | 1                     | 90000.00          |
 
 Si una convocatoria usa varios instrumentos (por ejemplo, subvenciones y préstamos), tiene un resumen por cada uno, y entonces conviene agrupar también por `instrumento`.

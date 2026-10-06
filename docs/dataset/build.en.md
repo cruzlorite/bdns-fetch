@@ -24,24 +24,29 @@ $ duckdb ~/bdns-dataset/privado.duckdb \
           SET VARIABLE output_dir = '$HOME/bdns-dataset/salida'" \
     -f dataset/build.sql
 $ ls ~/bdns-dataset/salida
-ayudas_estado_entidades.parquet  concesiones_entidades.parquet  concesiones_personas.parquet  minimis_entidades.parquet
+ayudas_estado_personas_juridicas.parquet  concesiones_personas_juridicas.parquet  concesiones_personas_fisicas.parquet  minimis_personas_juridicas.parquet
 ```
 
 While it works, it prints the time each step starts and, at the end, `done`, so you can follow a long build and see how long each step takes. These are the real timings for a copy with 30 million awards since 2022:
 
 ```text
-20:53:45  01_beneficiarios.sql
-20:53:45  02_privacy.sql
-20:53:45  03_publish.sql
-20:53:45  04_versions.sql
-20:53:45  10_concesiones.sql
-20:57:50  11_ayudas_estado.sql
-20:59:22  12_minimis.sql
-21:00:12  20_entidades.sql
-21:00:39  30_personas.sql
-21:01:05  90_checks.sql
-21:01:12  95_export.sql
-21:01:17  done
+02:00:21  01_beneficiarios.sql
+02:00:21  02_privacy.sql
+02:00:21  03_publish.sql
+02:00:21  04_versions.sql
+02:00:21  05_summaries.sql
+02:00:21  10_concesiones.sql
+02:04:09  11_ayudas_estado.sql
+02:05:26  12_minimis.sql
+02:06:04  20_concesiones_personas_juridicas.sql
+02:06:37  21_concesiones_personas_fisicas.sql
+02:09:41  22_ayudas_estado_personas_juridicas.sql
+02:09:51  23_ayudas_estado_personas_fisicas.sql
+02:10:16  24_minimis_personas_juridicas.sql
+02:10:20  25_minimis_personas_fisicas.sql
+02:10:23  90_checks.sql
+02:10:35  95_export.sql
+02:10:45  done
 ```
 
 If you forget `output_dir`, it stops with the message `No output folder: run SET VARIABLE output_dir = '/path/to/output' before the build`.
@@ -90,7 +95,7 @@ Before writing the files, the build checks what it is about to publish, and if i
 
 ```console
 $ duckdb ~/bdns-dataset/privado.duckdb -cmd "..." -f dataset/build.sql
-Invalid Input Error: publish.concesiones_entidades: 1 rows with something shaped like a personal tax ID
+Invalid Input Error: publish.concesiones_personas_juridicas: 1 rows with something shaped like a personal tax ID
 $ ls ~/bdns-dataset/salida
 $
 ```
@@ -118,11 +123,14 @@ Intermediate tables stay in the private file, and only those in the `publish` sc
 | `02_privacy.sql` | Defines the building blocks of the privacy checks and the [thresholds](#thresholds) |
 | `03_publish.sql` | Creates the `publish` schema, where everything to be published goes |
 | `04_versions.sql` | Defines how each record's last version is chosen, without loading every `payload` at once |
+| `05_summaries.sql` | Defines the per-call summary of natural persons, with [its rules](privacy.md#rules), the same for the three entities |
 | `10_concesiones.sql` | Reads awards from `bdns-sync`, each one's last version, with typed columns. Private |
 | `11_ayudas_estado.sql` | The same for state aid. Private |
 | `12_minimis.sql` | The same for de minimis aid. Private |
-| `20_entidades.sql` | Writes the three entity tables to `publish`, record by record |
-| `30_personas.sql` | Writes the per-call summary of natural persons to `publish` |
+| `20_concesiones_personas_juridicas.sql` | Writes awards to legal persons to `publish`, record by record |
+| `21_concesiones_personas_fisicas.sql` | Writes the summary of awards to natural persons to `publish` |
+| `22_ayudas_estado_personas_juridicas.sql`, `23_ayudas_estado_personas_fisicas.sql` | The same for state aid |
+| `24_minimis_personas_juridicas.sql`, `25_minimis_personas_fisicas.sql` | The same for de minimis aid |
 | `90_checks.sql` | Checks what is about to be published and stops the run if it finds anything |
 | `95_export.sql` | Writes each table in `publish` as a Parquet file in `output_dir` |
 

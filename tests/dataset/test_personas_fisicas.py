@@ -1,12 +1,22 @@
-"""The per-call summary of awards to natural persons (dataset/sql/30_personas.sql):
-statistical disclosure control, case by case. Everyone here is made up."""
+"""The per-call summaries of awards to natural persons (dataset/sql/05_summaries.sql,
+with 21, 23 and 25_*_personas_fisicas.sql): statistical disclosure control, case by
+case. Everyone here is made up."""
 
 from datetime import date, timedelta
 
 import duckdb
 import pytest
 
-from tests.dataset.conftest import ROOT, T1, award, make_sync_db, run_steps, version
+from tests.dataset.conftest import (
+    ROOT,
+    T1,
+    award,
+    de_minimis,
+    make_sync_db,
+    run_steps,
+    state_aid,
+    version,
+)
 
 CHECKS = ROOT / "dataset" / "sql" / "90_checks.sql"
 
@@ -86,7 +96,7 @@ def con(tmp_path):
 def row(con, call):
     """The published row of a call, as a dict, or None."""
     result = con.execute(
-        "SELECT * FROM publish.concesiones_personas WHERE numero_convocatoria IS NOT DISTINCT FROM ?",
+        "SELECT * FROM publish.concesiones_personas_fisicas WHERE numero_convocatoria IS NOT DISTINCT FROM ?",
         [call],
     )
     names = [d[0] for d in result.description]
@@ -97,7 +107,8 @@ def row(con, call):
 def rest(con, ejercicio):
     """The published rest row of a year, as a dict, or None."""
     result = con.execute(
-        "SELECT * FROM publish.concesiones_personas WHERE es_resto AND ejercicio = ?", [ejercicio]
+        "SELECT * FROM publish.concesiones_personas_fisicas WHERE es_resto AND ejercicio = ?",
+        [ejercicio],
     )
     names = [d[0] for d in result.description]
     found = result.fetchall()
@@ -171,7 +182,7 @@ def test_a_title_shaped_like_a_tax_id_is_blanked(con):
 
 def test_the_checks_stop_a_row_below_the_minimum(con):
     con.execute(
-        "INSERT INTO publish.concesiones_personas (numero_convocatoria, beneficiarios, es_resto) "
+        "INSERT INTO publish.concesiones_personas_fisicas (numero_convocatoria, beneficiarios, es_resto) "
         "VALUES ('Z', 3, false)"
     )
     with pytest.raises(duckdb.InvalidInputException, match="below 10 beneficiaries"):
@@ -180,14 +191,14 @@ def test_the_checks_stop_a_row_below_the_minimum(con):
 
 def test_the_checks_stop_tails_below_twenty_people(con):
     con.execute(
-        "UPDATE publish.concesiones_personas SET importe_p90 = 999 WHERE numero_convocatoria = 'A'"
+        "UPDATE publish.concesiones_personas_fisicas SET importe_p90 = 999 WHERE numero_convocatoria = 'A'"
     )
     with pytest.raises(duckdb.InvalidInputException, match="10th or 90th percentiles below 20"):
         con.execute(CHECKS.read_text(encoding="utf-8"))
 
 
 def test_the_checks_stop_an_identifying_column(con):
-    con.execute("ALTER TABLE publish.concesiones_personas ADD COLUMN id_persona BIGINT")
+    con.execute("ALTER TABLE publish.concesiones_personas_fisicas ADD COLUMN id_persona BIGINT")
     with pytest.raises(duckdb.InvalidInputException, match="identifying columns: id_persona"):
         con.execute(CHECKS.read_text(encoding="utf-8"))
 
@@ -222,5 +233,74 @@ def test_a_call_with_several_bodies_shows_the_main_one(
         {n for n in (p.name for p in (ROOT / "dataset" / "sql").iterdir()) if n != "95_export.sql"},
     )
     assert con.execute(
-        "SELECT nivel3 FROM publish.concesiones_personas WHERE numero_convocatoria = 'G'"
+        "SELECT nivel3 FROM publish.concesiones_personas_fisicas WHERE numero_convocatoria = 'G'"
     ).fetchone() == (published,)
+
+
+def build_without_export(tmp_path, concesiones=(), ayudas=(), minimis=()):
+    sync_db = make_sync_db(
+        tmp_path / "sync.duckdb",
+        *[
+            [version(i, T1, None, True, None, r) for i, r in enumerate(rows)]
+            for rows in (concesiones, ayudas, minimis)
+        ],
+    )
+    con = duckdb.connect()
+    con.execute(f"ATTACH '{sync_db}' AS sync (READ_ONLY)")
+    run_steps(
+        con,
+        {n for n in (p.name for p in (ROOT / "dataset" / "sql").iterdir()) if n != "95_export.sql"},
+    )
+    return con
+
+
+def self_employed(make, call, count, start, amount, **extra):
+    """State aid or de minimis aid to `count` self-employed people in one call."""
+    return [
+        dict(
+            make(start + n, f"***{start + n:04d}** NOMBRE", amount),
+            numeroConvocatoria=call,
+            convocante="ESTADO MINISTERIO DE EJEMPLO",
+            idPersona=str(start + n),
+            **extra,
+        )
+        for n in range(count)
+    ]
+
+
+def test_state_aid_summarises_both_amounts(tmp_path):
+    con = build_without_export(tmp_path, ayudas=self_employed(state_aid, "S1", 12, 100, 1000))
+    total, equivalente, convocante, beneficiarios = con.execute(
+        "SELECT importe_total, ayuda_equivalente_total, convocante, beneficiarios "
+        "FROM publish.ayudas_estado_personas_fisicas"
+    ).fetchone()
+    # state_aid() sets the gross grant equivalent to half the amount.
+    assert (float(total), float(equivalente), beneficiarios) == (12000.0, 6000.0, 12)
+    assert convocante == "ESTADO MINISTERIO DE EJEMPLO"
+
+
+def test_one_person_holding_most_of_either_amount_suppresses_the_call(tmp_path):
+    # Equal amounts, but one person holds most of the gross grant equivalent.
+    rows = self_employed(state_aid, "S2", 12, 200, 1000)
+    rows[0]["ayudaEquivalente"] = "100000"
+    con = build_without_export(tmp_path, ayudas=rows)
+    assert con.execute(
+        "SELECT count(*) FROM publish.ayudas_estado_personas_fisicas"
+    ).fetchone() == (0,)
+
+
+def test_de_minimis_summarises_only_its_gross_grant_equivalent(tmp_path):
+    con = build_without_export(tmp_path, minimis=self_employed(de_minimis, "M1", 11, 300, 900))
+    columns = {
+        name
+        for (name,) in con.execute(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_schema = 'publish' AND table_name = 'minimis_personas_fisicas'"
+        ).fetchall()
+    }
+    assert "ayuda_equivalente_total" in columns and not any(
+        c.startswith("importe") for c in columns
+    )
+    assert con.execute(
+        "SELECT beneficiarios, ayuda_equivalente_total FROM publish.minimis_personas_fisicas"
+    ).fetchone() == (11, 9900)

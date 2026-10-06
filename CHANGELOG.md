@@ -38,15 +38,17 @@ attached as `sync`, stops at the first error, and writes Parquet files to the `o
 - `02_privacy.sql`: the building blocks of the privacy checks, and the disclosure-control thresholds as macros.
 - `10_concesiones.sql`, `11_ayudas_estado.sql`, `12_minimis.sql`: each record's last known version, read straight
   from bdns-sync (withdrawn ones included), with typed columns and the beneficiary's kind (`tipo_persona`).
-- `20_entidades.sql`: awards, state aid and de minimis aid to legal persons and public bodies, record by record, in
-  the `publish` schema that holds everything to be published (`concesiones_entidades`, `ayudas_estado_entidades`,
-  `minimis_entidades`); without `url_br` (the bulletin usually lists natural persons too) or `id_persona`.
-- `30_personas.sql`: awards to natural persons, entities made of persons and unrecognised beneficiaries, only as
-  one summary row per call (`concesiones_personas`): counts, total, mean, standard deviation, median and quartiles
-  of the amount, and the same percentiles of the award date. A row needs at least 10 people, none holding more than
-  half its amount; the 10th and 90th percentiles need 20; the smallest and largest values are never published.
-  Suppressed calls go into one rest row per year, published only if it gathers two or more of them and meets the
-  same thresholds.
+- `04_versions.sql`: each record's last version, read without holding every payload in memory.
+- `05_summaries.sql`: the per-call summary that is all the dataset publishes about natural persons, the same for
+  the three entities: counts, total, mean, standard deviation, median and quartiles of each amount, and the same
+  percentiles of the award date. A row needs at least 10 people, none holding more than half of any of its amounts;
+  the 10th and 90th percentiles need 20; the smallest and largest values are never published. Suppressed calls go
+  into one rest row per year, published only if it gathers two or more of them and meets the same thresholds.
+- `20` to `25`, two per entity: awards, state aid and de minimis aid to legal persons record by record
+  (`concesiones_personas_juridicas`, `ayudas_estado_personas_juridicas`, `minimis_personas_juridicas`), without
+  `url_br` (the bulletin usually lists natural persons too) or `id_persona`, and to natural persons only as the
+  summary (`concesiones_personas_fisicas`, `ayudas_estado_personas_fisicas`, `minimis_personas_fisicas`).
+  Companies whose name carries a person's tax ID are summarised with the natural persons.
 - `90_checks.sql`: stops the build if a record-level table holds a protected beneficiary or anything shaped like a
   natural person's tax ID, or the summary table breaks any of its rules.
 - `95_export.sql`: writes each table in `publish`, and nothing else, as a Parquet file (the dataset's only format),

@@ -24,24 +24,29 @@ $ duckdb ~/bdns-dataset/privado.duckdb \
           SET VARIABLE output_dir = '$HOME/bdns-dataset/salida'" \
     -f dataset/build.sql
 $ ls ~/bdns-dataset/salida
-ayudas_estado_entidades.parquet  concesiones_entidades.parquet  concesiones_personas.parquet  minimis_entidades.parquet
+ayudas_estado_personas_juridicas.parquet  concesiones_personas_juridicas.parquet  concesiones_personas_fisicas.parquet  minimis_personas_juridicas.parquet
 ```
 
 Mientras trabaja, muestra la hora a la que empieza cada paso y, al final, `done`, así que puedes seguir una generación larga y ver cuánto tarda cada paso. Estos son los tiempos reales de una copia con 30 millones de concesiones desde 2022:
 
 ```text
-20:53:45  01_beneficiarios.sql
-20:53:45  02_privacy.sql
-20:53:45  03_publish.sql
-20:53:45  04_versions.sql
-20:53:45  10_concesiones.sql
-20:57:50  11_ayudas_estado.sql
-20:59:22  12_minimis.sql
-21:00:12  20_entidades.sql
-21:00:39  30_personas.sql
-21:01:05  90_checks.sql
-21:01:12  95_export.sql
-21:01:17  done
+02:00:21  01_beneficiarios.sql
+02:00:21  02_privacy.sql
+02:00:21  03_publish.sql
+02:00:21  04_versions.sql
+02:00:21  05_summaries.sql
+02:00:21  10_concesiones.sql
+02:04:09  11_ayudas_estado.sql
+02:05:26  12_minimis.sql
+02:06:04  20_concesiones_personas_juridicas.sql
+02:06:37  21_concesiones_personas_fisicas.sql
+02:09:41  22_ayudas_estado_personas_juridicas.sql
+02:09:51  23_ayudas_estado_personas_fisicas.sql
+02:10:16  24_minimis_personas_juridicas.sql
+02:10:20  25_minimis_personas_fisicas.sql
+02:10:23  90_checks.sql
+02:10:35  95_export.sql
+02:10:45  done
 ```
 
 Si olvidas `output_dir`, se para con el mensaje `No output folder: run SET VARIABLE output_dir = '/path/to/output' before the build`.
@@ -90,7 +95,7 @@ Antes de escribir los ficheros, la generación revisa lo que va a publicar, y si
 
 ```console
 $ duckdb ~/bdns-dataset/privado.duckdb -cmd "..." -f dataset/build.sql
-Invalid Input Error: publish.concesiones_entidades: 1 rows with something shaped like a personal tax ID
+Invalid Input Error: publish.concesiones_personas_juridicas: 1 rows with something shaped like a personal tax ID
 $ ls ~/bdns-dataset/salida
 $
 ```
@@ -118,11 +123,14 @@ Las tablas intermedias se quedan en el fichero privado, y solo las del esquema `
 | `02_privacy.sql` | Define las piezas de los controles de privacidad y los [umbrales](#thresholds) |
 | `03_publish.sql` | Crea el esquema `publish`, donde va todo lo que se publica |
 | `04_versions.sql` | Define cómo se elige la última versión de cada registro, sin cargar todos los `payload` a la vez |
+| `05_summaries.sql` | Define el resumen por convocatoria de las personas físicas, con [sus reglas](privacy.md#rules), igual para las tres entidades |
 | `10_concesiones.sql` | Lee las concesiones de `bdns-sync`, con la última versión de cada una y sus columnas con tipo. Privada |
 | `11_ayudas_estado.sql` | Lo mismo con las ayudas de Estado. Privada |
 | `12_minimis.sql` | Lo mismo con las ayudas de minimis. Privada |
-| `20_entidades.sql` | Escribe en `publish` las tres tablas de entidades, registro a registro |
-| `30_personas.sql` | Escribe en `publish` el resumen por convocatoria de las personas físicas |
+| `20_concesiones_personas_juridicas.sql` | Escribe en `publish` las concesiones a personas jurídicas, registro a registro |
+| `21_concesiones_personas_fisicas.sql` | Escribe en `publish` el resumen de las concesiones a personas físicas |
+| `22_ayudas_estado_personas_juridicas.sql`, `23_ayudas_estado_personas_fisicas.sql` | Lo mismo con las ayudas de Estado |
+| `24_minimis_personas_juridicas.sql`, `25_minimis_personas_fisicas.sql` | Lo mismo con las ayudas de minimis |
 | `90_checks.sql` | Comprueba lo que va a publicarse y para la ejecución si encuentra algo |
 | `95_export.sql` | Escribe cada tabla de `publish` como un fichero Parquet en `output_dir` |
 

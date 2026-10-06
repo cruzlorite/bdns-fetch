@@ -1,5 +1,5 @@
 """Awards, state aid and de minimis aid to legal persons and public bodies
-(dataset/sql/20_entidades.sql), and the checks that guard them (90_checks.sql)."""
+(dataset/sql/20, 22 and 24_*_personas_juridicas.sql), and the checks that guard them (90_checks.sql)."""
 
 import duckdb
 import pytest
@@ -24,7 +24,7 @@ def checks():
 
 def test_only_legal_persons_and_public_bodies_are_published(built):
     rows = built.execute(
-        "SELECT id, nif, nombre, tipo_persona, importe FROM publish.concesiones_entidades"
+        "SELECT id, nif, nombre, tipo_persona, importe FROM publish.concesiones_personas_juridicas"
     ).fetchall()
     # Award 2 (a natural person) and award 3 (an unrecognised ID) stay out.
     assert [(i, t, n, k, float(a)) for i, t, n, k, a in rows] == [
@@ -34,7 +34,7 @@ def test_only_legal_persons_and_public_bodies_are_published(built):
 
 def test_state_aid_names_lose_their_dash(built):
     rows = built.execute(
-        "SELECT id_concesion, nif, nombre, region FROM publish.ayudas_estado_entidades"
+        "SELECT id_concesion, nif, nombre, region FROM publish.ayudas_estado_personas_juridicas"
     ).fetchall()
     # The natural person (12) stays out; the company's name has no leading dash.
     assert rows == [(11, "B12345678", "EMPRESA SL", "ES615 - Huelva")]
@@ -42,14 +42,19 @@ def test_state_aid_names_lose_their_dash(built):
 
 def test_de_minimis_publishes_legal_persons_only(built):
     rows = built.execute(
-        "SELECT id_concesion, nif, nombre FROM publish.minimis_entidades"
+        "SELECT id_concesion, nif, nombre FROM publish.minimis_personas_juridicas"
     ).fetchall()
     # The community of property (22) is protected like a natural person.
     assert rows == [(21, "G12345678", "ASOCIACION")]
 
 
 @pytest.mark.parametrize(
-    "table", ["concesiones_entidades", "ayudas_estado_entidades", "minimis_entidades"]
+    "table",
+    [
+        "concesiones_personas_juridicas",
+        "ayudas_estado_personas_juridicas",
+        "minimis_personas_juridicas",
+    ],
 )
 def test_columns_that_lead_to_people_are_left_out(built, table):
     columns = columns_of(built, table)
@@ -59,7 +64,7 @@ def test_columns_that_lead_to_people_are_left_out(built, table):
 
 def test_a_protected_row_stops_the_build(built):
     built.execute(
-        "INSERT INTO publish.concesiones_entidades (id, nif, tipo_persona) "
+        "INSERT INTO publish.concesiones_personas_juridicas (id, nif, tipo_persona) "
         "VALUES (9, '***1234**', 'persona_fisica')"
     )
     with pytest.raises(duckdb.InvalidInputException, match="protected beneficiaries"):
@@ -68,7 +73,7 @@ def test_a_protected_row_stops_the_build(built):
 
 def test_a_personal_tax_id_anywhere_stops_the_build(built):
     built.execute(
-        "INSERT INTO publish.concesiones_entidades (id, nif, tipo_persona, convocatoria) "
+        "INSERT INTO publish.concesiones_personas_juridicas (id, nif, tipo_persona, convocatoria) "
         "VALUES (9, 'B87654321', 'persona_juridica', 'Ayuda nominativa a 12345678Z')"
     )
     with pytest.raises(duckdb.InvalidInputException, match="personal tax ID"):
@@ -88,7 +93,9 @@ def test_a_company_named_with_a_personal_id_goes_to_the_summary(tmp_path):
     con.execute(f"ATTACH '{sync_db}' AS sync (READ_ONLY)")
     con.execute(f"SET VARIABLE output_dir = '{tmp_path}'")
     run_steps(con)  # the checks pass: nothing ID-shaped is published
-    assert con.execute("SELECT count(*) FROM publish.concesiones_entidades").fetchone() == (0,)
     assert con.execute(
-        "SELECT concesiones, beneficiarios FROM publish.concesiones_personas"
+        "SELECT count(*) FROM publish.concesiones_personas_juridicas"
+    ).fetchone() == (0,)
+    assert con.execute(
+        "SELECT concesiones, beneficiarios FROM publish.concesiones_personas_fisicas"
     ).fetchone() == (11, 11)

@@ -42,6 +42,11 @@ SELECT strftime(now(), '%H:%M:%S') || '  04_versions.sql';
 .read dataset/sql/04_versions.sql
 
 .mode list
+SELECT strftime(now(), '%H:%M:%S') || '  05_summaries.sql';
+.mode trash
+.read dataset/sql/05_summaries.sql
+
+.mode list
 SELECT strftime(now(), '%H:%M:%S') || '  10_concesiones.sql';
 .mode trash
 .read dataset/sql/10_concesiones.sql
@@ -57,14 +62,34 @@ SELECT strftime(now(), '%H:%M:%S') || '  12_minimis.sql';
 .read dataset/sql/12_minimis.sql
 
 .mode list
-SELECT strftime(now(), '%H:%M:%S') || '  20_entidades.sql';
+SELECT strftime(now(), '%H:%M:%S') || '  20_concesiones_personas_juridicas.sql';
 .mode trash
-.read dataset/sql/20_entidades.sql
+.read dataset/sql/20_concesiones_personas_juridicas.sql
 
 .mode list
-SELECT strftime(now(), '%H:%M:%S') || '  30_personas.sql';
+SELECT strftime(now(), '%H:%M:%S') || '  21_concesiones_personas_fisicas.sql';
 .mode trash
-.read dataset/sql/30_personas.sql
+.read dataset/sql/21_concesiones_personas_fisicas.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  22_ayudas_estado_personas_juridicas.sql';
+.mode trash
+.read dataset/sql/22_ayudas_estado_personas_juridicas.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  23_ayudas_estado_personas_fisicas.sql';
+.mode trash
+.read dataset/sql/23_ayudas_estado_personas_fisicas.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  24_minimis_personas_juridicas.sql';
+.mode trash
+.read dataset/sql/24_minimis_personas_juridicas.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  25_minimis_personas_fisicas.sql';
+.mode trash
+.read dataset/sql/25_minimis_personas_fisicas.sql
 
 .mode list
 SELECT strftime(now(), '%H:%M:%S') || '  90_checks.sql';

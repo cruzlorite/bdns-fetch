@@ -24,7 +24,7 @@ Companies and public bodies are published record by record, with their tax ID an
 <a id="summary"></a>
 ## What is published about a call
 
-Of the awards to protected beneficiaries, only one summary per call is published (and per instrument, if the call uses several). Picture a call with these 12 awards, which belong to 11 people because one of them got two:
+Of the awards, state aid and de minimis aid to protected beneficiaries, only one summary per call is published (and per instrument, if the call uses several). Picture a call with these 12 awards, which belong to 11 people because one of them got two:
 
 | Amount | Awards | Award date |
 |---:|---:|---|
@@ -34,7 +34,7 @@ Of the awards to protected beneficiaries, only one summary per call is published
 | €900 | 1 | 05/06/2026 |
 | €1,200 | 1 | 05/06/2026 |
 
-Its row in `concesiones_personas` would be this:
+Its row in `concesiones_personas_fisicas` would be this (without the gross grant equivalent columns, which follow the same logic):
 
 | Column | Value |
 |---|---|
@@ -54,7 +54,7 @@ With it you can tell how much the call gave out, what a typical award was and wh
 
 **Every row gathers at least 10 people.** With few people, a summary lets you guess what each one got. With two, for example, whoever knows what one got learns the other's by subtracting it from the total.
 
-**No one holds more than half their row's amount.** If one person takes nearly everything, the total is practically their amount, however many others the row gathers. With 14 awards of €100 and one of €10,000, the total (€11,400) tells anyone who knows the call how much that person got.
+**No one holds more than half of any of their row's amounts** (the amount and the gross grant equivalent, where the entity carries both). If one person takes nearly everything, the total is practically their amount, however many others the row gathers. With 14 awards of €100 and one of €10,000, the total (€11,400) tells anyone who knows the call how much that person got.
 
 **The smallest and largest values are never published, and the 10th and 90th percentiles only from 20 people.** The largest amount is one specific person's, and so are the smallest and the extreme dates. The 10th and 90th percentiles sit very close to them: in the example above, the 90th percentile would be €870, very close to the second largest award (€900). From 20 people on, the 10th percentile no longer falls below the second smallest award, nor the 90th above the second largest.
 

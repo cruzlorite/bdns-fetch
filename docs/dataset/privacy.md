@@ -24,7 +24,7 @@ Las empresas y entidades públicas se publican registro a registro, con su NIF y
 <a id="summary"></a>
 ## Qué se publica de una convocatoria
 
-De las concesiones a beneficiarios protegidos solo se publica un resumen por convocatoria (y por instrumento, si la convocatoria usa varios). Imagina una convocatoria con estas 12 concesiones, que son de 11 personas porque una de ellas recibió dos:
+De las concesiones, ayudas de Estado y minimis a beneficiarios protegidos solo se publica un resumen por convocatoria (y por instrumento, si la convocatoria usa varios). Imagina una convocatoria con estas 12 concesiones, que son de 11 personas porque una de ellas recibió dos:
 
 | Importe | Concesiones | Fecha de concesión |
 |---:|---:|---|
@@ -34,7 +34,7 @@ De las concesiones a beneficiarios protegidos solo se publica un resumen por con
 | 900 € | 1 | 05/06/2026 |
 | 1.200 € | 1 | 05/06/2026 |
 
-Su fila en `concesiones_personas` sería esta:
+Su fila en `concesiones_personas_fisicas` sería esta (sin las columnas de la ayuda equivalente, que siguen la misma lógica):
 
 | Columna | Valor |
 |---|---|
@@ -54,7 +54,7 @@ Con ella puedes saber cuánto repartió la convocatoria, cuánto fue una concesi
 
 **Cada fila junta al menos a 10 personas.** Con pocas personas, un resumen deja adivinar lo que recibió cada una. Con dos, por ejemplo, quien sepa lo que recibió una conoce lo de la otra restándolo del total.
 
-**Ninguna persona tiene más de la mitad del importe de su fila.** Si una persona se lleva casi todo, el total es prácticamente su importe, aunque la fila junte a muchas más. Con 14 concesiones de 100 euros y una de 10.000, el total (11.400 euros) le dice a cualquiera que conozca la convocatoria cuánto recibió esa persona.
+**Ninguna persona tiene más de la mitad de ninguno de los importes de su fila** (el importe y la ayuda equivalente, donde la entidad trae los dos). Si una persona se lleva casi todo, el total es prácticamente su importe, aunque la fila junte a muchas más. Con 14 concesiones de 100 euros y una de 10.000, el total (11.400 euros) le dice a cualquiera que conozca la convocatoria cuánto recibió esa persona.
 
 **El mínimo y el máximo no se publican nunca, y los percentiles 10 y 90, solo desde 20 personas.** El importe más alto es el de una persona concreta, y lo mismo pasa con el más bajo y con las fechas de los extremos. Los percentiles 10 y 90 quedan muy cerca de ellos: en el ejemplo de arriba, el percentil 90 serían 870 euros, muy cerca de la segunda concesión más alta (900 euros). Con al menos 20 personas, el percentil 10 ya no queda por debajo de la segunda concesión más pequeña, ni el 90 por encima de la segunda más grande.
 

@@ -30,30 +30,24 @@ ayudasestado_personas_juridicas.parquet  concesiones_personas_juridicas.parquet 
 Mientras trabaja, muestra la hora a la que empieza cada paso y, al final, `done`, así que puedes seguir una generación larga y ver cuánto tarda cada paso. Estos son los tiempos reales de una copia con 30 millones de concesiones desde 2022, leída desde BigQuery:
 
 ```text
-17:09:11  01_beneficiarios.sql
-17:09:11  02_privacy.sql
-17:09:11  03_publish.sql
-17:09:11  04_versions.sql
-17:09:11  05_summaries.sql
-17:09:11  10_concesiones.sql
-17:13:53  11_ayudasestado.sql
-17:15:26  12_minimis.sql
-17:16:26  13_partidospoliticos.sql
-17:16:29  14_grandesbeneficiarios.sql
-17:16:33  20_concesiones_personas_juridicas.sql
-17:17:06  21_concesiones_personas_fisicas.sql
-17:19:42  22_ayudasestado_personas_juridicas.sql
-17:20:11  23_ayudasestado_personas_fisicas.sql
-17:20:27  24_minimis_personas_juridicas.sql
-17:20:46  25_minimis_personas_fisicas.sql
-17:20:54  26_partidospoliticos.sql
-17:20:54  27_grandesbeneficiarios.sql
-17:20:54  30_convocatorias.sql
-17:21:37  31_planesestrategicos.sql
-17:21:40  32_catalogos.sql
-17:22:04  90_checks.sql
-17:22:12  95_export.sql
-17:22:19  done
+19:16:13  01_beneficiarios.sql
+19:16:13  02_privacy.sql
+19:16:13  03_publish.sql
+19:16:13  04_versions.sql
+19:16:13  05_schemas.sql
+19:16:13  06_summaries.sql
+19:16:13  10_concesiones.sql
+19:23:23  11_ayudasestado.sql
+19:24:31  12_minimis.sql
+19:25:14  13_partidospoliticos.sql
+19:25:17  14_grandesbeneficiarios.sql
+19:25:21  15_convocatorias.sql
+19:26:03  16_planesestrategicos.sql
+19:26:05  17_catalogos.sql
+19:26:27  80_schema_drift.sql
+19:26:27  90_checks.sql
+19:26:37  95_export.sql
+19:26:47  done
 ```
 
 Si olvidas `output_dir`, se para con el mensaje `No output folder: run SET VARIABLE output_dir = '/path/to/output' before the build`.
@@ -89,7 +83,7 @@ $ duckdb ~/bdns-dataset/privado.duckdb -cmd "
 <a id="memory"></a>
 ### Con mucho histórico
 
-DuckDB usa por defecto hasta el 80 % de la memoria del equipo, y si a la vez tienes otros programas abiertos, el sistema puede llegar a pararlo por falta de memoria. Para evitarlo, ponle un límite al principio de `-cmd`, como en el ejemplo de BigQuery; lo que no quepa lo vuelca a disco, junto al fichero de trabajo. Ten en cuenta que el proceso ocupa bastante más que ese límite, porque la extensión de BigQuery usa memoria por su cuenta: con `memory_limit = '3GB'` y `threads = 4`, en un portátil de 12 GB, la copia de 30 millones de concesiones se generó en 13 minutos y el proceso llegó a 7,8 GB.
+DuckDB usa por defecto hasta el 80 % de la memoria del equipo, y si a la vez tienes otros programas abiertos, el sistema puede llegar a pararlo por falta de memoria. Para evitarlo, ponle un límite al principio de `-cmd`, como en el ejemplo de BigQuery; lo que no quepa lo vuelca a disco, junto al fichero de trabajo. Ten en cuenta que el proceso ocupa bastante más que ese límite, porque la extensión de BigQuery usa memoria por su cuenta: con `memory_limit = '3GB'` y `threads = 4`, en un portátil de 12 GB, la copia de 30 millones de concesiones se generó en 11 minutos y el proceso llegó a 7,6 GB.
 
 <a id="checks"></a>
 ## Cuando un control para la generación

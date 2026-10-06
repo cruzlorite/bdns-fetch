@@ -83,7 +83,7 @@ Before writing any file, the build checks what it is about to publish and **stop
 - a column that identifies someone in the summary, such as `beneficiario`, `idPersona`, `urlBR` or `codConcesion`;
 - a summary row with fewer than 10 people, or with the 10th or 90th percentiles and fewer than 20.
 
-It reports what it finds without cleaning it up, because such a finding points to a fault in an earlier step, and quietly cleaning it would hide it behind a dataset that looks right. Each check's message is in [how it is built](build.md#checks).
+It looks at every table about to be published, including any added later, without anyone having to list them. It reports what it finds without cleaning it up, because such a finding points to a fault in an earlier step, and quietly cleaning it would hide it behind a dataset that looks right. Each check's message is in [how it is built](build.md#checks).
 
 ## What the dataset does not allow
 

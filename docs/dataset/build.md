@@ -103,7 +103,7 @@ $ ls ~/bdns-dataset/salida
 $
 ```
 
-El comando termina con código 1 y la carpeta se queda como estaba. Estos son todos los mensajes posibles, que siempre van precedidos del nombre de la tabla:
+El comando termina con código 1 y la carpeta se queda como estaba. Los controles no van tabla a tabla: revisan todas las tablas de `publish` y reconocen el tipo de cada una por sus columnas, así que una tabla nueva queda controlada sin tocar nada. Estos son todos los mensajes posibles, que siempre van precedidos del nombre de la tabla:
 
 | Mensaje | Qué ha encontrado |
 |---|---|
@@ -115,30 +115,39 @@ El comando termina con código 1 y la carpeta se queda como estaba. Estos son to
 
 Cualquiera de ellos indica un error en el SQL del dataset, así que, si te ocurre, abre una [incidencia](https://github.com/cruzlorite/bdns-tools/issues) con el mensaje, pero sin copiar ningún dato de las filas que lo han provocado.
 
+Al final, la exportación también se para si una tabla de `publish` se ha quedado sin su fichero (`Published but not exported`), porque cada tabla necesita su línea en `95_export.sql`.
+
+<a id="drift"></a>
+## Cuando la API deja de mandar un campo
+
+Los campos que lee el dataset están listados en `05_schemas.sql`. Si la API renombra o retira uno, o cambia su formato, ese campo llegaría vacío sin que nadie se diera cuenta, así que la generación avisa cuando uno ha venido vacío en todos los registros que `bdns-sync` guardó en los últimos 30 días de su tabla:
+
+```text
+warning: planesestrategicos.tipoPlan is empty in every record stored in its last 30 days
+```
+
+Es un aviso y no un error, porque un campo poco frecuente puede pasar un mes vacío. Si se repite, compara un registro reciente de la API con `05_schemas.sql`. Los campos nuevos que añada la API no dan aviso: se ignoran hasta que alguien los declara, así que nunca se publica nada por sorpresa.
+
 <a id="steps"></a>
 ## Los pasos
 
-Las tablas intermedias se quedan en el fichero privado, y solo las del esquema `publish` se escriben como ficheros Parquet.
+Las tablas intermedias se quedan en el fichero privado, y solo las de la base `publish`, que va aparte, se escriben como ficheros Parquet.
 
 | Fichero | Qué hace |
 |---|---|
 | `01_beneficiarios.sql` | Define cómo se clasifica a cada beneficiario a partir de su NIF |
 | `02_privacy.sql` | Define las piezas de los controles de privacidad y los [umbrales](#thresholds) |
-| `03_publish.sql` | Crea el esquema `publish`, donde va todo lo que se publica |
+| `03_publish.sql` | Abre la base `publish`, aparte de la privada, donde va todo lo que se publica |
 | `04_versions.sql` | Define cómo se elige la última versión de cada registro, sin cargar todos los `payload` a la vez |
-| `05_summaries.sql` | Define el resumen por convocatoria de las personas físicas, con [sus reglas](privacy.md#rules), igual para las tres entidades |
-| `10_concesiones.sql` | Lee las concesiones de `bdns-sync`, con la última versión de cada una y sus columnas con tipo. Privada |
-| `11_ayudasestado.sql` | Lo mismo con las ayudas de Estado. Privada |
-| `12_minimis.sql` | Lo mismo con las ayudas de minimis. Privada |
-| `13_partidospoliticos.sql`, `14_grandesbeneficiarios.sql` | Lo mismo con las ayudas a partidos políticos y la lista de grandes beneficiarios. Privadas |
-| `20_concesiones_personas_juridicas.sql` | Escribe en `publish` las concesiones a personas jurídicas, registro a registro |
-| `21_concesiones_personas_fisicas.sql` | Escribe en `publish` el resumen de las concesiones a personas físicas |
-| `22_ayudasestado_personas_juridicas.sql`, `23_ayudasestado_personas_fisicas.sql` | Lo mismo con las ayudas de Estado |
-| `24_minimis_personas_juridicas.sql`, `25_minimis_personas_fisicas.sql` | Lo mismo con las ayudas de minimis |
-| `26_partidospoliticos.sql`, `27_grandesbeneficiarios.sql` | Escriben en `publish` las ayudas a partidos políticos y los grandes beneficiarios que son personas jurídicas |
-| `30_convocatorias.sql`, `31_planesestrategicos.sql`, `32_catalogos.sql` | Escriben en `publish` las convocatorias, los planes estratégicos y los catálogos |
-| `90_checks.sql` | Comprueba lo que va a publicarse y para la ejecución si encuentra algo |
-| `95_export.sql` | Escribe cada tabla de `publish` como un fichero Parquet en `output_dir` |
+| `05_schemas.sql` | El modelo de datos de la API: los campos que lee el dataset de cada entidad, con sus nombres y sus tipos |
+| `06_summaries.sql` | Define el resumen por convocatoria de las personas físicas, con [sus reglas](privacy.md#rules), igual para las tres entidades |
+| `10_concesiones.sql` | Lee las concesiones y escribe en `publish` las de personas jurídicas, registro a registro, y el resumen de las de personas físicas |
+| `11_ayudasestado.sql`, `12_minimis.sql` | Lo mismo con las ayudas de Estado y las de minimis |
+| `13_partidospoliticos.sql`, `14_grandesbeneficiarios.sql` | Lo mismo con las ayudas a partidos políticos y con los grandes beneficiarios que son personas jurídicas |
+| `15_convocatorias.sql`, `16_planesestrategicos.sql`, `17_catalogos.sql` | Lo mismo con las convocatorias, los planes estratégicos y los catálogos |
+| `80_schema_drift.sql` | Busca los [campos que han dejado de llegar](#drift) |
+| `90_checks.sql` | Desconecta `bdns-sync`, que ya no hace falta, comprueba todo lo que va a publicarse y para la ejecución si encuentra algo |
+| `95_export.sql` | Escribe cada tabla de `publish` como un fichero Parquet en `output_dir`, y falla si alguna se queda sin fichero |
 
 <a id="thresholds"></a>
 ## Umbrales
@@ -147,6 +156,6 @@ Están definidos una sola vez, como macros en `02_privacy.sql`, y los usan tanto
 
 | Macro | Valor | Qué controla |
 |---|---|---|
-| `min_beneficiaries()` | 10 | Personas que tiene que juntar como mínimo cada fila del resumen |
-| `max_dominant_share()` | 0,5 | Parte del importe de una fila que puede tener una sola persona, como máximo |
-| `min_beneficiaries_for_tails()` | 20 | Personas a partir de las que se publican los percentiles 10 y 90 |
+| `MIN_BENEFICIARIES()` | 10 | Personas que tiene que juntar como mínimo cada fila del resumen |
+| `MAX_DOMINANT_SHARE()` | 0,5 | Parte del importe de una fila que puede tener una sola persona, como máximo |
+| `MIN_BENEFICIARIES_FOR_TAILS()` | 20 | Personas a partir de las que se publican los percentiles 10 y 90 |

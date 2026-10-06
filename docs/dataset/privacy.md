@@ -83,7 +83,7 @@ Antes de escribir ningún fichero, la generación revisa lo que va a publicar y 
 - una columna que identifica a alguien en el resumen, como `beneficiario`, `idPersona`, `urlBR` o `codConcesion`;
 - una fila del resumen con menos de 10 personas, o con los percentiles 10 o 90 y menos de 20.
 
-Lo que encuentra lo señala sin limpiarlo, porque un hallazgo así indica un error en un paso anterior, y limpiarlo sin avisar lo dejaría escondido detrás de un dataset que parece correcto. Los mensajes de cada control están en [cómo se genera](build.md#checks).
+Revisa todas las tablas que se van a publicar, también las que se añadan en el futuro, sin que haga falta apuntarlas en ningún sitio. Lo que encuentra lo señala sin limpiarlo, porque un hallazgo así indica un error en un paso anterior, y limpiarlo sin avisar lo dejaría escondido detrás de un dataset que parece correcto. Los mensajes de cada control están en [cómo se genera](build.md#checks).
 
 ## Lo que el dataset no permite
 

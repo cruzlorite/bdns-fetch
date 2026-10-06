@@ -35,29 +35,33 @@ attached as `sync`, stops at the first error, and writes Parquet files to the `o
 
 - `01_beneficiarios.sql`: classifies a BDNS beneficiary as a natural person, an entity made of persons, a legal
   person, a public body or unknown, from its tax ID alone, and treats anything unrecognised as a natural person.
-- `02_privacy.sql`: the building blocks of the privacy checks, and the disclosure-control thresholds as macros.
-- `10_concesiones.sql`, `11_ayudasestado.sql`, `12_minimis.sql`: each record's last known version, read straight
-  from bdns-sync (withdrawn ones included), with typed columns and the beneficiary's kind (`tipoPersona`).
-- `04_versions.sql`: each record's last version, read without holding every payload in memory.
-- `05_summaries.sql`: the per-call summary that is all the dataset publishes about natural persons, the same for
-  the three entities: counts, total, mean, standard deviation, median and quartiles of each amount, and the same
-  percentiles of the award date. A row needs at least 10 people, none holding more than half of any of its amounts;
-  the 10th and 90th percentiles need 20; the smallest and largest values are never published. Suppressed calls go
-  into one rest row per year, published only if it gathers two or more of them and meets the same thresholds.
-- `20` to `25`, two per entity: awards, state aid and de minimis aid to legal persons record by record
-  (`concesiones_personas_juridicas`, `ayudasestado_personas_juridicas`, `minimis_personas_juridicas`), without
-  `urlBR` (the bulletin usually lists natural persons too) or `idPersona`, and to natural persons only as the
-  summary (`concesiones_personas_fisicas`, `ayudasestado_personas_fisicas`, `minimis_personas_fisicas`).
-  Companies whose name carries a person's tax ID are summarised with the natural persons.
-- `13`, `14`, `26`, `27`, `30` to `32`: aid to political parties (all legal persons) and the large beneficiaries that
-  are legal persons, record by record (`partidospoliticos`, `grandesbeneficiarios`); calls for applications, with
-  lists kept as lists and any hand-written text shaped like a personal tax ID left empty (`convocatorias`); strategic
-  plans (`planesestrategicos`); and every catalogue in one table, trees flattened to one row per node (`catalogos`).
-  Documents and bulletin announcements are left out.
-- `90_checks.sql`: stops the build if a record-level table holds a protected beneficiary or anything shaped like a
-  natural person's tax ID, or the summary table breaks any of its rules.
+- `02_privacy.sql`: the building blocks of the privacy checks, and the disclosure-control thresholds.
+- `03_publish.sql`: a database of its own, `publish`, for everything to be published, apart from the private one.
+- `04_versions.sql`: each record's last known version, withdrawn ones included, read without holding every payload in
+  memory.
+- `05_schemas.sql`: the API's data model, as far as the dataset reads it: each entity's fields, named and nested as the
+  API names them, with their types.
+- `06_summaries.sql`: the per-call summary that is all the dataset publishes about natural persons, the same for
+  awards, state aid and de minimis aid: counts, total, mean, standard deviation, median and quartiles of each amount,
+  and the same percentiles of the award date. A row needs at least 10 people, none holding more than half of any of
+  its amounts; the 10th and 90th percentiles need 20; the smallest and largest values are never published.
+  Suppressed calls go into one rest row per year, published only if it gathers two or more of them and meets the
+  same thresholds.
+- `10` to `17`, one per entity: awards, state aid and de minimis aid to legal persons record by record
+  (`*_personas_juridicas`), without `urlBR` (the bulletin usually lists natural persons too) or `idPersona`, and to
+  natural persons only as the summary (`*_personas_fisicas`); companies whose name carries a person's tax ID are
+  summarised with the natural persons. Aid to political parties (`partidospoliticos`) and the large beneficiaries
+  that are legal persons (`grandesbeneficiarios`), record by record. Calls for applications, with any hand-written
+  text shaped like a personal tax ID left empty (`convocatorias`); strategic plans (`planesestrategicos`); and every
+  catalogue in one table, trees flattened to one row per node (`catalogos`). Documents and bulletin announcements
+  are not read.
+- `80_schema_drift.sql`: warns about fields of `05_schemas.sql` that came empty in every record of the last 30 days,
+  as a renamed or dropped field would.
+- `90_checks.sql`: stops the build if a published table holds anything shaped like a natural person's tax ID, a
+  record-level table holds a protected beneficiary, or a summary breaks any of its rules. It finds the tables in
+  `publish` by itself, so a table added later is checked too.
 - `95_export.sql`: writes each table in `publish`, and nothing else, as a Parquet file (the dataset's only format),
-  once the checks have passed.
+  once the checks have passed, and fails if a published table is left without its file.
 
 Tables are named after the API's endpoints and columns exactly as its fields (`codConcesion`, `fechaConcesion`…), with
 the same style for the columns the SQL computes (`tipoPersona`, `importeMediana`…). The code is in English.

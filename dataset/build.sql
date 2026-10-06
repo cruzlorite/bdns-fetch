@@ -15,8 +15,9 @@
 -- Each step is a file in dataset/sql/, run in this order. The run stops at
 -- the first error, so a failed privacy check (90_checks.sql) leaves the
 -- export (95_export.sql) unrun and nothing is written. Each step prints
--- the time it starts and its name, so you can follow a long run; query
--- results are not printed.
+-- the time it starts and its name, so you can follow a long run, and after
+-- 80_schema_drift.sql come its warnings about fields the API stopped sending;
+-- query results are not printed.
 
 .bail on
 .headers off
@@ -42,9 +43,14 @@ SELECT strftime(now(), '%H:%M:%S') || '  04_versions.sql';
 .read dataset/sql/04_versions.sql
 
 .mode list
-SELECT strftime(now(), '%H:%M:%S') || '  05_summaries.sql';
+SELECT strftime(now(), '%H:%M:%S') || '  05_schemas.sql';
 .mode trash
-.read dataset/sql/05_summaries.sql
+.read dataset/sql/05_schemas.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  06_summaries.sql';
+.mode trash
+.read dataset/sql/06_summaries.sql
 
 .mode list
 SELECT strftime(now(), '%H:%M:%S') || '  10_concesiones.sql';
@@ -72,59 +78,28 @@ SELECT strftime(now(), '%H:%M:%S') || '  14_grandesbeneficiarios.sql';
 .read dataset/sql/14_grandesbeneficiarios.sql
 
 .mode list
-SELECT strftime(now(), '%H:%M:%S') || '  20_concesiones_personas_juridicas.sql';
+SELECT strftime(now(), '%H:%M:%S') || '  15_convocatorias.sql';
 .mode trash
-.read dataset/sql/20_concesiones_personas_juridicas.sql
+.read dataset/sql/15_convocatorias.sql
 
 .mode list
-SELECT strftime(now(), '%H:%M:%S') || '  21_concesiones_personas_fisicas.sql';
+SELECT strftime(now(), '%H:%M:%S') || '  16_planesestrategicos.sql';
 .mode trash
-.read dataset/sql/21_concesiones_personas_fisicas.sql
+.read dataset/sql/16_planesestrategicos.sql
 
 .mode list
-SELECT strftime(now(), '%H:%M:%S') || '  22_ayudasestado_personas_juridicas.sql';
+SELECT strftime(now(), '%H:%M:%S') || '  17_catalogos.sql';
 .mode trash
-.read dataset/sql/22_ayudasestado_personas_juridicas.sql
+.read dataset/sql/17_catalogos.sql
 
 .mode list
-SELECT strftime(now(), '%H:%M:%S') || '  23_ayudasestado_personas_fisicas.sql';
+SELECT strftime(now(), '%H:%M:%S') || '  80_schema_drift.sql';
 .mode trash
-.read dataset/sql/23_ayudasestado_personas_fisicas.sql
-
+.read dataset/sql/80_schema_drift.sql
 .mode list
-SELECT strftime(now(), '%H:%M:%S') || '  24_minimis_personas_juridicas.sql';
+SELECT 'warning: ' || tabla || '.' || campo || ' is empty in every record stored in its last 30 days'
+FROM campos_vacios ORDER BY tabla, campo;
 .mode trash
-.read dataset/sql/24_minimis_personas_juridicas.sql
-
-.mode list
-SELECT strftime(now(), '%H:%M:%S') || '  25_minimis_personas_fisicas.sql';
-.mode trash
-.read dataset/sql/25_minimis_personas_fisicas.sql
-
-.mode list
-SELECT strftime(now(), '%H:%M:%S') || '  26_partidospoliticos.sql';
-.mode trash
-.read dataset/sql/26_partidospoliticos.sql
-
-.mode list
-SELECT strftime(now(), '%H:%M:%S') || '  27_grandesbeneficiarios.sql';
-.mode trash
-.read dataset/sql/27_grandesbeneficiarios.sql
-
-.mode list
-SELECT strftime(now(), '%H:%M:%S') || '  30_convocatorias.sql';
-.mode trash
-.read dataset/sql/30_convocatorias.sql
-
-.mode list
-SELECT strftime(now(), '%H:%M:%S') || '  31_planesestrategicos.sql';
-.mode trash
-.read dataset/sql/31_planesestrategicos.sql
-
-.mode list
-SELECT strftime(now(), '%H:%M:%S') || '  32_catalogos.sql';
-.mode trash
-.read dataset/sql/32_catalogos.sql
 
 .mode list
 SELECT strftime(now(), '%H:%M:%S') || '  90_checks.sql';

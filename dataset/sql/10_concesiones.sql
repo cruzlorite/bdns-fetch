@@ -1,39 +1,93 @@
--- Awards with typed columns, one row per award: the last known version of
--- each in bdns-sync's concesiones_busqueda table, including awards the API
--- has since withdrawn. That is what makes the history worth publishing.
--- Columns keep the API's names in snake_case; the ones added here are in
--- Spanish too, like all the data.
---
--- How the last version is chosen is in 04_versions.sql.
--- Each record is parsed once, into the fields it uses: extracting each
--- field with ->> would parse it again for every one, and thirty million
--- awards run out of memory that way. The other entities do the same.
---
--- This table still holds personal data (beneficiario, idPersona,
--- urlBR...) and never leaves the private build. The published tables are
--- built from it, and the privacy checks run on those.
+-- Awards: all of them, from bdns-sync's concesiones_busqueda table, with the
+-- last known version of each (04_versions.sql), withdrawn ones included;
+-- that is what makes the history worth publishing. Legal persons are
+-- published record by record and natural persons only summarised (06),
+-- see docs/adr/0020-anonymised-dataset.md.
 
+-- Private: every award, with the fields in 05_schemas.sql, the kind of
+-- beneficiary and whether the API has withdrawn it. It still holds personal
+-- data (beneficiario, idPersona, urlBR) and never leaves the private build.
 CREATE OR REPLACE TABLE concesiones AS
-WITH parsed AS (
-    SELECT from_json(r, '{"id": "VARCHAR", "codConcesion": "VARCHAR", "fechaConcesion": "VARCHAR", "beneficiario": "VARCHAR", "idPersona": "VARCHAR", "importe": "VARCHAR", "ayudaEquivalente": "VARCHAR", "instrumento": "VARCHAR", "numeroConvocatoria": "VARCHAR", "convocatoria": "VARCHAR", "nivel1": "VARCHAR", "nivel2": "VARCHAR", "nivel3": "VARCHAR", "urlBR": "VARCHAR", "fechaAlta": "VARCHAR"}') AS c, is_current
-    FROM latest_versions('sync.concesiones_busqueda')
-)
 SELECT
-    CAST(c.id AS BIGINT)                                  AS id,
-    c.codConcesion                                        AS codConcesion,
-    TRY_CAST(c.fechaConcesion AS DATE)                    AS fechaConcesion,
-    c.beneficiario                                        AS beneficiario,
-    beneficiary_kind(c.beneficiario)                      AS tipoPersona,
-    TRY_CAST(c.idPersona AS BIGINT)                       AS idPersona,
-    TRY_CAST(c.importe AS DECIMAL(18, 2))                 AS importe,
-    TRY_CAST(c.ayudaEquivalente AS DECIMAL(18, 2))        AS ayudaEquivalente,
-    trim(c.instrumento)                                   AS instrumento,
-    c.numeroConvocatoria                                  AS numeroConvocatoria,
-    c.convocatoria                                        AS convocatoria,
-    c.nivel1                                              AS nivel1,
-    c.nivel2                                              AS nivel2,
-    c.nivel3                                              AS nivel3,
-    c.urlBR                                               AS urlBR,
-    TRY_CAST(c.fechaAlta AS DATE)                         AS fechaAlta,
-    NOT is_current                                            AS retirada
-FROM parsed;
+    * EXCLUDE (is_current) REPLACE (trim(instrumento) AS instrumento),
+    beneficiary_kind(beneficiario) AS tipoPersona,
+    NOT is_current AS retirada
+FROM (
+    SELECT unnest(from_json(r, CONCESIONES_SCHEMA())), is_current, _valid_from
+    FROM latest_versions('sync.concesiones_busqueda')
+);
+
+-- Legal persons, public bodies included, record by record: without the fields
+-- that lead to people (urlBR, idPersona, the beneficiario field itself),
+-- and without any beneficiary protected like a natural person.
+CREATE OR REPLACE TABLE publish.concesiones_personas_juridicas AS
+SELECT
+    id,
+    codConcesion,
+    fechaConcesion,
+    beneficiary_id(beneficiario)   AS nif,
+    beneficiary_name(beneficiario) AS nombre,
+    tipoPersona,
+    importe,
+    ayudaEquivalente,
+    instrumento,
+    numeroConvocatoria,
+    convocatoria,
+    nivel1,
+    nivel2,
+    nivel3,
+    fechaAlta,
+    retirada
+FROM concesiones
+WHERE NOT is_protected_beneficiary(tipoPersona, beneficiario);
+
+-- Natural persons and those protected like them: the per-call summary
+-- (06_summaries.sql).
+CREATE OR REPLACE TABLE concesiones_protegidas AS
+SELECT
+    numeroConvocatoria,
+    instrumento,
+    coalesce(CAST(idPersona AS VARCHAR), beneficiario) AS persona,
+    fechaConcesion,
+    importe,
+    ayudaEquivalente,
+    struct_pack(convocatoria, nivel1, nivel2, nivel3) AS etiqueta
+FROM concesiones
+WHERE is_protected_beneficiary(tipoPersona, beneficiario);
+
+-- A call title shaped like a personal tax ID is blanked; the checks
+-- would stop the build otherwise.
+CREATE OR REPLACE TABLE publish.concesiones_personas_fisicas AS
+SELECT
+    numeroConvocatoria,
+    without_personal_id(etiqueta.convocatoria) AS convocatoria,
+    etiqueta.nivel1 AS nivel1,
+    etiqueta.nivel2 AS nivel2,
+    etiqueta.nivel3 AS nivel3,
+    instrumento,
+    esResto,
+    ejercicio,
+    concesiones,
+    beneficiarios,
+    importe.total      AS importeTotal,
+    importe.media      AS importeMedia,
+    importe.desviacion AS importeDesviacion,
+    importe.p10        AS importeP10,
+    importe.p25        AS importeP25,
+    importe.mediana    AS importeMediana,
+    importe.p75        AS importeP75,
+    importe.p90        AS importeP90,
+    ayudaEquivalente.total      AS ayudaEquivalenteTotal,
+    ayudaEquivalente.media      AS ayudaEquivalenteMedia,
+    ayudaEquivalente.desviacion AS ayudaEquivalenteDesviacion,
+    ayudaEquivalente.p10        AS ayudaEquivalenteP10,
+    ayudaEquivalente.p25        AS ayudaEquivalenteP25,
+    ayudaEquivalente.mediana    AS ayudaEquivalenteMediana,
+    ayudaEquivalente.p75        AS ayudaEquivalenteP75,
+    ayudaEquivalente.p90        AS ayudaEquivalenteP90,
+    fechaConcesion.p10     AS fechaConcesionP10,
+    fechaConcesion.p25     AS fechaConcesionP25,
+    fechaConcesion.mediana AS fechaConcesionMediana,
+    fechaConcesion.p75     AS fechaConcesionP75,
+    fechaConcesion.p90     AS fechaConcesionP90
+FROM call_summaries('concesiones_protegidas');

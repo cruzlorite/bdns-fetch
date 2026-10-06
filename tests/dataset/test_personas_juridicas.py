@@ -1,5 +1,5 @@
 """Awards, state aid and de minimis aid to legal persons and public bodies
-(dataset/sql/20, 22 and 24_*_personas_juridicas.sql), and the checks that guard them (90_checks.sql)."""
+(dataset/sql/10, 11 and 12), and the checks that guard them (90_checks.sql)."""
 
 import duckdb
 import pytest
@@ -12,7 +12,7 @@ def columns_of(con, table):
         name
         for (name,) in con.execute(
             "SELECT column_name FROM information_schema.columns "
-            "WHERE table_schema = 'publish' AND table_name = ?",
+            "WHERE table_catalog = 'publish' AND table_name = ?",
             [table],
         ).fetchall()
     }

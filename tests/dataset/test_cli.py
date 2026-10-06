@@ -37,11 +37,13 @@ def test_the_build_writes_one_parquet_file_per_published_table(sync_db, output, 
     export = (ROOT / "dataset" / "sql" / "95_export.sql").read_text(encoding="utf-8")
     expected = sorted(f"{table}.parquet" for table in re.findall(r"COPY publish\.(\w+)", export))
     assert sorted(path.name for path in output.iterdir()) == expected
-    # One line per step, with the time it starts, and one at the end; query
-    # results are never printed.
+    # One line per step, with the time it starts, and one at the end, plus
+    # warnings about fields the API stopped sending; query results are never
+    # printed.
     printed = result.stdout.splitlines()
-    assert all(re.fullmatch(r"\d\d:\d\d:\d\d  \S+", line) for line in printed), printed
-    assert [line.split()[1] for line in printed] == [step.name for step in build_steps()] + ["done"]
+    steps = [line for line in printed if re.fullmatch(r"\d\d:\d\d:\d\d  \S+", line)]
+    assert [line.split()[1] for line in steps] == [step.name for step in build_steps()] + ["done"]
+    assert all(line in steps or line.startswith("warning: ") for line in printed), printed
 
 
 def test_a_failed_check_stops_the_build_before_anything_is_written(output, tmp_path):

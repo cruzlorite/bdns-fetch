@@ -103,7 +103,7 @@ $ ls ~/bdns-dataset/salida
 $
 ```
 
-The command exits with code 1 and the folder stays as it was. These are all the possible messages, always preceded by the table's name:
+The command exits with code 1 and the folder stays as it was. The checks are not written table by table: they look at every table in `publish` and tell each one's kind by its columns, so a new table is checked without touching anything. These are all the possible messages, always preceded by the table's name:
 
 | Message | What it found |
 |---|---|
@@ -115,30 +115,39 @@ The command exits with code 1 and the folder stays as it was. These are all the 
 
 Any of them points to a fault in the dataset's SQL, so if it happens to you, open an [issue](https://github.com/cruzlorite/bdns-tools/issues) with the message, without copying any data from the rows that caused it.
 
+At the end, the export also stops if a table in `publish` was left without its file (`Published but not exported`), since each table needs its line in `95_export.sql`.
+
+<a id="drift"></a>
+## When the API stops sending a field
+
+The fields the dataset reads are listed in `05_schemas.sql`. If the API renames or drops one, or changes its format, that field would arrive empty without anyone noticing, so the build warns when one came empty in every record `bdns-sync` stored in its table's last 30 days:
+
+```text
+warning: planesestrategicos.tipoPlan is empty in every record stored in its last 30 days
+```
+
+It is a warning, not an error, since a rare field can stay empty for a month. If it repeats, compare a recent API record with `05_schemas.sql`. New fields the API adds give no warning: they are ignored until someone declares them, so nothing is ever published by surprise.
+
 <a id="steps"></a>
 ## The steps
 
-Intermediate tables stay in the private file, and only those in the `publish` schema are written as Parquet files.
+Intermediate tables stay in the private file, and only those in the separate `publish` database are written as Parquet files.
 
 | File | What it does |
 |---|---|
 | `01_beneficiarios.sql` | Defines how each beneficiary is classified by its tax ID |
 | `02_privacy.sql` | Defines the building blocks of the privacy checks and the [thresholds](#thresholds) |
-| `03_publish.sql` | Creates the `publish` schema, where everything to be published goes |
+| `03_publish.sql` | Opens the `publish` database, apart from the private one, where everything to be published goes |
 | `04_versions.sql` | Defines how each record's last version is chosen, without loading every `payload` at once |
-| `05_summaries.sql` | Defines the per-call summary of natural persons, with [its rules](privacy.md#rules), the same for the three entities |
-| `10_concesiones.sql` | Reads awards from `bdns-sync`, each one's last version, with typed columns. Private |
-| `11_ayudasestado.sql` | The same for state aid. Private |
-| `12_minimis.sql` | The same for de minimis aid. Private |
-| `13_partidospoliticos.sql`, `14_grandesbeneficiarios.sql` | The same for party aid and the list of large beneficiaries. Private |
-| `20_concesiones_personas_juridicas.sql` | Writes awards to legal persons to `publish`, record by record |
-| `21_concesiones_personas_fisicas.sql` | Writes the summary of awards to natural persons to `publish` |
-| `22_ayudasestado_personas_juridicas.sql`, `23_ayudasestado_personas_fisicas.sql` | The same for state aid |
-| `24_minimis_personas_juridicas.sql`, `25_minimis_personas_fisicas.sql` | The same for de minimis aid |
-| `26_partidospoliticos.sql`, `27_grandesbeneficiarios.sql` | Write party aid and the large beneficiaries that are legal persons to `publish` |
-| `30_convocatorias.sql`, `31_planesestrategicos.sql`, `32_catalogos.sql` | Write calls, strategic plans and catalogues to `publish` |
-| `90_checks.sql` | Checks what is about to be published and stops the run if it finds anything |
-| `95_export.sql` | Writes each table in `publish` as a Parquet file in `output_dir` |
+| `05_schemas.sql` | The API's data model: the fields the dataset reads from each entity, with their names and types |
+| `06_summaries.sql` | Defines the per-call summary of natural persons, with [its rules](privacy.md#rules), the same for the three entities |
+| `10_concesiones.sql` | Reads awards and writes to `publish` those to legal persons, record by record, and the summary of those to natural persons |
+| `11_ayudasestado.sql`, `12_minimis.sql` | The same for state aid and de minimis aid |
+| `13_partidospoliticos.sql`, `14_grandesbeneficiarios.sql` | The same for aid to political parties and for the large beneficiaries that are legal persons |
+| `15_convocatorias.sql`, `16_planesestrategicos.sql`, `17_catalogos.sql` | The same for calls, strategic plans and catalogues |
+| `80_schema_drift.sql` | Looks for [fields that stopped coming](#drift) |
+| `90_checks.sql` | Detaches `bdns-sync`, no longer needed, checks everything about to be published and stops the run if it finds anything |
+| `95_export.sql` | Writes each table in `publish` as a Parquet file in `output_dir`, and fails if any is left without one |
 
 <a id="thresholds"></a>
 ## Thresholds
@@ -147,6 +156,6 @@ They are defined once, as macros in `02_privacy.sql`, and both the summary and t
 
 | Macro | Value | What it controls |
 |---|---|---|
-| `min_beneficiaries()` | 10 | People each summary row must gather at least |
-| `max_dominant_share()` | 0.5 | Share of a row's amount a single person may hold at most |
-| `min_beneficiaries_for_tails()` | 20 | People from which the 10th and 90th percentiles are published |
+| `MIN_BENEFICIARIES()` | 10 | People each summary row must gather at least |
+| `MAX_DOMINANT_SHARE()` | 0.5 | Share of a row's amount a single person may hold at most |
+| `MIN_BENEFICIARIES_FOR_TAILS()` | 20 | People from which the 10th and 90th percentiles are published |

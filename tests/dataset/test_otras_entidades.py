@@ -1,5 +1,5 @@
 """Party aid, large beneficiaries, calls, strategic plans and catalogues
-(dataset/sql/13, 14, 26, 27, 30, 31 and 32). Everything here is made up."""
+(dataset/sql/13 to 17). Everything here is made up."""
 
 import duckdb
 

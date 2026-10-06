@@ -9,11 +9,11 @@
 -- an NIE or a K/L/M one. A legal person's ID (B12345678) matches none, and
 -- neither does a local authority's DIR3 code (L01462580), since a K/L/M
 -- tax ID always ends in a letter.
-CREATE OR REPLACE MACRO personal_id_pattern() AS
+CREATE OR REPLACE MACRO PERSONAL_ID_PATTERN() AS
     '\*{2,}\d{3,5}\*{0,3}|\b\d{8}[A-Za-z]\b|\b[XYZxyz]\d{7}[A-Za-z]\b|\b[KLMklm]\d{7}[A-Za-z]\b';
 
 CREATE OR REPLACE MACRO has_personal_id(text) AS
-    regexp_matches(coalesce(text, ''), personal_id_pattern());
+    regexp_matches(coalesce(text, ''), PERSONAL_ID_PATTERN());
 
 -- A published text, or nothing if it holds something shaped like a
 -- natural person's tax ID: for titles and descriptions the BDNS writes by
@@ -48,15 +48,15 @@ CREATE OR REPLACE MACRO identifying_column(name) AS
 
 -- The thresholds of statistical disclosure control, in one place.
 -- A published summary covers at least this many beneficiaries...
-CREATE OR REPLACE MACRO min_beneficiaries() AS 10;
+CREATE OR REPLACE MACRO MIN_BENEFICIARIES() AS 10;
 -- ...and no single beneficiary holds more than this share of its amount.
-CREATE OR REPLACE MACRO max_dominant_share() AS 0.5;
+CREATE OR REPLACE MACRO MAX_DOMINANT_SHARE() AS 0.5;
 -- The 10th and 90th percentiles sit close to the smallest and largest
 -- values, each one person's, so they are only published from this many.
-CREATE OR REPLACE MACRO min_beneficiaries_for_tails() AS 20;
+CREATE OR REPLACE MACRO MIN_BENEFICIARIES_FOR_TAILS() AS 20;
 
 -- Whether a summary may be published, given its number of beneficiaries,
 -- its total amount and its largest beneficiary's amount.
 CREATE OR REPLACE MACRO is_publishable(beneficiaries, total, largest) AS
-    beneficiaries >= min_beneficiaries()
-    AND NOT (coalesce(total, 0) > 0 AND largest > max_dominant_share() * total);
+    beneficiaries >= MIN_BENEFICIARIES()
+    AND NOT (coalesce(total, 0) > 0 AND largest > MAX_DOMINANT_SHARE() * total);

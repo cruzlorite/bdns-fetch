@@ -25,7 +25,7 @@ def test_every_published_table_has_its_export_line(built):
     tables = {
         name
         for (name,) in built.execute(
-            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'publish'"
+            "SELECT table_name FROM duckdb_tables() WHERE database_name = 'publish'"
         ).fetchall()
     }
     exported = set(re.findall(r"COPY publish\.(\w+)", EXPORT.read_text(encoding="utf-8")))

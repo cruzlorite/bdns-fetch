@@ -1,5 +1,5 @@
-"""The per-call summaries of awards to natural persons (dataset/sql/05_summaries.sql,
-with 21, 23 and 25_*_personas_fisicas.sql): statistical disclosure control, case by
+"""The per-call summaries of awards to natural persons (dataset/sql/06_summaries.sql,
+used by 10, 11 and 12): statistical disclosure control, case by
 case. Everyone here is made up."""
 
 from datetime import date, timedelta
@@ -306,7 +306,7 @@ def test_de_minimis_summarises_only_its_gross_grant_equivalent(tmp_path):
         name
         for (name,) in con.execute(
             "SELECT column_name FROM information_schema.columns "
-            "WHERE table_schema = 'publish' AND table_name = 'minimis_personas_fisicas'"
+            "WHERE table_catalog = 'publish' AND table_name = 'minimis_personas_fisicas'"
         ).fetchall()
     }
     assert "ayudaEquivalenteTotal" in columns and not any(c.startswith("importe") for c in columns)

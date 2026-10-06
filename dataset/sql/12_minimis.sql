@@ -1,29 +1,74 @@
--- De minimis aid with typed columns, one row per award: the last known
--- version of each in bdns-sync's minimis_busqueda table, withdrawn ones
--- included (see 04_versions.sql for how the last version is chosen).
--- De minimis records carry the aid's gross grant equivalent, not an amount.
---
--- Private: it still holds personal data, like concesiones.
+-- De minimis aid, from bdns-sync's minimis_busqueda table, read and
+-- published like awards (see 10_concesiones.sql). De minimis records carry
+-- the aid's gross grant equivalent, not an amount.
 
+-- Private, like concesiones.
 CREATE OR REPLACE TABLE minimis AS
-WITH parsed AS (
-    SELECT from_json(r, '{"idConcesion": "VARCHAR", "codigoConcesion": "VARCHAR", "fechaConcesion": "VARCHAR", "beneficiario": "VARCHAR", "idPersona": "VARCHAR", "ayudaEquivalente": "VARCHAR", "instrumento": "VARCHAR", "numeroConvocatoria": "VARCHAR", "convocante": "VARCHAR", "reglamento": "VARCHAR", "sectorActividad": "VARCHAR", "sectorProducto": "VARCHAR", "fechaRegistro": "VARCHAR"}') AS c, is_current
-    FROM latest_versions('sync.minimis_busqueda')
-)
 SELECT
-    CAST(c.idConcesion AS BIGINT)                         AS idConcesion,
-    c.codigoConcesion                                     AS codigoConcesion,
-    TRY_CAST(c.fechaConcesion AS DATE)                    AS fechaConcesion,
-    c.beneficiario                                        AS beneficiario,
-    beneficiary_kind(c.beneficiario)                      AS tipoPersona,
-    TRY_CAST(c.idPersona AS BIGINT)                       AS idPersona,
-    TRY_CAST(c.ayudaEquivalente AS DECIMAL(18, 2))        AS ayudaEquivalente,
-    trim(c.instrumento)                                   AS instrumento,
-    c.numeroConvocatoria                                  AS numeroConvocatoria,
-    c.convocante                                          AS convocante,
-    c.reglamento                                          AS reglamento,
-    c.sectorActividad                                     AS sectorActividad,
-    c.sectorProducto                                      AS sectorProducto,
-    TRY_CAST(c.fechaRegistro AS DATE)                     AS fechaRegistro,
-    NOT is_current                                            AS retirada
-FROM parsed;
+    * EXCLUDE (is_current) REPLACE (trim(instrumento) AS instrumento),
+    beneficiary_kind(beneficiario) AS tipoPersona,
+    NOT is_current AS retirada
+FROM (
+    SELECT unnest(from_json(r, MINIMIS_SCHEMA())), is_current, _valid_from
+    FROM latest_versions('sync.minimis_busqueda')
+);
+
+-- Legal persons, record by record (see 10_concesiones.sql).
+CREATE OR REPLACE TABLE publish.minimis_personas_juridicas AS
+SELECT
+    idConcesion,
+    codigoConcesion,
+    fechaConcesion,
+    beneficiary_id(beneficiario)   AS nif,
+    beneficiary_name(beneficiario) AS nombre,
+    tipoPersona,
+    ayudaEquivalente,
+    instrumento,
+    numeroConvocatoria,
+    convocante,
+    reglamento,
+    sectorActividad,
+    sectorProducto,
+    fechaRegistro,
+    retirada
+FROM minimis
+WHERE NOT is_protected_beneficiary(tipoPersona, beneficiario);
+
+-- Natural persons and those protected like them: the per-call summary
+-- (06_summaries.sql).
+CREATE OR REPLACE TABLE minimis_protegidas AS
+SELECT
+    numeroConvocatoria,
+    instrumento,
+    coalesce(CAST(idPersona AS VARCHAR), beneficiario) AS persona,
+    fechaConcesion,
+    NULL::DECIMAL(18, 2) AS importe,
+    ayudaEquivalente,
+    struct_pack(convocante) AS etiqueta
+FROM minimis
+WHERE is_protected_beneficiary(tipoPersona, beneficiario);
+
+-- De minimis records name no call title, only the calling body.
+CREATE OR REPLACE TABLE publish.minimis_personas_fisicas AS
+SELECT
+    numeroConvocatoria,
+    etiqueta.convocante AS convocante,
+    instrumento,
+    esResto,
+    ejercicio,
+    concesiones,
+    beneficiarios,
+    ayudaEquivalente.total      AS ayudaEquivalenteTotal,
+    ayudaEquivalente.media      AS ayudaEquivalenteMedia,
+    ayudaEquivalente.desviacion AS ayudaEquivalenteDesviacion,
+    ayudaEquivalente.p10        AS ayudaEquivalenteP10,
+    ayudaEquivalente.p25        AS ayudaEquivalenteP25,
+    ayudaEquivalente.mediana    AS ayudaEquivalenteMediana,
+    ayudaEquivalente.p75        AS ayudaEquivalenteP75,
+    ayudaEquivalente.p90        AS ayudaEquivalenteP90,
+    fechaConcesion.p10     AS fechaConcesionP10,
+    fechaConcesion.p25     AS fechaConcesionP25,
+    fechaConcesion.mediana AS fechaConcesionMediana,
+    fechaConcesion.p75     AS fechaConcesionP75,
+    fechaConcesion.p90     AS fechaConcesionP90
+FROM call_summaries('minimis_protegidas');

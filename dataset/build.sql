@@ -2,14 +2,15 @@
 -- SQL. What may be published, and why, is in
 -- docs/adr/0020-anonymised-dataset.md.
 --
--- Run it from the repository root, in a private DuckDB file (it holds
--- personal data until the published tables are written), with the
--- bdns-sync database attached as `sync`, read-only, and the folder for the
--- Parquet files in the `output_dir` variable. For example:
+-- Run it from the repository root, in memory (no database file), with the
+-- bdns-sync database attached as `sync`, read-only, the folder for the
+-- Parquet files in the `output_dir` variable, and DuckDB's temp folder in a
+-- private place: whatever does not fit in memory goes there, personal data
+-- included, until the run ends and DuckDB deletes it. For example:
 --
---   duckdb /private/dataset.duckdb \
---     -cmd "ATTACH 'postgresql://user@host/bdns' AS sync (TYPE postgres, READ_ONLY);
---           SET VARIABLE output_dir = '/path/to/output'" \
+--   duckdb -cmd "SET temp_directory = '/private/tmp';
+--                ATTACH 'postgresql://user@host/bdns' AS sync (TYPE postgres, READ_ONLY);
+--                SET VARIABLE output_dir = '/path/to/output'" \
 --     -f dataset/build.sql
 --
 -- Each step is a file in dataset/sql/, run in this order. The run stops at
@@ -21,6 +22,13 @@
 
 .bail on
 .headers off
+.mode trash
+
+-- In memory, DuckDB's temp folder defaults to .tmp in the current folder,
+-- which here is the repository: personal data would spill into it.
+SELECT CASE WHEN current_setting('temp_directory') = '.tmp' THEN error(
+    'No private temp folder: run SET temp_directory = ''/private/tmp'' before the build'
+) END;
 
 .mode list
 SELECT strftime(now(), '%H:%M:%S') || '  01_beneficiarios.sql';

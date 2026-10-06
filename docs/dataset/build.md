@@ -15,19 +15,24 @@ $ cd bdns-tools
 
 ## Generarlo
 
-DuckDB se conecta a tu base de datos en modo solo lectura y trabaja en un fichero propio, que tiene que estar en un sitio privado, porque guarda tablas intermedias con datos personales. Los ficheros Parquet se escriben en la carpeta que indiques en `output_dir`, que tiene que existir. Con la copia en SQLite de los primeros pasos de `bdns-sync`:
+DuckDB se conecta a tu base de datos en modo solo lectura y trabaja en memoria, sin fichero propio. Lo que no le cabe lo vuelca a su carpeta temporal, con datos personales incluidos, así que tienes que indicarle una en un sitio privado (`temp_directory`); si no lo haces, la generación no arranca. DuckDB la vacía al terminar, y solo si una ejecución se corta a medias quedarían restos que tendrías que borrar tú. Los ficheros Parquet se escriben en la carpeta que indiques en `output_dir`, que tiene que existir. Con la copia en SQLite de los primeros pasos de `bdns-sync`:
 
 ```console
-$ mkdir -p ~/bdns-dataset/salida
-$ duckdb ~/bdns-dataset/privado.duckdb \
-    -cmd "ATTACH '/ruta/a/bdns.db' AS sync (TYPE sqlite, READ_ONLY);
-          SET VARIABLE output_dir = '$HOME/bdns-dataset/salida'" \
+$ mkdir -p ~/bdns-dataset/salida ~/bdns-dataset/tmp
+$ duckdb -cmd "SET temp_directory = '$HOME/bdns-dataset/tmp';
+               ATTACH '/ruta/a/bdns.db' AS sync (TYPE sqlite, READ_ONLY);
+               SET VARIABLE output_dir = '$HOME/bdns-dataset/salida'" \
     -f dataset/build.sql
 $ ls ~/bdns-dataset/salida
-ayudasestado_personas_juridicas.parquet  concesiones_personas_juridicas.parquet  concesiones_personas_fisicas.parquet  minimis_personas_juridicas.parquet
+ayudasestado_personas_fisicas.parquet    grandesbeneficiarios.parquet
+ayudasestado_personas_juridicas.parquet  minimis_personas_fisicas.parquet
+catalogos.parquet                        minimis_personas_juridicas.parquet
+concesiones_personas_fisicas.parquet     partidospoliticos.parquet
+concesiones_personas_juridicas.parquet   planesestrategicos.parquet
+convocatorias.parquet
 ```
 
-Mientras trabaja, muestra la hora a la que empieza cada paso y, al final, `done`, así que puedes seguir una generación larga y ver cuánto tarda cada paso. Estos son los tiempos reales de una copia con 30 millones de concesiones desde 2022, leída desde BigQuery:
+Mientras trabaja, muestra la hora a la que empieza cada paso y, al final, `done`, así que puedes seguir una generación larga y ver cuánto tarda cada paso. Estos son los tiempos reales de una copia con 30 millones de concesiones desde 2022, leída desde BigQuery y con un fichero de trabajo ([en memoria](#memory) tarda alrededor de un tercio más):
 
 ```text
 19:16:13  01_beneficiarios.sql
@@ -70,7 +75,8 @@ El SQL lee las tablas de `bdns-sync` con el nombre `sync`, así que solo cambia 
 La extensión [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) conecta tu proyecto y, si le indicas el dataset en el `ATTACH`, encuentra las tablas con el nombre que espera el SQL. Los datos llegan comprimidos, y solo las columnas que se usan: con 30 millones de concesiones son unos 4,5 GB por la red, y la lectura cuesta céntimos. Necesitas las credenciales de `gcloud auth application-default login`:
 
 ```console
-$ duckdb ~/bdns-dataset/privado.duckdb -cmd "
+$ duckdb -cmd "
+    SET temp_directory = '$HOME/bdns-dataset/tmp';
     SET memory_limit = '3GB';
     SET threads = 4;
     SET preserve_insertion_order = false;
@@ -83,7 +89,7 @@ $ duckdb ~/bdns-dataset/privado.duckdb -cmd "
 <a id="memory"></a>
 ### Con mucho histórico
 
-DuckDB usa por defecto hasta el 80 % de la memoria del equipo, y si a la vez tienes otros programas abiertos, el sistema puede llegar a pararlo por falta de memoria. Para evitarlo, ponle un límite al principio de `-cmd`, como en el ejemplo de BigQuery; lo que no quepa lo vuelca a disco, junto al fichero de trabajo. Ten en cuenta que el proceso ocupa bastante más que ese límite, porque la extensión de BigQuery usa memoria por su cuenta: con `memory_limit = '3GB'` y `threads = 4`, en un portátil de 12 GB, la copia de 30 millones de concesiones se generó en 11 minutos y el proceso llegó a 7,6 GB.
+DuckDB usa por defecto hasta el 80 % de la memoria del equipo, y si a la vez tienes otros programas abiertos, el sistema puede llegar a pararlo por falta de memoria. Para evitarlo, ponle un límite al principio de `-cmd`, como en el ejemplo de BigQuery; lo que no quepa lo vuelca a su carpeta temporal. Ten en cuenta dos cosas. La primera, que el proceso ocupa bastante más que ese límite, porque la extensión de BigQuery usa memoria por su cuenta. La segunda, que lo que vuelca a disco va sin comprimir, así que con un histórico grande la carpeta temporal crece mucho: con 30 millones de concesiones llegó a ocupar unos 35 GB, y el proceso unos 7 GB de memoria. Si te falta disco, puedes pasarle a `duckdb` un fichero de trabajo como primer argumento (por ejemplo, `~/bdns-dataset/privado.duckdb`): guarda lo mismo comprimido, en unos 3 GB, y va algo más rápido, pero luego tienes que borrarlo tú.
 
 <a id="checks"></a>
 ## Cuando un control para la generación
@@ -91,7 +97,7 @@ DuckDB usa por defecto hasta el 80 % de la memoria del equipo, y si a la vez tie
 Antes de escribir los ficheros, la generación revisa lo que va a publicar, y si encuentra algo que podría identificar a una persona física se para sin escribir nada. Por ejemplo, si el título de una convocatoria a una empresa incluyera un DNI:
 
 ```console
-$ duckdb ~/bdns-dataset/privado.duckdb -cmd "..." -f dataset/build.sql
+$ duckdb -cmd "..." -f dataset/build.sql
 Invalid Input Error: publish.concesiones_personas_juridicas: 1 rows with something shaped like a personal tax ID
 $ ls ~/bdns-dataset/salida
 $
@@ -125,7 +131,7 @@ Es un aviso y no un error, porque un campo poco frecuente puede pasar un mes vac
 <a id="steps"></a>
 ## Los pasos
 
-Las tablas intermedias se quedan en el fichero privado, y solo las de la base `publish`, que va aparte, se escriben como ficheros Parquet.
+Las tablas intermedias se quedan en la base principal, que es privada, y solo las de la base `publish`, que va aparte, se escriben como ficheros Parquet.
 
 | Fichero | Qué hace |
 |---|---|

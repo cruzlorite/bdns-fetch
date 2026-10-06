@@ -15,19 +15,24 @@ $ cd bdns-tools
 
 ## Building it
 
-DuckDB attaches your database read-only and works in a file of its own, which must be somewhere private, because it keeps intermediate tables with personal data. The Parquet files are written to the folder you set in `output_dir`, which must exist. With the SQLite copy from `bdns-sync`'s get started:
+DuckDB attaches your database read-only and works in memory, without a file of its own. Whatever does not fit goes to its temp folder, personal data included, so you must give it one somewhere private (`temp_directory`); otherwise the build does not start. DuckDB empties it at the end, and only a run cut short would leave remains for you to delete. The Parquet files are written to the folder you set in `output_dir`, which must exist. With the SQLite copy from `bdns-sync`'s get started:
 
 ```console
-$ mkdir -p ~/bdns-dataset/salida
-$ duckdb ~/bdns-dataset/privado.duckdb \
-    -cmd "ATTACH '/path/to/bdns.db' AS sync (TYPE sqlite, READ_ONLY);
-          SET VARIABLE output_dir = '$HOME/bdns-dataset/salida'" \
+$ mkdir -p ~/bdns-dataset/salida ~/bdns-dataset/tmp
+$ duckdb -cmd "SET temp_directory = '$HOME/bdns-dataset/tmp';
+               ATTACH '/path/to/bdns.db' AS sync (TYPE sqlite, READ_ONLY);
+               SET VARIABLE output_dir = '$HOME/bdns-dataset/salida'" \
     -f dataset/build.sql
 $ ls ~/bdns-dataset/salida
-ayudasestado_personas_juridicas.parquet  concesiones_personas_juridicas.parquet  concesiones_personas_fisicas.parquet  minimis_personas_juridicas.parquet
+ayudasestado_personas_fisicas.parquet    grandesbeneficiarios.parquet
+ayudasestado_personas_juridicas.parquet  minimis_personas_fisicas.parquet
+catalogos.parquet                        minimis_personas_juridicas.parquet
+concesiones_personas_fisicas.parquet     partidospoliticos.parquet
+concesiones_personas_juridicas.parquet   planesestrategicos.parquet
+convocatorias.parquet
 ```
 
-While it works, it prints the time each step starts and, at the end, `done`, so you can follow a long build and see how long each step takes. These are the real timings for a copy with 30 million awards since 2022, read from BigQuery:
+While it works, it prints the time each step starts and, at the end, `done`, so you can follow a long build and see how long each step takes. These are the real timings for a copy with 30 million awards since 2022, read from BigQuery with a working file ([in memory](#memory) it takes about a third longer):
 
 ```text
 19:16:13  01_beneficiarios.sql
@@ -70,7 +75,8 @@ The SQL reads `bdns-sync`'s tables under the name `sync`, so only the `ATTACH` c
 The [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) extension attaches your project and, given the dataset in the `ATTACH`, finds the tables under the names the SQL expects. Data arrives compressed, and only the columns in use: with 30 million awards that is about 4.5 GB over the network, and the read costs cents. You need the credentials from `gcloud auth application-default login`:
 
 ```console
-$ duckdb ~/bdns-dataset/privado.duckdb -cmd "
+$ duckdb -cmd "
+    SET temp_directory = '$HOME/bdns-dataset/tmp';
     SET memory_limit = '3GB';
     SET threads = 4;
     SET preserve_insertion_order = false;
@@ -83,7 +89,7 @@ $ duckdb ~/bdns-dataset/privado.duckdb -cmd "
 <a id="memory"></a>
 ### With a long history
 
-By default DuckDB uses up to 80% of the machine's memory, and with other programs open at the same time the system may stop it for lack of memory. To avoid that, give it a limit at the start of `-cmd`, as in the BigQuery example; whatever does not fit goes to disk, next to the working file. Bear in mind the process takes quite a lot more than that limit, because the BigQuery extension uses memory of its own: with `memory_limit = '3GB'` and `threads = 4`, on a 12 GB laptop, the copy with 30 million awards was built in 11 minutes and the process reached 7.6 GB.
+By default DuckDB uses up to 80% of the machine's memory, and with other programs open at the same time the system may stop it for lack of memory. To avoid that, give it a limit at the start of `-cmd`, as in the BigQuery example; whatever does not fit goes to its temp folder. Bear in mind two things. First, the process takes quite a lot more than that limit, because the BigQuery extension uses memory of its own. Second, what goes to disk is not compressed, so with a long history the temp folder grows a lot: with 30 million awards it reached about 35 GB, and the process about 7 GB of memory. If you are short of disk, you can give `duckdb` a working file as its first argument (for example, `~/bdns-dataset/privado.duckdb`): it keeps the same, compressed, in about 3 GB, and is somewhat faster, but you have to delete it yourself afterwards.
 
 <a id="checks"></a>
 ## When a check stops the build
@@ -91,7 +97,7 @@ By default DuckDB uses up to 80% of the machine's memory, and with other program
 Before writing the files, the build checks what it is about to publish, and if it finds anything that could identify a natural person it stops without writing anything. For example, if the title of a call awarded to a company held a DNI:
 
 ```console
-$ duckdb ~/bdns-dataset/privado.duckdb -cmd "..." -f dataset/build.sql
+$ duckdb -cmd "..." -f dataset/build.sql
 Invalid Input Error: publish.concesiones_personas_juridicas: 1 rows with something shaped like a personal tax ID
 $ ls ~/bdns-dataset/salida
 $
@@ -125,7 +131,7 @@ It is a warning, not an error, since a rare field can stay empty for a month. If
 <a id="steps"></a>
 ## The steps
 
-Intermediate tables stay in the private file, and only those in the separate `publish` database are written as Parquet files.
+Intermediate tables stay in the main database, which is private, and only those in the separate `publish` database are written as Parquet files.
 
 | File | What it does |
 |---|---|

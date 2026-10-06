@@ -18,8 +18,8 @@ def run_build(sync_db, output, tmp_path):
     return subprocess.run(
         [
             "duckdb",
-            str(tmp_path / "dataset.duckdb"),
             "-cmd",
+            f"SET temp_directory = '{tmp_path / 'tmp'}'; "
             f"ATTACH '{sync_db}' AS sync (READ_ONLY); SET VARIABLE output_dir = '{output}'",
             "-f",
             "dataset/build.sql",
@@ -55,3 +55,22 @@ def test_a_failed_check_stops_the_build_before_anything_is_written(output, tmp_p
     assert result.returncode != 0
     assert "personal tax ID" in result.stderr
     assert list(output.iterdir()) == []
+
+
+def test_the_build_refuses_to_spill_into_the_repository(sync_db, output, tmp_path):
+    result = subprocess.run(
+        [
+            "duckdb",
+            "-cmd",
+            f"ATTACH '{sync_db}' AS sync (READ_ONLY); SET VARIABLE output_dir = '{output}'",
+            "-f",
+            "dataset/build.sql",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        env={**os.environ, "HOME": str(tmp_path)},
+    )
+    assert result.returncode != 0
+    assert "No private temp folder" in result.stderr
+    assert not (ROOT / ".tmp").exists()

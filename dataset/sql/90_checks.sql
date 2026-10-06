@@ -85,14 +85,15 @@ SELECT CASE WHEN count(*) > 0 THEN error(
 ) END
 FROM rows_with_personal_ids('publish.catalogos');
 
--- Summaries: no column that identifies people, no row below the minimum,
+-- Summaries: no column that identifies people (read with pragma_table_info,
+-- since information_schema also lists the attached bdns-sync database,
+-- and DuckDB's BigQuery extension fails there), no row below the minimum,
 -- tails only in rows with enough people, and no personal tax ID anywhere.
 
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publish.concesiones_personas_fisicas: identifying columns: ' || string_agg(column_name, ', ')
+    'publish.concesiones_personas_fisicas: identifying columns: ' || string_agg(name, ', ')
 ) END
-FROM information_schema.columns
-WHERE table_schema = 'publish' AND table_name = 'concesiones_personas_fisicas' AND identifying_column(column_name);
+FROM pragma_table_info('publish.concesiones_personas_fisicas') WHERE identifying_column(name);
 
 SELECT CASE WHEN count(*) > 0 THEN error(
     'publish.concesiones_personas_fisicas: ' || count(*) || ' rows below ' || min_beneficiaries() || ' beneficiaries'
@@ -111,10 +112,9 @@ SELECT CASE WHEN count(*) > 0 THEN error(
 FROM rows_with_personal_ids('publish.concesiones_personas_fisicas');
 
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publish.ayudasestado_personas_fisicas: identifying columns: ' || string_agg(column_name, ', ')
+    'publish.ayudasestado_personas_fisicas: identifying columns: ' || string_agg(name, ', ')
 ) END
-FROM information_schema.columns
-WHERE table_schema = 'publish' AND table_name = 'ayudasestado_personas_fisicas' AND identifying_column(column_name);
+FROM pragma_table_info('publish.ayudasestado_personas_fisicas') WHERE identifying_column(name);
 
 SELECT CASE WHEN count(*) > 0 THEN error(
     'publish.ayudasestado_personas_fisicas: ' || count(*) || ' rows below ' || min_beneficiaries() || ' beneficiaries'
@@ -133,10 +133,9 @@ SELECT CASE WHEN count(*) > 0 THEN error(
 FROM rows_with_personal_ids('publish.ayudasestado_personas_fisicas');
 
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publish.minimis_personas_fisicas: identifying columns: ' || string_agg(column_name, ', ')
+    'publish.minimis_personas_fisicas: identifying columns: ' || string_agg(name, ', ')
 ) END
-FROM information_schema.columns
-WHERE table_schema = 'publish' AND table_name = 'minimis_personas_fisicas' AND identifying_column(column_name);
+FROM pragma_table_info('publish.minimis_personas_fisicas') WHERE identifying_column(name);
 
 SELECT CASE WHEN count(*) > 0 THEN error(
     'publish.minimis_personas_fisicas: ' || count(*) || ' rows below ' || min_beneficiaries() || ' beneficiaries'

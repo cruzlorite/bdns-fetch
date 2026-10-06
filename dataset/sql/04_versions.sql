@@ -9,6 +9,10 @@
 -- would hold every payload at once, and a long history does not fit in
 -- memory. bdns-sync never writes two versions of a record at the same
 -- instant, so each key matches one row.
+--
+-- Call it once per statement. With DuckDB's BigQuery extension, a
+-- statement that calls it for several tables gets the first table every
+-- time (see 32_catalogos.sql).
 
 CREATE OR REPLACE MACRO latest_versions(tbl) AS TABLE
     WITH newest AS (

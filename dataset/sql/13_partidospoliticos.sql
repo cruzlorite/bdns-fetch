@@ -7,22 +7,26 @@
 -- only legal persons are published (26_partidospoliticos.sql).
 
 CREATE OR REPLACE TABLE partidospoliticos AS
+WITH parsed AS (
+    SELECT from_json(r, '{"id": "VARCHAR", "codConcesion": "VARCHAR", "fechaConcesion": "VARCHAR", "beneficiario": "VARCHAR", "importe": "VARCHAR", "ayudaEquivalente": "VARCHAR", "instrumento": "VARCHAR", "tieneProyecto": "VARCHAR", "numeroConvocatoria": "VARCHAR", "idConvocatoria": "VARCHAR", "convocatoria": "VARCHAR", "nivel1": "VARCHAR", "nivel2": "VARCHAR", "nivel3": "VARCHAR", "urlBR": "VARCHAR"}') AS c, is_current
+    FROM latest_versions('sync.partidospoliticos_busqueda')
+)
 SELECT
-    CAST(r->>'id' AS BIGINT)                                  AS id,
-    r->>'codConcesion'                                        AS codConcesion,
-    TRY_CAST(r->>'fechaConcesion' AS DATE)                    AS fechaConcesion,
-    r->>'beneficiario'                                        AS beneficiario,
-    beneficiary_kind(r->>'beneficiario')                      AS tipoPersona,
-    TRY_CAST(r->>'importe' AS DECIMAL(18, 2))                 AS importe,
-    TRY_CAST(r->>'ayudaEquivalente' AS DECIMAL(18, 2))        AS ayudaEquivalente,
-    trim(r->>'instrumento')                                   AS instrumento,
-    TRY_CAST(r->>'tieneProyecto' AS BOOLEAN)                  AS tieneProyecto,
-    r->>'numeroConvocatoria'                                  AS numeroConvocatoria,
-    TRY_CAST(r->>'idConvocatoria' AS BIGINT)                  AS idConvocatoria,
-    r->>'convocatoria'                                        AS convocatoria,
-    r->>'nivel1'                                              AS nivel1,
-    r->>'nivel2'                                              AS nivel2,
-    r->>'nivel3'                                              AS nivel3,
-    r->>'urlBR'                                               AS urlBR,
+    CAST(c.id AS BIGINT)                                  AS id,
+    c.codConcesion                                        AS codConcesion,
+    TRY_CAST(c.fechaConcesion AS DATE)                    AS fechaConcesion,
+    c.beneficiario                                        AS beneficiario,
+    beneficiary_kind(c.beneficiario)                      AS tipoPersona,
+    TRY_CAST(c.importe AS DECIMAL(18, 2))                 AS importe,
+    TRY_CAST(c.ayudaEquivalente AS DECIMAL(18, 2))        AS ayudaEquivalente,
+    trim(c.instrumento)                                   AS instrumento,
+    TRY_CAST(c.tieneProyecto AS BOOLEAN)                  AS tieneProyecto,
+    c.numeroConvocatoria                                  AS numeroConvocatoria,
+    TRY_CAST(c.idConvocatoria AS BIGINT)                  AS idConvocatoria,
+    c.convocatoria                                        AS convocatoria,
+    c.nivel1                                              AS nivel1,
+    c.nivel2                                              AS nivel2,
+    c.nivel3                                              AS nivel3,
+    c.urlBR                                               AS urlBR,
     NOT is_current                                            AS retirada
-FROM latest_versions('sync.partidospoliticos_busqueda');
+FROM parsed;

@@ -8,11 +8,15 @@
 -- beneficiary's total.
 
 CREATE OR REPLACE TABLE grandesbeneficiarios AS
+WITH parsed AS (
+    SELECT from_json(r, '{"beneficiario": "VARCHAR", "idPersona": "VARCHAR", "ejercicio": "VARCHAR", "ayudaETotal": "VARCHAR"}') AS c, is_current
+    FROM latest_versions('sync.grandesbeneficiarios_busqueda')
+)
 SELECT
-    r->>'beneficiario'                                        AS beneficiario,
-    beneficiary_kind(r->>'beneficiario')                      AS tipoPersona,
-    TRY_CAST(r->>'idPersona' AS BIGINT)                       AS idPersona,
-    TRY_CAST(r->>'ejercicio' AS INTEGER)                      AS ejercicio,
-    TRY_CAST(r->>'ayudaETotal' AS DECIMAL(18, 2))             AS ayudaETotal,
+    c.beneficiario                                        AS beneficiario,
+    beneficiary_kind(c.beneficiario)                      AS tipoPersona,
+    TRY_CAST(c.idPersona AS BIGINT)                       AS idPersona,
+    TRY_CAST(c.ejercicio AS INTEGER)                      AS ejercicio,
+    TRY_CAST(c.ayudaETotal AS DECIMAL(18, 2))             AS ayudaETotal,
     NOT is_current                                            AS retirada
-FROM latest_versions('sync.grandesbeneficiarios_busqueda');
+FROM parsed;

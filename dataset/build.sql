@@ -52,14 +52,24 @@ SELECT strftime(now(), '%H:%M:%S') || '  10_concesiones.sql';
 .read dataset/sql/10_concesiones.sql
 
 .mode list
-SELECT strftime(now(), '%H:%M:%S') || '  11_ayudas_estado.sql';
+SELECT strftime(now(), '%H:%M:%S') || '  11_ayudasestado.sql';
 .mode trash
-.read dataset/sql/11_ayudas_estado.sql
+.read dataset/sql/11_ayudasestado.sql
 
 .mode list
 SELECT strftime(now(), '%H:%M:%S') || '  12_minimis.sql';
 .mode trash
 .read dataset/sql/12_minimis.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  13_partidospoliticos.sql';
+.mode trash
+.read dataset/sql/13_partidospoliticos.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  14_grandesbeneficiarios.sql';
+.mode trash
+.read dataset/sql/14_grandesbeneficiarios.sql
 
 .mode list
 SELECT strftime(now(), '%H:%M:%S') || '  20_concesiones_personas_juridicas.sql';
@@ -72,14 +82,14 @@ SELECT strftime(now(), '%H:%M:%S') || '  21_concesiones_personas_fisicas.sql';
 .read dataset/sql/21_concesiones_personas_fisicas.sql
 
 .mode list
-SELECT strftime(now(), '%H:%M:%S') || '  22_ayudas_estado_personas_juridicas.sql';
+SELECT strftime(now(), '%H:%M:%S') || '  22_ayudasestado_personas_juridicas.sql';
 .mode trash
-.read dataset/sql/22_ayudas_estado_personas_juridicas.sql
+.read dataset/sql/22_ayudasestado_personas_juridicas.sql
 
 .mode list
-SELECT strftime(now(), '%H:%M:%S') || '  23_ayudas_estado_personas_fisicas.sql';
+SELECT strftime(now(), '%H:%M:%S') || '  23_ayudasestado_personas_fisicas.sql';
 .mode trash
-.read dataset/sql/23_ayudas_estado_personas_fisicas.sql
+.read dataset/sql/23_ayudasestado_personas_fisicas.sql
 
 .mode list
 SELECT strftime(now(), '%H:%M:%S') || '  24_minimis_personas_juridicas.sql';
@@ -90,6 +100,31 @@ SELECT strftime(now(), '%H:%M:%S') || '  24_minimis_personas_juridicas.sql';
 SELECT strftime(now(), '%H:%M:%S') || '  25_minimis_personas_fisicas.sql';
 .mode trash
 .read dataset/sql/25_minimis_personas_fisicas.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  26_partidospoliticos.sql';
+.mode trash
+.read dataset/sql/26_partidospoliticos.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  27_grandesbeneficiarios.sql';
+.mode trash
+.read dataset/sql/27_grandesbeneficiarios.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  30_convocatorias.sql';
+.mode trash
+.read dataset/sql/30_convocatorias.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  31_planesestrategicos.sql';
+.mode trash
+.read dataset/sql/31_planesestrategicos.sql
+
+.mode list
+SELECT strftime(now(), '%H:%M:%S') || '  32_catalogos.sql';
+.mode trash
+.read dataset/sql/32_catalogos.sql
 
 .mode list
 SELECT strftime(now(), '%H:%M:%S') || '  90_checks.sql';

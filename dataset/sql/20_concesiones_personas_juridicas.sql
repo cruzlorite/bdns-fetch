@@ -6,27 +6,27 @@
 -- aid (22) and de minimis aid (24).
 -- See docs/adr/0020-anonymised-dataset.md.
 --
--- Left out even here: url_br, since the bulletin it links to usually lists
--- natural persons among the beneficiaries, and id_persona, a BDNS internal
+-- Left out even here: urlBR, since the bulletin it links to usually lists
+-- natural persons among the beneficiaries, and idPersona, a BDNS internal
 -- identifier that adds nothing the tax ID does not already give.
 
 CREATE OR REPLACE TABLE publish.concesiones_personas_juridicas AS
 SELECT
     id,
-    cod_concesion,
-    fecha_concesion,
+    codConcesion,
+    fechaConcesion,
     beneficiary_id(beneficiario)   AS nif,
     beneficiary_name(beneficiario) AS nombre,
-    tipo_persona,
+    tipoPersona,
     importe,
-    ayuda_equivalente,
+    ayudaEquivalente,
     instrumento,
-    numero_convocatoria,
+    numeroConvocatoria,
     convocatoria,
     nivel1,
     nivel2,
     nivel3,
-    fecha_alta,
+    fechaAlta,
     retirada
 FROM concesiones
-WHERE NOT is_protected_beneficiary(tipo_persona, beneficiario);
+WHERE NOT is_protected_beneficiary(tipoPersona, beneficiario);

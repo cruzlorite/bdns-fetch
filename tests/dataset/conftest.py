@@ -99,21 +99,46 @@ def de_minimis(key, beneficiario, equivalente):
     }
 
 
-def make_sync_db(path, concesiones, ayudas, minimis):
-    """Write a bdns-sync database (DuckDB) with bdns-sync's real table schema."""
+# Every bdns-sync table the build reads.
+SYNC_TABLES = (
+    "concesiones_busqueda",
+    "ayudasestado_busqueda",
+    "minimis_busqueda",
+    "partidospoliticos_busqueda",
+    "grandesbeneficiarios_busqueda",
+    "convocatorias",
+    "planesestrategicos",
+    "actividades",
+    "beneficiarios",
+    "finalidades",
+    "instrumentos",
+    "objetivos",
+    "organos",
+    "organos_agrupacion",
+    "regiones",
+    "reglamentos",
+    "sectores",
+)
+
+
+def make_sync_db(path, concesiones, ayudas, minimis, **others):
+    """Write a bdns-sync database (DuckDB) with bdns-sync's real table schema.
+
+    Every table the build reads exists; `others` fills any of them by name
+    (`convocatorias=[...]`), and the rest stay empty.
+    """
     engine = create_engine(f"duckdb:///{path}")
     metadata = MetaData()
-    tables = {
-        name: build_sync_table(name, metadata)
-        for name in ("concesiones_busqueda", "ayudasestado_busqueda", "minimis_busqueda")
-    }
+    tables = {name: build_sync_table(name, metadata) for name in SYNC_TABLES}
     metadata.create_all(engine)
+    rows_by_table = {
+        "concesiones_busqueda": concesiones,
+        "ayudasestado_busqueda": ayudas,
+        "minimis_busqueda": minimis,
+        **others,
+    }
     with engine.begin() as conn:
-        for name, rows in [
-            ("concesiones_busqueda", concesiones),
-            ("ayudasestado_busqueda", ayudas),
-            ("minimis_busqueda", minimis),
-        ]:
+        for name, rows in rows_by_table.items():
             if rows:
                 conn.execute(insert(tables[name]), rows)
     engine.dispose()

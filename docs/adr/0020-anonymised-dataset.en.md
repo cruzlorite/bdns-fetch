@@ -26,9 +26,12 @@ The dataset **holds no personal data**. It may identify legal persons and public
     | Data | Level |
     |---|---|
     | Catalogs | As they are |
-    | Calls for applications | Record by record, reviewing titles that name people |
+    | Calls for applications | Record by record, with texts holding something shaped like a DNI left empty, and without documents or bulletin announcements |
+    | Strategic plans | Record by record, without attached documents |
+    | Aid to political parties | Record by record: every beneficiary is a legal person |
+    | Large beneficiaries | Legal persons only, record by record |
     | Awards, state aid and de minimis aid to legal persons and public bodies | Record by record |
-    | The same, to natural persons, entities made of persons and doubtful beneficiaries | Only as a summary per call: number of awards and beneficiaries, total amount, mean, standard deviation, median and quartiles of the amount, and the same percentiles of the award date |
+    | The same, to natural persons, entities made of persons and doubtful beneficiaries | Only as a summary per call: number of awards and beneficiaries, total amount, mean, standard deviation, median and quartiles of each amount, and the same percentiles of the award date |
     | Sanctions on natural persons | Not published |
 
 3. **No summary about natural persons gathers fewer than 10 people**, or one holding more than half its amount: an amount that appears only once would single out who got it, even without a name, and could be matched against old copies of the BDNS that do carry names. The smallest and largest amount or date are never published, since each is one specific person's, and the 10th and 90th percentiles, which sit close to them, only when the summary gathers at least 20 people. Calls that fall short are gathered, per year, into a "rest" row, published only if it gathers at least two (with one, the rest would be that call as it is) and meets the thresholds too. Every statistic covers every award in its row, and there is no other table about them to compare it with.

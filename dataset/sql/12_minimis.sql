@@ -7,19 +7,19 @@
 
 CREATE OR REPLACE TABLE minimis AS
 SELECT
-    CAST(r->>'idConcesion' AS BIGINT)                         AS id_concesion,
-    r->>'codigoConcesion'                                     AS codigo_concesion,
-    TRY_CAST(r->>'fechaConcesion' AS DATE)                    AS fecha_concesion,
+    CAST(r->>'idConcesion' AS BIGINT)                         AS idConcesion,
+    r->>'codigoConcesion'                                     AS codigoConcesion,
+    TRY_CAST(r->>'fechaConcesion' AS DATE)                    AS fechaConcesion,
     r->>'beneficiario'                                        AS beneficiario,
-    beneficiary_kind(r->>'beneficiario')                      AS tipo_persona,
-    TRY_CAST(r->>'idPersona' AS BIGINT)                       AS id_persona,
-    TRY_CAST(r->>'ayudaEquivalente' AS DECIMAL(18, 2))        AS ayuda_equivalente,
+    beneficiary_kind(r->>'beneficiario')                      AS tipoPersona,
+    TRY_CAST(r->>'idPersona' AS BIGINT)                       AS idPersona,
+    TRY_CAST(r->>'ayudaEquivalente' AS DECIMAL(18, 2))        AS ayudaEquivalente,
     trim(r->>'instrumento')                                   AS instrumento,
-    r->>'numeroConvocatoria'                                  AS numero_convocatoria,
+    r->>'numeroConvocatoria'                                  AS numeroConvocatoria,
     r->>'convocante'                                          AS convocante,
     r->>'reglamento'                                          AS reglamento,
-    r->>'sectorActividad'                                     AS sector_actividad,
-    r->>'sectorProducto'                                      AS sector_producto,
-    TRY_CAST(r->>'fechaRegistro' AS DATE)                     AS fecha_registro,
+    r->>'sectorActividad'                                     AS sectorActividad,
+    r->>'sectorProducto'                                      AS sectorProducto,
+    TRY_CAST(r->>'fechaRegistro' AS DATE)                     AS fechaRegistro,
     NOT is_current                                            AS retirada
 FROM latest_versions('sync.minimis_busqueda');

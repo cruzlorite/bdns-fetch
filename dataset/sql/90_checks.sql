@@ -5,7 +5,7 @@
 -- See docs/adr/0020-anonymised-dataset.md.
 
 -- The rows of a summary table with fewer people than any row needs, and
--- those whose 10th or 90th percentiles (any column ending in _p10 or _p90)
+-- those whose 10th or 90th percentiles (any column ending in P10 or P90)
 -- are published with fewer people than those need.
 CREATE OR REPLACE MACRO rows_below_minimum(tbl) AS TABLE
     SELECT * FROM query_table(tbl) WHERE beneficiarios < min_beneficiaries();
@@ -13,7 +13,7 @@ CREATE OR REPLACE MACRO rows_below_minimum(tbl) AS TABLE
 CREATE OR REPLACE MACRO rows_with_tails_below(tbl) AS TABLE
     SELECT * FROM query_table(tbl)
     WHERE beneficiarios < min_beneficiaries_for_tails()
-        AND concat_ws('', *COLUMNS('_p(10|90)$')) <> '';
+        AND concat_ws('', *COLUMNS('P(10|90)$')) <> '';
 
 -- Record-level tables: only legal persons and public bodies, and no
 -- personal tax ID anywhere.
@@ -21,7 +21,7 @@ CREATE OR REPLACE MACRO rows_with_tails_below(tbl) AS TABLE
 SELECT CASE WHEN count(*) > 0 THEN error(
     'publish.concesiones_personas_juridicas: ' || count(*) || ' rows of protected beneficiaries'
 ) END
-FROM publish.concesiones_personas_juridicas WHERE is_protected(tipo_persona);
+FROM publish.concesiones_personas_juridicas WHERE is_protected(tipoPersona);
 
 SELECT CASE WHEN count(*) > 0 THEN error(
     'publish.concesiones_personas_juridicas: ' || count(*) || ' rows with something shaped like a personal tax ID'
@@ -29,24 +29,61 @@ SELECT CASE WHEN count(*) > 0 THEN error(
 FROM rows_with_personal_ids('publish.concesiones_personas_juridicas');
 
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publish.ayudas_estado_personas_juridicas: ' || count(*) || ' rows of protected beneficiaries'
+    'publish.ayudasestado_personas_juridicas: ' || count(*) || ' rows of protected beneficiaries'
 ) END
-FROM publish.ayudas_estado_personas_juridicas WHERE is_protected(tipo_persona);
+FROM publish.ayudasestado_personas_juridicas WHERE is_protected(tipoPersona);
 
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publish.ayudas_estado_personas_juridicas: ' || count(*) || ' rows with something shaped like a personal tax ID'
+    'publish.ayudasestado_personas_juridicas: ' || count(*) || ' rows with something shaped like a personal tax ID'
 ) END
-FROM rows_with_personal_ids('publish.ayudas_estado_personas_juridicas');
+FROM rows_with_personal_ids('publish.ayudasestado_personas_juridicas');
 
 SELECT CASE WHEN count(*) > 0 THEN error(
     'publish.minimis_personas_juridicas: ' || count(*) || ' rows of protected beneficiaries'
 ) END
-FROM publish.minimis_personas_juridicas WHERE is_protected(tipo_persona);
+FROM publish.minimis_personas_juridicas WHERE is_protected(tipoPersona);
 
 SELECT CASE WHEN count(*) > 0 THEN error(
     'publish.minimis_personas_juridicas: ' || count(*) || ' rows with something shaped like a personal tax ID'
 ) END
 FROM rows_with_personal_ids('publish.minimis_personas_juridicas');
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publish.partidospoliticos: ' || count(*) || ' rows of protected beneficiaries'
+) END
+FROM publish.partidospoliticos WHERE is_protected(tipoPersona);
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publish.partidospoliticos: ' || count(*) || ' rows with something shaped like a personal tax ID'
+) END
+FROM rows_with_personal_ids('publish.partidospoliticos');
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publish.grandesbeneficiarios: ' || count(*) || ' rows of protected beneficiaries'
+) END
+FROM publish.grandesbeneficiarios WHERE is_protected(tipoPersona);
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publish.grandesbeneficiarios: ' || count(*) || ' rows with something shaped like a personal tax ID'
+) END
+FROM rows_with_personal_ids('publish.grandesbeneficiarios');
+
+-- Calls, plans and catalogues: no personal tax ID anywhere.
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publish.convocatorias: ' || count(*) || ' rows with something shaped like a personal tax ID'
+) END
+FROM rows_with_personal_ids('publish.convocatorias');
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publish.planesestrategicos: ' || count(*) || ' rows with something shaped like a personal tax ID'
+) END
+FROM rows_with_personal_ids('publish.planesestrategicos');
+
+SELECT CASE WHEN count(*) > 0 THEN error(
+    'publish.catalogos: ' || count(*) || ' rows with something shaped like a personal tax ID'
+) END
+FROM rows_with_personal_ids('publish.catalogos');
 
 -- Summaries: no column that identifies people, no row below the minimum,
 -- tails only in rows with enough people, and no personal tax ID anywhere.
@@ -74,26 +111,26 @@ SELECT CASE WHEN count(*) > 0 THEN error(
 FROM rows_with_personal_ids('publish.concesiones_personas_fisicas');
 
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publish.ayudas_estado_personas_fisicas: identifying columns: ' || string_agg(column_name, ', ')
+    'publish.ayudasestado_personas_fisicas: identifying columns: ' || string_agg(column_name, ', ')
 ) END
 FROM information_schema.columns
-WHERE table_schema = 'publish' AND table_name = 'ayudas_estado_personas_fisicas' AND identifying_column(column_name);
+WHERE table_schema = 'publish' AND table_name = 'ayudasestado_personas_fisicas' AND identifying_column(column_name);
 
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publish.ayudas_estado_personas_fisicas: ' || count(*) || ' rows below ' || min_beneficiaries() || ' beneficiaries'
+    'publish.ayudasestado_personas_fisicas: ' || count(*) || ' rows below ' || min_beneficiaries() || ' beneficiaries'
 ) END
-FROM rows_below_minimum('publish.ayudas_estado_personas_fisicas');
+FROM rows_below_minimum('publish.ayudasestado_personas_fisicas');
 
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publish.ayudas_estado_personas_fisicas: ' || count(*) || ' rows with 10th or 90th percentiles below '
+    'publish.ayudasestado_personas_fisicas: ' || count(*) || ' rows with 10th or 90th percentiles below '
     || min_beneficiaries_for_tails() || ' beneficiaries'
 ) END
-FROM rows_with_tails_below('publish.ayudas_estado_personas_fisicas');
+FROM rows_with_tails_below('publish.ayudasestado_personas_fisicas');
 
 SELECT CASE WHEN count(*) > 0 THEN error(
-    'publish.ayudas_estado_personas_fisicas: ' || count(*) || ' rows with something shaped like a personal tax ID'
+    'publish.ayudasestado_personas_fisicas: ' || count(*) || ' rows with something shaped like a personal tax ID'
 ) END
-FROM rows_with_personal_ids('publish.ayudas_estado_personas_fisicas');
+FROM rows_with_personal_ids('publish.ayudasestado_personas_fisicas');
 
 SELECT CASE WHEN count(*) > 0 THEN error(
     'publish.minimis_personas_fisicas: identifying columns: ' || string_agg(column_name, ', ')

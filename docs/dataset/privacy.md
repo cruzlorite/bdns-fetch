@@ -7,7 +7,7 @@ El dataset no contiene ningún dato personal. Puede identificar a empresas y ent
 
 Cada beneficiario se clasifica a partir del NIF que va al principio del campo `beneficiario`, nunca a partir de su nombre, porque una empresa puede llamarse como una persona y al revés. Lo que no se reconoce se trata como una persona física. Por ejemplo (los nombres y los NIF son inventados):
 
-| Cómo aparece en la BDNS | `tipo_persona` | En el dataset |
+| Cómo aparece en la BDNS | `tipoPersona` | En el dataset |
 |---|---|---|
 | `***1234** NOMBRE APELLIDOS` | `persona_fisica` | Solo en el resumen |
 | `12345678Z NOMBRE APELLIDOS` | `persona_fisica` | Solo en el resumen |
@@ -40,12 +40,12 @@ Su fila en `concesiones_personas_fisicas` sería esta (sin las columnas de la ay
 |---|---|
 | `concesiones` | 12 |
 | `beneficiarios` | 11 |
-| `importe_total` | 6.450,00 |
-| `importe_media` | 537,50 |
-| `importe_desviacion` | 274,79 |
-| `importe_p25`, `importe_mediana`, `importe_p75` | 300,00, 450,00 y 600,00 |
-| `fecha_p25`, `fecha_mediana`, `fecha_p75` | 2026-03-12, 2026-04-20 y 2026-04-20 |
-| `importe_p10`, `importe_p90`, `fecha_p10`, `fecha_p90` | Vacíos, porque son menos de 20 personas |
+| `importeTotal` | 6.450,00 |
+| `importeMedia` | 537,50 |
+| `importeDesviacion` | 274,79 |
+| `importeP25`, `importeMediana`, `importeP75` | 300,00, 450,00 y 600,00 |
+| `fechaConcesionP25`, `fechaConcesionMediana`, `fechaConcesionP75` | 2026-03-12, 2026-04-20 y 2026-04-20 |
+| `importeP10`, `importeP90`, `fechaConcesionP10`, `fechaConcesionP90` | Vacíos, porque son menos de 20 personas |
 
 Con ella puedes saber cuánto repartió la convocatoria, cuánto fue una concesión típica y cuándo se concedieron, pero no quién recibió qué. Tampoco aparecen los 1.200 euros de la concesión más alta, que son de una persona concreta.
 
@@ -60,11 +60,18 @@ Con ella puedes saber cuánto repartió la convocatoria, cuánto fue una concesi
 
 **Las fechas son fechas reales.** Los percentiles de la fecha se eligen entre las fechas de concesión que existen, sin interpolar, porque un día a medio camino entre dos fechas no significa nada.
 
-**Lo que no cumple va a la fila de resto de su año.** Las concesiones de las convocatorias que no se pueden publicar se juntan en una fila con `es_resto = true`, que no dice qué convocatorias reúne, y en `ejercicio` lleva el año de la fecha mediana de cada una de ellas. Esa fila tiene que cumplir las mismas reglas y, además, juntar al menos dos convocatorias, porque si fuera una sola, el resto sería esa convocatoria con otro nombre.
+**Lo que no cumple va a la fila de resto de su año.** Las concesiones de las convocatorias que no se pueden publicar se juntan en una fila con `esResto = true`, que no dice qué convocatorias reúne, y en `ejercicio` lleva el año de la fecha mediana de cada una de ellas. Esa fila tiene que cumplir las mismas reglas y, además, juntar al menos dos convocatorias, porque si fuera una sola, el resto sería esa convocatoria con otro nombre.
 
 **Cada persona cuenta una vez.** Se reconoce por su identificador en la BDNS o, si falta, por el campo `beneficiario` completo, y ninguno de los dos sale del fichero privado.
 
 Cada estadística cubre todas las concesiones de su fila, y ninguna otra tabla resume las mismas concesiones, así que no se puede averiguar nada restando una cosa de otra. Los umbrales están definidos una sola vez, en el SQL, y sus valores están en [cómo se genera](build.md#thresholds).
+
+<a id="texts"></a>
+## Los textos de las convocatorias
+
+Una convocatoria es un anuncio de la propia administración, no un dato de nadie, y se publica registro a registro. Pero sus textos los escribe a mano el órgano, y una subvención nominativa a veces nombra a su beneficiario, así que el título, la descripción de las bases y el resto de textos libres se publican vacíos si contienen algo con forma de DNI, NIE o NIF enmascarado. Lo mismo se hace con el enlace a las bases cuando tiene esa forma, aunque casi siempre es una falsa alarma: algunos boletines nombran sus ficheros con ocho cifras y una letra. Los documentos y los anuncios en boletines se quedan fuera, porque suelen listar a los beneficiarios.
+
+Un título que nombre a una persona sin poner su DNI no se puede detectar de forma fiable, y se publica tal cual, igual que lo mantiene publicado la propia BDNS.
 
 <a id="checks"></a>
 ## Lo que se comprueba antes de publicar
@@ -73,7 +80,7 @@ Antes de escribir ningún fichero, la generación revisa lo que va a publicar y 
 
 - un beneficiario protegido en una tabla registro a registro;
 - algo con forma de DNI, NIE o NIF enmascarado, en cualquier columna de cualquier tabla;
-- una columna que identifica a alguien en el resumen, como `beneficiario`, `id_persona`, `url_br` o `cod_concesion`;
+- una columna que identifica a alguien en el resumen, como `beneficiario`, `idPersona`, `urlBR` o `codConcesion`;
 - una fila del resumen con menos de 10 personas, o con los percentiles 10 o 90 y menos de 20.
 
 Lo que encuentra lo señala sin limpiarlo, porque un hallazgo así indica un error en un paso anterior, y limpiarlo sin avisar lo dejaría escondido detrás de un dataset que parece correcto. Los mensajes de cada control están en [cómo se genera](build.md#checks).

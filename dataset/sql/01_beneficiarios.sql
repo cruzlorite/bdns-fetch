@@ -1,4 +1,4 @@
--- Who a beneficiary is (tipo_persona), read from the leading tax ID of the
+-- Who a beneficiary is (tipoPersona), read from the leading tax ID of the
 -- BDNS field ("B12345678 EMPRESA SL"), never from the name. Its values are
 -- in Spanish, like all the data: code is in English, data in Spanish.
 --

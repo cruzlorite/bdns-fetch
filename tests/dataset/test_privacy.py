@@ -12,6 +12,8 @@ import pytest
         ("beneficiario X1234567L", True),
         ("residente L1234567A", True),
         ("Empresa B12345678 y ayuntamiento P1234567D", False),
+        # A local authority's DIR3 code, in an online office's address.
+        ("https://sede.example/tramites/L01462580", False),
         ("Convocatoria 2026 de ayudas por 12.345.678 euros", False),
         (None, False),
     ],
@@ -41,14 +43,14 @@ def test_two_columns_never_form_one_match(macros):
         ("beneficiario", True),
         ("idPersona", True),
         ("urlBR", True),
-        ("id_persona", True),
-        ("url_br", True),
-        ("cod_concesion", True),
+        ("idPersona", True),
+        ("urlBR", True),
+        ("codConcesion", True),
         ("nif", True),
         ("NOMBRE", True),
         # Counts and summaries of people are what may be published.
         ("beneficiarios", False),
-        ("importe_total", False),
+        ("importeTotal", False),
         ("convocatoria", False),
     ],
 )

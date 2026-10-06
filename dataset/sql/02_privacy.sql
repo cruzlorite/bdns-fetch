@@ -6,12 +6,20 @@
 -- See docs/adr/0020-anonymised-dataset.md.
 
 -- A natural person's tax ID anywhere in a text: masked (***1234**), a DNI,
--- an NIE or a K/L/M one. A legal person's ID (B12345678) matches none.
+-- an NIE or a K/L/M one. A legal person's ID (B12345678) matches none, and
+-- neither does a local authority's DIR3 code (L01462580), since a K/L/M
+-- tax ID always ends in a letter.
 CREATE OR REPLACE MACRO personal_id_pattern() AS
-    '\*{2,}\d{3,5}\*{0,3}|\b\d{8}[A-Za-z]\b|\b[XYZxyz]\d{7}[A-Za-z]\b|\b[KLMklm]\d{7}[A-Za-z0-9]\b';
+    '\*{2,}\d{3,5}\*{0,3}|\b\d{8}[A-Za-z]\b|\b[XYZxyz]\d{7}[A-Za-z]\b|\b[KLMklm]\d{7}[A-Za-z]\b';
 
 CREATE OR REPLACE MACRO has_personal_id(text) AS
     regexp_matches(coalesce(text, ''), personal_id_pattern());
+
+-- A published text, or nothing if it holds something shaped like a
+-- natural person's tax ID: for titles and descriptions the BDNS writes by
+-- hand, where a nominative grant sometimes names its beneficiary.
+CREATE OR REPLACE MACRO without_personal_id(text) AS
+    CASE WHEN has_personal_id(text) THEN NULL ELSE text END;
 
 -- The rows of a table where any column holds something shaped like a
 -- natural person's tax ID. The separator keeps two columns from forming
@@ -30,12 +38,12 @@ CREATE OR REPLACE MACRO is_protected_beneficiary(kind, beneficiary) AS
     is_protected(kind) OR has_personal_id(beneficiary);
 
 -- Columns that identify a beneficiary, or lead back to one: never in a
--- table about natural persons. Both the API's names and this dataset's.
+-- table about natural persons. Compared in lower case, since the dataset
+-- keeps the API's names (idPersona, urlBR...).
 CREATE OR REPLACE MACRO identifying_column(name) AS
     lower(name) IN (
         'beneficiario', 'nifcif', 'idpersona', 'urlbr', 'codconcesion', 'codigoconcesion',
-        'id', 'nif', 'nombre', 'id_persona', 'url_br', 'cod_concesion', 'codigo_concesion',
-        'id_concesion'
+        'id', 'idconcesion', 'nif', 'nombre'
     );
 
 -- The thresholds of statistical disclosure control, in one place.

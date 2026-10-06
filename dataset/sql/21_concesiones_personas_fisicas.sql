@@ -5,49 +5,49 @@
 -- Each protected award, in the shape call_summaries() takes. Private.
 CREATE OR REPLACE TABLE concesiones_protegidas AS
 SELECT
-    numero_convocatoria,
+    numeroConvocatoria,
     instrumento,
-    coalesce(CAST(id_persona AS VARCHAR), beneficiario) AS persona,
-    fecha_concesion,
+    coalesce(CAST(idPersona AS VARCHAR), beneficiario) AS persona,
+    fechaConcesion,
     importe,
-    ayuda_equivalente,
+    ayudaEquivalente,
     struct_pack(convocatoria, nivel1, nivel2, nivel3) AS etiqueta
 FROM concesiones
-WHERE is_protected_beneficiary(tipo_persona, beneficiario);
+WHERE is_protected_beneficiary(tipoPersona, beneficiario);
 
 -- A call title shaped like a personal tax ID is blanked; the checks
 -- would stop the build otherwise.
 CREATE OR REPLACE TABLE publish.concesiones_personas_fisicas AS
 SELECT
-    numero_convocatoria,
-    CASE WHEN has_personal_id(etiqueta.convocatoria) THEN NULL ELSE etiqueta.convocatoria END AS convocatoria,
+    numeroConvocatoria,
+    without_personal_id(etiqueta.convocatoria) AS convocatoria,
     etiqueta.nivel1 AS nivel1,
     etiqueta.nivel2 AS nivel2,
     etiqueta.nivel3 AS nivel3,
     instrumento,
-    es_resto,
+    esResto,
     ejercicio,
     concesiones,
     beneficiarios,
-    importe.total      AS importe_total,
-    importe.media      AS importe_media,
-    importe.desviacion AS importe_desviacion,
-    importe.p10        AS importe_p10,
-    importe.p25        AS importe_p25,
-    importe.mediana    AS importe_mediana,
-    importe.p75        AS importe_p75,
-    importe.p90        AS importe_p90,
-    ayuda_equivalente.total      AS ayuda_equivalente_total,
-    ayuda_equivalente.media      AS ayuda_equivalente_media,
-    ayuda_equivalente.desviacion AS ayuda_equivalente_desviacion,
-    ayuda_equivalente.p10        AS ayuda_equivalente_p10,
-    ayuda_equivalente.p25        AS ayuda_equivalente_p25,
-    ayuda_equivalente.mediana    AS ayuda_equivalente_mediana,
-    ayuda_equivalente.p75        AS ayuda_equivalente_p75,
-    ayuda_equivalente.p90        AS ayuda_equivalente_p90,
-    fecha.p10        AS fecha_p10,
-    fecha.p25        AS fecha_p25,
-    fecha.mediana    AS fecha_mediana,
-    fecha.p75        AS fecha_p75,
-    fecha.p90        AS fecha_p90
+    importe.total      AS importeTotal,
+    importe.media      AS importeMedia,
+    importe.desviacion AS importeDesviacion,
+    importe.p10        AS importeP10,
+    importe.p25        AS importeP25,
+    importe.mediana    AS importeMediana,
+    importe.p75        AS importeP75,
+    importe.p90        AS importeP90,
+    ayudaEquivalente.total      AS ayudaEquivalenteTotal,
+    ayudaEquivalente.media      AS ayudaEquivalenteMedia,
+    ayudaEquivalente.desviacion AS ayudaEquivalenteDesviacion,
+    ayudaEquivalente.p10        AS ayudaEquivalenteP10,
+    ayudaEquivalente.p25        AS ayudaEquivalenteP25,
+    ayudaEquivalente.mediana    AS ayudaEquivalenteMediana,
+    ayudaEquivalente.p75        AS ayudaEquivalenteP75,
+    ayudaEquivalente.p90        AS ayudaEquivalenteP90,
+    fechaConcesion.p10     AS fechaConcesionP10,
+    fechaConcesion.p25     AS fechaConcesionP25,
+    fechaConcesion.mediana AS fechaConcesionMediana,
+    fechaConcesion.p75     AS fechaConcesionP75,
+    fechaConcesion.p90     AS fechaConcesionP90
 FROM call_summaries('concesiones_protegidas');

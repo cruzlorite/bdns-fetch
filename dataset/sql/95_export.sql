@@ -18,14 +18,29 @@ COPY publish.concesiones_personas_juridicas
 COPY publish.concesiones_personas_fisicas
     TO (getvariable('output_dir') || '/concesiones_personas_fisicas.parquet') (FORMAT parquet, COMPRESSION zstd);
 
-COPY publish.ayudas_estado_personas_juridicas
-    TO (getvariable('output_dir') || '/ayudas_estado_personas_juridicas.parquet') (FORMAT parquet, COMPRESSION zstd);
+COPY publish.ayudasestado_personas_juridicas
+    TO (getvariable('output_dir') || '/ayudasestado_personas_juridicas.parquet') (FORMAT parquet, COMPRESSION zstd);
 
-COPY publish.ayudas_estado_personas_fisicas
-    TO (getvariable('output_dir') || '/ayudas_estado_personas_fisicas.parquet') (FORMAT parquet, COMPRESSION zstd);
+COPY publish.ayudasestado_personas_fisicas
+    TO (getvariable('output_dir') || '/ayudasestado_personas_fisicas.parquet') (FORMAT parquet, COMPRESSION zstd);
 
 COPY publish.minimis_personas_juridicas
     TO (getvariable('output_dir') || '/minimis_personas_juridicas.parquet') (FORMAT parquet, COMPRESSION zstd);
 
 COPY publish.minimis_personas_fisicas
     TO (getvariable('output_dir') || '/minimis_personas_fisicas.parquet') (FORMAT parquet, COMPRESSION zstd);
+
+COPY publish.partidospoliticos
+    TO (getvariable('output_dir') || '/partidospoliticos.parquet') (FORMAT parquet, COMPRESSION zstd);
+
+COPY publish.grandesbeneficiarios
+    TO (getvariable('output_dir') || '/grandesbeneficiarios.parquet') (FORMAT parquet, COMPRESSION zstd);
+
+COPY publish.convocatorias
+    TO (getvariable('output_dir') || '/convocatorias.parquet') (FORMAT parquet, COMPRESSION zstd);
+
+COPY publish.planesestrategicos
+    TO (getvariable('output_dir') || '/planesestrategicos.parquet') (FORMAT parquet, COMPRESSION zstd);
+
+COPY publish.catalogos
+    TO (getvariable('output_dir') || '/catalogos.parquet') (FORMAT parquet, COMPRESSION zstd);

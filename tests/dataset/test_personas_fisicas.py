@@ -96,7 +96,7 @@ def con(tmp_path):
 def row(con, call):
     """The published row of a call, as a dict, or None."""
     result = con.execute(
-        "SELECT * FROM publish.concesiones_personas_fisicas WHERE numero_convocatoria IS NOT DISTINCT FROM ?",
+        "SELECT * FROM publish.concesiones_personas_fisicas WHERE numeroConvocatoria IS NOT DISTINCT FROM ?",
         [call],
     )
     names = [d[0] for d in result.description]
@@ -107,7 +107,7 @@ def row(con, call):
 def rest(con, ejercicio):
     """The published rest row of a year, as a dict, or None."""
     result = con.execute(
-        "SELECT * FROM publish.concesiones_personas_fisicas WHERE es_resto AND ejercicio = ?",
+        "SELECT * FROM publish.concesiones_personas_fisicas WHERE esResto AND ejercicio = ?",
         [ejercicio],
     )
     names = [d[0] for d in result.description]
@@ -118,30 +118,41 @@ def rest(con, ejercicio):
 def test_a_large_call_is_published_counting_each_person_once(con):
     a = row(con, "A")
     # 13 awards to 12 people; the company stays out.
-    assert (a["concesiones"], a["beneficiarios"], float(a["importe_total"])) == (13, 12, 1300.0)
-    assert (a["es_resto"], a["ejercicio"]) == (False, None)
+    assert (a["concesiones"], a["beneficiarios"], float(a["importeTotal"])) == (13, 12, 1300.0)
+    assert (a["esResto"], a["ejercicio"]) == (False, None)
     assert a["convocatoria"] == "Convocatoria A"
 
 
 def test_below_twenty_people_the_tails_are_left_out(con):
     a = row(con, "A")
-    assert [a[c] for c in ("importe_p10", "importe_p90", "fecha_p10", "fecha_p90")] == [None] * 4
-    assert float(a["importe_mediana"]) == 100.0
-    assert a["fecha_mediana"] == date(2026, 5, 10)
+    assert [
+        a[c] for c in ("importeP10", "importeP90", "fechaConcesionP10", "fechaConcesionP90")
+    ] == [None] * 4
+    assert float(a["importeMediana"]) == 100.0
+    assert a["fechaConcesionMediana"] == date(2026, 5, 10)
 
 
 def test_from_twenty_people_the_tails_are_published(con):
     f = row(con, "F")
     amounts = [
         float(f[c])
-        for c in ("importe_p10", "importe_p25", "importe_mediana", "importe_p75", "importe_p90")
+        for c in ("importeP10", "importeP25", "importeMediana", "importeP75", "importeP90")
     ]
     # Interpolated between the awards: 25 amounts from 100 to 2,500.
     assert amounts == [340.0, 700.0, 1300.0, 1900.0, 2260.0]
-    assert float(f["importe_media"]) == 1300.0
+    assert float(f["importeMedia"]) == 1300.0
     # Rounded to the cent, like every amount.
-    assert float(f["importe_desviacion"]) == 735.98
-    dates = [f[c] for c in ("fecha_p10", "fecha_p25", "fecha_mediana", "fecha_p75", "fecha_p90")]
+    assert float(f["importeDesviacion"]) == 735.98
+    dates = [
+        f[c]
+        for c in (
+            "fechaConcesionP10",
+            "fechaConcesionP25",
+            "fechaConcesionMediana",
+            "fechaConcesionP75",
+            "fechaConcesionP90",
+        )
+    ]
     # Real award dates, one day apart from 1 March.
     assert dates == sorted(dates)
     assert all(date(2026, 3, 1) <= d <= date(2026, 3, 25) for d in dates)
@@ -157,13 +168,13 @@ def test_small_calls_are_suppressed_and_gathered_into_a_rest_row(con):
     assert row(con, "B") is None and row(con, "C") is None
     # B and C together: 12 people in two calls, so the rest row may be published.
     resto = rest(con, 2026)
-    assert (resto["concesiones"], resto["beneficiarios"], float(resto["importe_total"])) == (
+    assert (resto["concesiones"], resto["beneficiarios"], float(resto["importeTotal"])) == (
         12,
         12,
         1200.0,
     )
     # Nothing in a rest row says which calls it gathers.
-    assert [resto[c] for c in ("numero_convocatoria", "convocatoria", "nivel3", "instrumento")] == [
+    assert [resto[c] for c in ("numeroConvocatoria", "convocatoria", "nivel3", "instrumento")] == [
         None
     ] * 4
 
@@ -182,7 +193,7 @@ def test_a_title_shaped_like_a_tax_id_is_blanked(con):
 
 def test_the_checks_stop_a_row_below_the_minimum(con):
     con.execute(
-        "INSERT INTO publish.concesiones_personas_fisicas (numero_convocatoria, beneficiarios, es_resto) "
+        "INSERT INTO publish.concesiones_personas_fisicas (numeroConvocatoria, beneficiarios, esResto) "
         "VALUES ('Z', 3, false)"
     )
     with pytest.raises(duckdb.InvalidInputException, match="below 10 beneficiaries"):
@@ -191,15 +202,15 @@ def test_the_checks_stop_a_row_below_the_minimum(con):
 
 def test_the_checks_stop_tails_below_twenty_people(con):
     con.execute(
-        "UPDATE publish.concesiones_personas_fisicas SET importe_p90 = 999 WHERE numero_convocatoria = 'A'"
+        "UPDATE publish.concesiones_personas_fisicas SET importeP90 = 999 WHERE numeroConvocatoria = 'A'"
     )
     with pytest.raises(duckdb.InvalidInputException, match="10th or 90th percentiles below 20"):
         con.execute(CHECKS.read_text(encoding="utf-8"))
 
 
 def test_the_checks_stop_an_identifying_column(con):
-    con.execute("ALTER TABLE publish.concesiones_personas_fisicas ADD COLUMN id_persona BIGINT")
-    with pytest.raises(duckdb.InvalidInputException, match="identifying columns: id_persona"):
+    con.execute("ALTER TABLE publish.concesiones_personas_fisicas ADD COLUMN idPersona BIGINT")
+    with pytest.raises(duckdb.InvalidInputException, match="identifying columns: idPersona"):
         con.execute(CHECKS.read_text(encoding="utf-8"))
 
 
@@ -233,7 +244,7 @@ def test_a_call_with_several_bodies_shows_the_main_one(
         {n for n in (p.name for p in (ROOT / "dataset" / "sql").iterdir()) if n != "95_export.sql"},
     )
     assert con.execute(
-        "SELECT nivel3 FROM publish.concesiones_personas_fisicas WHERE numero_convocatoria = 'G'"
+        "SELECT nivel3 FROM publish.concesiones_personas_fisicas WHERE numeroConvocatoria = 'G'"
     ).fetchone() == (published,)
 
 
@@ -271,8 +282,8 @@ def self_employed(make, call, count, start, amount, **extra):
 def test_state_aid_summarises_both_amounts(tmp_path):
     con = build_without_export(tmp_path, ayudas=self_employed(state_aid, "S1", 12, 100, 1000))
     total, equivalente, convocante, beneficiarios = con.execute(
-        "SELECT importe_total, ayuda_equivalente_total, convocante, beneficiarios "
-        "FROM publish.ayudas_estado_personas_fisicas"
+        "SELECT importeTotal, ayudaEquivalenteTotal, convocante, beneficiarios "
+        "FROM publish.ayudasestado_personas_fisicas"
     ).fetchone()
     # state_aid() sets the gross grant equivalent to half the amount.
     assert (float(total), float(equivalente), beneficiarios) == (12000.0, 6000.0, 12)
@@ -284,9 +295,9 @@ def test_one_person_holding_most_of_either_amount_suppresses_the_call(tmp_path):
     rows = self_employed(state_aid, "S2", 12, 200, 1000)
     rows[0]["ayudaEquivalente"] = "100000"
     con = build_without_export(tmp_path, ayudas=rows)
-    assert con.execute(
-        "SELECT count(*) FROM publish.ayudas_estado_personas_fisicas"
-    ).fetchone() == (0,)
+    assert con.execute("SELECT count(*) FROM publish.ayudasestado_personas_fisicas").fetchone() == (
+        0,
+    )
 
 
 def test_de_minimis_summarises_only_its_gross_grant_equivalent(tmp_path):
@@ -298,9 +309,7 @@ def test_de_minimis_summarises_only_its_gross_grant_equivalent(tmp_path):
             "WHERE table_schema = 'publish' AND table_name = 'minimis_personas_fisicas'"
         ).fetchall()
     }
-    assert "ayuda_equivalente_total" in columns and not any(
-        c.startswith("importe") for c in columns
-    )
+    assert "ayudaEquivalenteTotal" in columns and not any(c.startswith("importe") for c in columns)
     assert con.execute(
-        "SELECT beneficiarios, ayuda_equivalente_total FROM publish.minimis_personas_fisicas"
+        "SELECT beneficiarios, ayudaEquivalenteTotal FROM publish.minimis_personas_fisicas"
     ).fetchone() == (11, 9900)

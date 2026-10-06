@@ -26,9 +26,12 @@ El dataset **no contiene ningún dato personal**. Puede identificar a personas j
     | Datos | Nivel |
     |---|---|
     | Catálogos | Tal cual |
-    | Convocatorias | Registro a registro, revisando los títulos que nombran a personas |
+    | Convocatorias | Registro a registro, con los textos que llevan algo con forma de DNI vacíos y sin documentos ni anuncios en boletines |
+    | Planes estratégicos | Registro a registro, sin documentos adjuntos |
+    | Ayudas a partidos políticos | Registro a registro: todos los beneficiarios son personas jurídicas |
+    | Grandes beneficiarios | Solo las personas jurídicas, registro a registro |
     | Concesiones, ayudas de Estado y minimis a personas jurídicas y entidades públicas | Registro a registro |
-    | Las mismas, a personas físicas, entidades formadas por personas y beneficiarios dudosos | Solo como un resumen por convocatoria: número de concesiones y de beneficiarios, importe total, media, desviación típica, mediana y cuartiles del importe, y los mismos percentiles de la fecha de concesión |
+    | Las mismas, a personas físicas, entidades formadas por personas y beneficiarios dudosos | Solo como un resumen por convocatoria: número de concesiones y de beneficiarios, importe total, media, desviación típica, mediana y cuartiles de cada importe, y los mismos percentiles de la fecha de concesión |
     | Sanciones a personas físicas | No se publican |
 
 3. **Ningún resumen sobre personas físicas junta a menos de 10 personas**, ni a una que tenga más de la mitad de su importe: un importe que solo aparece una vez aislaría a quien lo recibió, aunque no se diga su nombre, y se podría cruzar con copias antiguas de la BDNS que sí lo dicen. Nunca se publican el mínimo ni el máximo del importe o de la fecha, porque cada uno es el de una persona concreta, y los percentiles 10 y 90, que quedan cerca, solo cuando el resumen junta al menos a 20 personas. Las convocatorias que no cumplen se reúnen, por año, en una fila de "resto", que solo se publica si junta al menos dos (si fuera una, el resto sería esa convocatoria tal cual) y cumple también los umbrales. Cada estadística cubre todas las concesiones de su fila, y no hay otra tabla sobre ellas con la que compararla.

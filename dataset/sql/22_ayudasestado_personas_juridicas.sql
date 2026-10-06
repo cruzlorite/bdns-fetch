@@ -3,30 +3,30 @@
 -- Commission's case is about the aid scheme, not the beneficiary, so it
 -- stays.
 
-CREATE OR REPLACE TABLE publish.ayudas_estado_personas_juridicas AS
+CREATE OR REPLACE TABLE publish.ayudasestado_personas_juridicas AS
 SELECT
-    id_concesion,
-    cod_concesion,
-    fecha_concesion,
+    idConcesion,
+    codConcesion,
+    fechaConcesion,
     beneficiary_id(beneficiario)   AS nif,
     beneficiary_name(beneficiario) AS nombre,
-    tipo_persona,
-    tipo_beneficiario,
+    tipoPersona,
+    tipoBeneficiario,
     importe,
-    ayuda_equivalente,
+    ayudaEquivalente,
     instrumento,
-    numero_convocatoria,
+    numeroConvocatoria,
     convocatoria,
     convocante,
     reglamento,
     objetivo,
     region,
     sectores,
-    ayuda_estado,
-    url_ayuda_estado,
+    ayudaEstado,
+    urlAyudaEstado,
     entidad,
     intermediario,
-    fecha_alta,
+    fechaAlta,
     retirada
-FROM ayudas_estado
-WHERE NOT is_protected_beneficiary(tipo_persona, beneficiario);
+FROM ayudasestado
+WHERE NOT is_protected_beneficiary(tipoPersona, beneficiario);

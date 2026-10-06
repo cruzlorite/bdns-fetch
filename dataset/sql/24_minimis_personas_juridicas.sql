@@ -3,20 +3,20 @@
 
 CREATE OR REPLACE TABLE publish.minimis_personas_juridicas AS
 SELECT
-    id_concesion,
-    codigo_concesion,
-    fecha_concesion,
+    idConcesion,
+    codigoConcesion,
+    fechaConcesion,
     beneficiary_id(beneficiario)   AS nif,
     beneficiary_name(beneficiario) AS nombre,
-    tipo_persona,
-    ayuda_equivalente,
+    tipoPersona,
+    ayudaEquivalente,
     instrumento,
-    numero_convocatoria,
+    numeroConvocatoria,
     convocante,
     reglamento,
-    sector_actividad,
-    sector_producto,
-    fecha_registro,
+    sectorActividad,
+    sectorProducto,
+    fechaRegistro,
     retirada
 FROM minimis
-WHERE NOT is_protected_beneficiary(tipo_persona, beneficiario);
+WHERE NOT is_protected_beneficiary(tipoPersona, beneficiario);

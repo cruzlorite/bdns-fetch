@@ -4,7 +4,7 @@ Until a version is published, the only way to have the dataset is to build it yo
 
 ## What you need
 
-- A `bdns-sync` database with, at least, the awards. If you do not have one yet, follow its [get started](../sync/getting-started.md) first.
+- A `bdns-sync` database with every entity, like the one `bdns-sync delta` keeps. If you do not have one yet, follow its [get started](../sync/getting-started.md) first.
 - The [DuckDB command line](https://duckdb.org/docs/installation/). It is tested with version 1.5.
 - A copy of the repository, since the SQL runs from its root:
 
@@ -24,7 +24,7 @@ $ duckdb ~/bdns-dataset/privado.duckdb \
           SET VARIABLE output_dir = '$HOME/bdns-dataset/salida'" \
     -f dataset/build.sql
 $ ls ~/bdns-dataset/salida
-ayudas_estado_personas_juridicas.parquet  concesiones_personas_juridicas.parquet  concesiones_personas_fisicas.parquet  minimis_personas_juridicas.parquet
+ayudasestado_personas_juridicas.parquet  concesiones_personas_juridicas.parquet  concesiones_personas_fisicas.parquet  minimis_personas_juridicas.parquet
 ```
 
 While it works, it prints the time each step starts and, at the end, `done`, so you can follow a long build and see how long each step takes. These are the real timings for a copy with 30 million awards since 2022:
@@ -36,12 +36,12 @@ While it works, it prints the time each step starts and, at the end, `done`, so 
 02:00:21  04_versions.sql
 02:00:21  05_summaries.sql
 02:00:21  10_concesiones.sql
-02:04:09  11_ayudas_estado.sql
+02:04:09  11_ayudasestado.sql
 02:05:26  12_minimis.sql
 02:06:04  20_concesiones_personas_juridicas.sql
 02:06:37  21_concesiones_personas_fisicas.sql
-02:09:41  22_ayudas_estado_personas_juridicas.sql
-02:09:51  23_ayudas_estado_personas_fisicas.sql
+02:09:41  22_ayudasestado_personas_juridicas.sql
+02:09:51  23_ayudasestado_personas_fisicas.sql
 02:10:16  24_minimis_personas_juridicas.sql
 02:10:20  25_minimis_personas_fisicas.sql
 02:10:23  90_checks.sql
@@ -61,12 +61,12 @@ The SQL reads `bdns-sync`'s tables under the name `sync`, so only the `ATTACH` c
 | SQLite | `ATTACH '/path/to/bdns.db' AS sync (TYPE sqlite, READ_ONLY)` | Yes |
 | DuckDB | `ATTACH '/path/to/bdns.duckdb' AS sync (READ_ONLY)` | Yes |
 | PostgreSQL | `ATTACH 'postgresql://user@host/bdns' AS sync (TYPE postgres, READ_ONLY)` | Yes |
-| BigQuery | With the [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) community extension and one view per table ([how](#bigquery)) | Yes |
+| BigQuery | With the [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) community extension ([how](#bigquery)) | Yes |
 
 <a id="bigquery"></a>
 ### From BigQuery
 
-The [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) extension names tables after their dataset (`bq.YOUR_DATASET.concesiones_busqueda`), so three views give them the names the SQL expects. Data arrives compressed, and only the columns in use: with 30 million awards that is about 4.5 GB over the network, and the read costs cents. You need the credentials from `gcloud auth application-default login`:
+The [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) extension attaches your project and, given the dataset in the `ATTACH`, finds the tables under the names the SQL expects. Data arrives compressed, and only the columns in use: with 30 million awards that is about 4.5 GB over the network, and the read costs cents. You need the credentials from `gcloud auth application-default login`:
 
 ```console
 $ duckdb ~/bdns-dataset/privado.duckdb -cmd "
@@ -74,11 +74,7 @@ $ duckdb ~/bdns-dataset/privado.duckdb -cmd "
     SET threads = 4;
     SET preserve_insertion_order = false;
     INSTALL bigquery FROM community; LOAD bigquery;
-    ATTACH 'project=YOUR_PROJECT' AS bq (TYPE bigquery, READ_ONLY);
-    ATTACH ':memory:' AS sync;
-    CREATE VIEW sync.concesiones_busqueda  AS SELECT * FROM bq.YOUR_DATASET.concesiones_busqueda;
-    CREATE VIEW sync.ayudasestado_busqueda AS SELECT * FROM bq.YOUR_DATASET.ayudasestado_busqueda;
-    CREATE VIEW sync.minimis_busqueda      AS SELECT * FROM bq.YOUR_DATASET.minimis_busqueda;
+    ATTACH 'project=YOUR_PROJECT dataset=YOUR_DATASET' AS sync (TYPE bigquery, READ_ONLY);
     SET VARIABLE output_dir = '$HOME/bdns-dataset/salida'" \
     -f dataset/build.sql
 ```
@@ -125,12 +121,15 @@ Intermediate tables stay in the private file, and only those in the `publish` sc
 | `04_versions.sql` | Defines how each record's last version is chosen, without loading every `payload` at once |
 | `05_summaries.sql` | Defines the per-call summary of natural persons, with [its rules](privacy.md#rules), the same for the three entities |
 | `10_concesiones.sql` | Reads awards from `bdns-sync`, each one's last version, with typed columns. Private |
-| `11_ayudas_estado.sql` | The same for state aid. Private |
+| `11_ayudasestado.sql` | The same for state aid. Private |
 | `12_minimis.sql` | The same for de minimis aid. Private |
+| `13_partidospoliticos.sql`, `14_grandesbeneficiarios.sql` | The same for party aid and the list of large beneficiaries. Private |
 | `20_concesiones_personas_juridicas.sql` | Writes awards to legal persons to `publish`, record by record |
 | `21_concesiones_personas_fisicas.sql` | Writes the summary of awards to natural persons to `publish` |
-| `22_ayudas_estado_personas_juridicas.sql`, `23_ayudas_estado_personas_fisicas.sql` | The same for state aid |
+| `22_ayudasestado_personas_juridicas.sql`, `23_ayudasestado_personas_fisicas.sql` | The same for state aid |
 | `24_minimis_personas_juridicas.sql`, `25_minimis_personas_fisicas.sql` | The same for de minimis aid |
+| `26_partidospoliticos.sql`, `27_grandesbeneficiarios.sql` | Write party aid and the large beneficiaries that are legal persons to `publish` |
+| `30_convocatorias.sql`, `31_planesestrategicos.sql`, `32_catalogos.sql` | Write calls, strategic plans and catalogues to `publish` |
 | `90_checks.sql` | Checks what is about to be published and stops the run if it finds anything |
 | `95_export.sql` | Writes each table in `publish` as a Parquet file in `output_dir` |
 

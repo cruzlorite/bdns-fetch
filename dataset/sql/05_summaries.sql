@@ -64,8 +64,8 @@ CREATE OR REPLACE MACRO date_with_tails(s, people) AS STRUCT_PACK(
 
 -- The publishable summaries of a table of protected awards, one per call
 -- and instrument, then one rest row per year. The table has, per award:
--- numero_convocatoria, instrumento, persona, fecha_concesion, importe,
--- ayuda_equivalente (either may be NULL throughout, if the entity lacks
+-- numeroConvocatoria, instrumento, persona, fechaConcesion, importe,
+-- ayudaEquivalente (either may be NULL throughout, if the entity lacks
 -- it) and etiqueta, a struct with the call's title and awarding body as
 -- the entity names them. A few calls do not keep those the same across
 -- their awards: a call shows those of most of its awards, and on a tie
@@ -76,14 +76,14 @@ WITH awards AS (
 ),
 per_person AS (
     SELECT
-        numero_convocatoria, instrumento, persona,
-        sum(importe) AS importe, sum(ayuda_equivalente) AS equivalente
+        numeroConvocatoria, instrumento, persona,
+        sum(importe) AS importe, sum(ayudaEquivalente) AS equivalente
     FROM awards
     GROUP BY ALL
 ),
 people AS (
     SELECT
-        numero_convocatoria,
+        numeroConvocatoria,
         instrumento,
         count(*) AS beneficiarios,
         is_publishable(count(*), sum(importe), max(importe))
@@ -92,9 +92,9 @@ people AS (
     GROUP BY ALL
 ),
 labels AS (
-    SELECT numero_convocatoria, instrumento, first(etiqueta ORDER BY n DESC, etiqueta) AS etiqueta
+    SELECT numeroConvocatoria, instrumento, first(etiqueta ORDER BY n DESC, etiqueta) AS etiqueta
     FROM (
-        SELECT numero_convocatoria, instrumento, etiqueta, count(*) AS n
+        SELECT numeroConvocatoria, instrumento, etiqueta, count(*) AS n
         FROM awards
         GROUP BY ALL
     )
@@ -102,35 +102,35 @@ labels AS (
 ),
 calls AS (
     SELECT
-        a.numero_convocatoria,
+        a.numeroConvocatoria,
         a.instrumento,
         any_value(l.etiqueta)                       AS etiqueta,
         count(*)                                    AS concesiones,
         any_value(p.beneficiarios)                  AS beneficiarios,
         any_value(p.publishable)                    AS publishable,
         amount_summary(a.importe)                   AS importe,
-        amount_summary(a.ayuda_equivalente)         AS ayuda_equivalente,
-        date_summary(a.fecha_concesion)             AS fecha,
-        year(quantile_disc(a.fecha_concesion, 0.50)) AS ejercicio
+        amount_summary(a.ayudaEquivalente)         AS ayudaEquivalente,
+        date_summary(a.fechaConcesion)             AS fechaConcesion,
+        year(quantile_disc(a.fechaConcesion, 0.50)) AS ejercicio
     FROM awards a
     JOIN people p
-        ON  a.numero_convocatoria IS NOT DISTINCT FROM p.numero_convocatoria
+        ON  a.numeroConvocatoria IS NOT DISTINCT FROM p.numeroConvocatoria
         AND a.instrumento IS NOT DISTINCT FROM p.instrumento
     JOIN labels l
-        ON  a.numero_convocatoria IS NOT DISTINCT FROM l.numero_convocatoria
+        ON  a.numeroConvocatoria IS NOT DISTINCT FROM l.numeroConvocatoria
         AND a.instrumento IS NOT DISTINCT FROM l.instrumento
-    GROUP BY a.numero_convocatoria, a.instrumento
+    GROUP BY a.numeroConvocatoria, a.instrumento
 ),
 suppressed AS (
     SELECT a.*, c.ejercicio
     FROM awards a
     JOIN calls c
-        ON  a.numero_convocatoria IS NOT DISTINCT FROM c.numero_convocatoria
+        ON  a.numeroConvocatoria IS NOT DISTINCT FROM c.numeroConvocatoria
         AND a.instrumento IS NOT DISTINCT FROM c.instrumento
     WHERE NOT c.publishable
 ),
 rest_per_person AS (
-    SELECT ejercicio, persona, sum(importe) AS importe, sum(ayuda_equivalente) AS equivalente
+    SELECT ejercicio, persona, sum(importe) AS importe, sum(ayudaEquivalente) AS equivalente
     FROM suppressed
     GROUP BY ALL
 ),
@@ -153,32 +153,32 @@ rest AS (
         any_value(p.beneficiarios)                  AS beneficiarios,
         any_value(p.publishable) AND any_value(c.suppressed_calls) >= 2 AS publishable,
         amount_summary(s.importe)                   AS importe,
-        amount_summary(s.ayuda_equivalente)         AS ayuda_equivalente,
-        date_summary(s.fecha_concesion)             AS fecha
+        amount_summary(s.ayudaEquivalente)         AS ayudaEquivalente,
+        date_summary(s.fechaConcesion)             AS fechaConcesion
     FROM suppressed s
     JOIN rest_people p ON s.ejercicio IS NOT DISTINCT FROM p.ejercicio
     JOIN rest_calls c ON s.ejercicio IS NOT DISTINCT FROM c.ejercicio
     GROUP BY s.ejercicio
 ),
 published AS (
-    SELECT numero_convocatoria, instrumento, etiqueta, false AS es_resto, NULL::BIGINT AS ejercicio,
-           concesiones, beneficiarios, importe, ayuda_equivalente, fecha
+    SELECT numeroConvocatoria, instrumento, etiqueta, false AS esResto, NULL::BIGINT AS ejercicio,
+           concesiones, beneficiarios, importe, ayudaEquivalente, fechaConcesion
     FROM calls
     WHERE publishable
     UNION ALL BY NAME
-    SELECT true AS es_resto, ejercicio, concesiones, beneficiarios, importe, ayuda_equivalente, fecha
+    SELECT true AS esResto, ejercicio, concesiones, beneficiarios, importe, ayudaEquivalente, fechaConcesion
     FROM rest
     WHERE publishable
 )
 SELECT
-    numero_convocatoria,
+    numeroConvocatoria,
     instrumento,
     etiqueta,
-    es_resto,
+    esResto,
     ejercicio,
     concesiones,
     beneficiarios,
     amount_with_tails(importe, beneficiarios)           AS importe,
-    amount_with_tails(ayuda_equivalente, beneficiarios) AS ayuda_equivalente,
-    date_with_tails(fecha, beneficiarios)               AS fecha
+    amount_with_tails(ayudaEquivalente, beneficiarios) AS ayudaEquivalente,
+    date_with_tails(fechaConcesion, beneficiarios)      AS fechaConcesion
 FROM published;

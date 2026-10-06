@@ -4,7 +4,7 @@ Mientras no haya una versión publicada, la única forma de tener el dataset es 
 
 ## Lo que necesitas
 
-- Una base de datos de `bdns-sync` con, al menos, las concesiones. Si todavía no la tienes, sigue antes sus [primeros pasos](../sync/getting-started.md).
+- Una base de datos de `bdns-sync` con todas las entidades, como la que deja `bdns-sync delta`. Si todavía no la tienes, sigue antes sus [primeros pasos](../sync/getting-started.md).
 - La [línea de comandos de DuckDB](https://duckdb.org/docs/installation/). Está probado con la versión 1.5.
 - Una copia del repositorio, porque el SQL se lanza desde su raíz:
 
@@ -24,7 +24,7 @@ $ duckdb ~/bdns-dataset/privado.duckdb \
           SET VARIABLE output_dir = '$HOME/bdns-dataset/salida'" \
     -f dataset/build.sql
 $ ls ~/bdns-dataset/salida
-ayudas_estado_personas_juridicas.parquet  concesiones_personas_juridicas.parquet  concesiones_personas_fisicas.parquet  minimis_personas_juridicas.parquet
+ayudasestado_personas_juridicas.parquet  concesiones_personas_juridicas.parquet  concesiones_personas_fisicas.parquet  minimis_personas_juridicas.parquet
 ```
 
 Mientras trabaja, muestra la hora a la que empieza cada paso y, al final, `done`, así que puedes seguir una generación larga y ver cuánto tarda cada paso. Estos son los tiempos reales de una copia con 30 millones de concesiones desde 2022:
@@ -36,12 +36,12 @@ Mientras trabaja, muestra la hora a la que empieza cada paso y, al final, `done`
 02:00:21  04_versions.sql
 02:00:21  05_summaries.sql
 02:00:21  10_concesiones.sql
-02:04:09  11_ayudas_estado.sql
+02:04:09  11_ayudasestado.sql
 02:05:26  12_minimis.sql
 02:06:04  20_concesiones_personas_juridicas.sql
 02:06:37  21_concesiones_personas_fisicas.sql
-02:09:41  22_ayudas_estado_personas_juridicas.sql
-02:09:51  23_ayudas_estado_personas_fisicas.sql
+02:09:41  22_ayudasestado_personas_juridicas.sql
+02:09:51  23_ayudasestado_personas_fisicas.sql
 02:10:16  24_minimis_personas_juridicas.sql
 02:10:20  25_minimis_personas_fisicas.sql
 02:10:23  90_checks.sql
@@ -61,12 +61,12 @@ El SQL lee las tablas de `bdns-sync` con el nombre `sync`, así que solo cambia 
 | SQLite | `ATTACH '/ruta/a/bdns.db' AS sync (TYPE sqlite, READ_ONLY)` | Sí |
 | DuckDB | `ATTACH '/ruta/a/bdns.duckdb' AS sync (READ_ONLY)` | Sí |
 | PostgreSQL | `ATTACH 'postgresql://usuario@servidor/bdns' AS sync (TYPE postgres, READ_ONLY)` | Sí |
-| BigQuery | Con la extensión de la comunidad [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) y una vista por tabla ([cómo](#bigquery)) | Sí |
+| BigQuery | Con la extensión de la comunidad [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) ([cómo](#bigquery)) | Sí |
 
 <a id="bigquery"></a>
 ### Desde BigQuery
 
-La extensión [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) nombra las tablas con su dataset (`bq.TU_DATASET.concesiones_busqueda`), así que hacen falta tres vistas con el nombre que espera el SQL. Los datos llegan comprimidos, y solo las columnas que se usan: con 30 millones de concesiones son unos 4,5 GB por la red, y la lectura cuesta céntimos. Necesitas las credenciales de `gcloud auth application-default login`:
+La extensión [`bigquery`](https://duckdb.org/community_extensions/extensions/bigquery.html) conecta tu proyecto y, si le indicas el dataset en el `ATTACH`, encuentra las tablas con el nombre que espera el SQL. Los datos llegan comprimidos, y solo las columnas que se usan: con 30 millones de concesiones son unos 4,5 GB por la red, y la lectura cuesta céntimos. Necesitas las credenciales de `gcloud auth application-default login`:
 
 ```console
 $ duckdb ~/bdns-dataset/privado.duckdb -cmd "
@@ -74,11 +74,7 @@ $ duckdb ~/bdns-dataset/privado.duckdb -cmd "
     SET threads = 4;
     SET preserve_insertion_order = false;
     INSTALL bigquery FROM community; LOAD bigquery;
-    ATTACH 'project=TU_PROYECTO' AS bq (TYPE bigquery, READ_ONLY);
-    ATTACH ':memory:' AS sync;
-    CREATE VIEW sync.concesiones_busqueda  AS SELECT * FROM bq.TU_DATASET.concesiones_busqueda;
-    CREATE VIEW sync.ayudasestado_busqueda AS SELECT * FROM bq.TU_DATASET.ayudasestado_busqueda;
-    CREATE VIEW sync.minimis_busqueda      AS SELECT * FROM bq.TU_DATASET.minimis_busqueda;
+    ATTACH 'project=TU_PROYECTO dataset=TU_DATASET' AS sync (TYPE bigquery, READ_ONLY);
     SET VARIABLE output_dir = '$HOME/bdns-dataset/salida'" \
     -f dataset/build.sql
 ```
@@ -125,12 +121,15 @@ Las tablas intermedias se quedan en el fichero privado, y solo las del esquema `
 | `04_versions.sql` | Define cómo se elige la última versión de cada registro, sin cargar todos los `payload` a la vez |
 | `05_summaries.sql` | Define el resumen por convocatoria de las personas físicas, con [sus reglas](privacy.md#rules), igual para las tres entidades |
 | `10_concesiones.sql` | Lee las concesiones de `bdns-sync`, con la última versión de cada una y sus columnas con tipo. Privada |
-| `11_ayudas_estado.sql` | Lo mismo con las ayudas de Estado. Privada |
+| `11_ayudasestado.sql` | Lo mismo con las ayudas de Estado. Privada |
 | `12_minimis.sql` | Lo mismo con las ayudas de minimis. Privada |
+| `13_partidospoliticos.sql`, `14_grandesbeneficiarios.sql` | Lo mismo con las ayudas a partidos políticos y la lista de grandes beneficiarios. Privadas |
 | `20_concesiones_personas_juridicas.sql` | Escribe en `publish` las concesiones a personas jurídicas, registro a registro |
 | `21_concesiones_personas_fisicas.sql` | Escribe en `publish` el resumen de las concesiones a personas físicas |
-| `22_ayudas_estado_personas_juridicas.sql`, `23_ayudas_estado_personas_fisicas.sql` | Lo mismo con las ayudas de Estado |
+| `22_ayudasestado_personas_juridicas.sql`, `23_ayudasestado_personas_fisicas.sql` | Lo mismo con las ayudas de Estado |
 | `24_minimis_personas_juridicas.sql`, `25_minimis_personas_fisicas.sql` | Lo mismo con las ayudas de minimis |
+| `26_partidospoliticos.sql`, `27_grandesbeneficiarios.sql` | Escriben en `publish` las ayudas a partidos políticos y los grandes beneficiarios que son personas jurídicas |
+| `30_convocatorias.sql`, `31_planesestrategicos.sql`, `32_catalogos.sql` | Escriben en `publish` las convocatorias, los planes estratégicos y los catálogos |
 | `90_checks.sql` | Comprueba lo que va a publicarse y para la ejecución si encuentra algo |
 | `95_export.sql` | Escribe cada tabla de `publish` como un fichero Parquet en `output_dir` |
 

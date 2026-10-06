@@ -7,7 +7,7 @@ The dataset holds no personal data. It may identify companies and public bodies,
 
 Each beneficiary is classified by the tax ID at the start of the `beneficiario` field, never by its name, because a company may be named like a person and the other way round. Anything not recognised is treated as a natural person. For example (names and tax IDs are made up):
 
-| How it appears in the BDNS | `tipo_persona` | In the dataset |
+| How it appears in the BDNS | `tipoPersona` | In the dataset |
 |---|---|---|
 | `***1234** NOMBRE APELLIDOS` | `persona_fisica` | Summary only |
 | `12345678Z NOMBRE APELLIDOS` | `persona_fisica` | Summary only |
@@ -40,12 +40,12 @@ Its row in `concesiones_personas_fisicas` would be this (without the gross grant
 |---|---|
 | `concesiones` | 12 |
 | `beneficiarios` | 11 |
-| `importe_total` | 6,450.00 |
-| `importe_media` | 537.50 |
-| `importe_desviacion` | 274.79 |
-| `importe_p25`, `importe_mediana`, `importe_p75` | 300.00, 450.00 and 600.00 |
-| `fecha_p25`, `fecha_mediana`, `fecha_p75` | 2026-03-12, 2026-04-20 and 2026-04-20 |
-| `importe_p10`, `importe_p90`, `fecha_p10`, `fecha_p90` | Empty, because there are fewer than 20 people |
+| `importeTotal` | 6,450.00 |
+| `importeMedia` | 537.50 |
+| `importeDesviacion` | 274.79 |
+| `importeP25`, `importeMediana`, `importeP75` | 300.00, 450.00 and 600.00 |
+| `fechaConcesionP25`, `fechaConcesionMediana`, `fechaConcesionP75` | 2026-03-12, 2026-04-20 and 2026-04-20 |
+| `importeP10`, `importeP90`, `fechaConcesionP10`, `fechaConcesionP90` | Empty, because there are fewer than 20 people |
 
 With it you can tell how much the call gave out, what a typical award was and when they were awarded, but not who got what. Nor do the €1,200 of the largest award appear, since they are one specific person's.
 
@@ -60,11 +60,18 @@ With it you can tell how much the call gave out, what a typical award was and wh
 
 **Dates are real dates.** Date percentiles are picked among the award dates that exist, without interpolating, because a day halfway between two dates means nothing.
 
-**What falls short goes into its year's rest row.** The awards of calls that cannot be published are gathered into one row with `es_resto = true`, which does not say which calls it holds, and in `ejercicio` carries the year of each one's median award date. That row must meet the same rules and also gather at least two calls, because with only one, the rest would be that call under another name.
+**What falls short goes into its year's rest row.** The awards of calls that cannot be published are gathered into one row with `esResto = true`, which does not say which calls it holds, and in `ejercicio` carries the year of each one's median award date. That row must meet the same rules and also gather at least two calls, because with only one, the rest would be that call under another name.
 
 **Each person counts once.** A person is recognised by their BDNS identifier or, where it is missing, by the whole `beneficiario` field, and neither leaves the private file.
 
 Every statistic covers every award in its row, and no other table summarises the same awards, so nothing can be learnt by subtracting one from the other. The thresholds are defined once, in the SQL, and [how it is built](build.md#thresholds) gives their values.
+
+<a id="texts"></a>
+## The texts of calls
+
+A call is the administration's own announcement, not anyone's data, and is published record by record. But its texts are written by hand, and a nominative grant sometimes names its beneficiary, so the title, the description of the bases and the other free texts are published empty if they hold something shaped like a DNI, NIE or masked tax ID. So is the link to the bases when it has that shape, though it is nearly always a false alarm: some bulletins name their files with eight digits and a letter. Documents and bulletin announcements are left out, since they often list the beneficiaries.
+
+A title naming a person without their DNI cannot be detected reliably, and is published as it is, just as the BDNS itself keeps it published.
 
 <a id="checks"></a>
 ## What is checked before publishing
@@ -73,7 +80,7 @@ Before writing any file, the build checks what it is about to publish and **stop
 
 - a protected beneficiary in a record-level table;
 - anything shaped like a DNI, NIE or masked tax ID, in any column of any table;
-- a column that identifies someone in the summary, such as `beneficiario`, `id_persona`, `url_br` or `cod_concesion`;
+- a column that identifies someone in the summary, such as `beneficiario`, `idPersona`, `urlBR` or `codConcesion`;
 - a summary row with fewer than 10 people, or with the 10th or 90th percentiles and fewer than 20.
 
 It reports what it finds without cleaning it up, because such a finding points to a fault in an earlier step, and quietly cleaning it would hide it behind a dataset that looks right. Each check's message is in [how it is built](build.md#checks).
